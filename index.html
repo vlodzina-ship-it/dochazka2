@@ -14,27 +14,36 @@
       --muted: #64748b;
       --line: #e2e8f0;
       --accent: #0f172a;
+      --accent-soft: #eef2ff;
       --ok: #166534;
       --warn: #92400e;
       --danger: #991b1b;
+      --info: #1d4ed8;
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
       background: var(--bg);
       color: var(--text);
     }
+
     .wrap {
-      max-width: 1250px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 24px;
     }
+
     h1, h2, h3 { margin: 0 0 12px; }
     p { margin: 0 0 10px; }
+
     .grid { display: grid; gap: 16px; }
     .grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
     .grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
     .card {
       background: var(--card);
       border: 1px solid var(--line);
@@ -42,11 +51,32 @@
       padding: 18px;
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
+
     .muted { color: var(--muted); }
     .big { font-size: 32px; font-weight: 700; }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .row-between { display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-    label { font-size: 14px; color: var(--muted); display: block; margin-bottom: 6px; }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .row-between {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    label {
+      font-size: 14px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
     input, select, button {
       width: 100%;
       padding: 10px 12px;
@@ -55,6 +85,12 @@
       font-size: 14px;
       background: white;
     }
+
+    input:focus, select:focus {
+      outline: 2px solid #c7d2fe;
+      outline-offset: 1px;
+    }
+
     button {
       cursor: pointer;
       background: var(--accent);
@@ -62,34 +98,58 @@
       border: none;
       width: auto;
       min-width: 120px;
+      transition: 0.15s ease;
     }
+
+    button:hover { opacity: 0.95; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
     button.secondary {
       background: white;
       color: var(--text);
       border: 1px solid var(--line);
     }
+
     button.warn {
       background: #854d0e;
       color: white;
     }
+
     button.danger {
       background: #b91c1c;
       color: white;
     }
+
+    button.info {
+      background: var(--info);
+      color: white;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
+      min-width: 680px;
     }
+
     th, td {
       text-align: left;
       padding: 10px 8px;
       border-bottom: 1px solid var(--line);
       vertical-align: top;
     }
+
     .status-ok { color: var(--ok); font-weight: 700; }
     .status-wait { color: var(--warn); font-weight: 700; }
+    .status-info { color: var(--info); font-weight: 700; }
+
     .toolbar { margin-bottom: 18px; }
+
     .note {
       background: #fffbeb;
       border: 1px solid #fde68a;
@@ -99,6 +159,28 @@
       margin-top: 12px;
       font-size: 14px;
     }
+
+    .info-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: var(--ok);
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 12px;
+      font-size: 14px;
+      display: none;
+    }
+
     .error {
       background: #fef2f2;
       border: 1px solid #fecaca;
@@ -109,6 +191,7 @@
       font-size: 14px;
       display: none;
     }
+
     .pill {
       display: inline-block;
       padding: 4px 8px;
@@ -116,20 +199,88 @@
       background: #eef2ff;
       color: #3730a3;
       font-size: 12px;
+      font-weight: 700;
     }
+
+    .pill.ok {
+      background: #ecfdf5;
+      color: var(--ok);
+    }
+
+    .toolbar-title {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-sub {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .section-top {
+      margin-bottom: 12px;
+    }
+
+    .mini-stat {
+      padding: 12px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+
+    .mini-stat .value {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    .nowrap {
+      white-space: nowrap;
+    }
+
     @media (max-width: 700px) {
       .wrap { padding: 14px; }
       .big { font-size: 26px; }
       table { font-size: 13px; }
+      .row > button,
+      .row > input,
+      .row > select {
+        width: 100%;
+      }
+      .card {
+        padding: 14px;
+        border-radius: 16px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="toolbar">
-      <h1>Docházkový systém</h1>
-      <p class="muted">Verze napojená na Supabase databázi. Data se sdílí mezi zařízeními a umí měsíční souhrn i export pro účetní.</p>
+      <div class="toolbar-title">
+        <h1>Docházkový systém</h1>
+        <span class="pill">Supabase</span>
+        <span class="pill ok" id="profileBadge">Režim: admin</span>
+      </div>
+      <p class="muted">
+        Verze napojená na Supabase databázi. Obsahuje měsíční souhrny, export do Excelu,
+        mobilnější rozložení a základ zaměstnaneckého režimu.
+      </p>
       <div class="error" id="errorBox"></div>
+      <div class="success" id="successBox"></div>
     </div>
 
     <div class="grid grid-4">
@@ -148,6 +299,65 @@
       <div class="card">
         <div class="muted">Schválené hodiny dovolené</div>
         <div class="big" id="approvedHours">0</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <div class="section-top row-between">
+          <h2>Zaměstnanecký režim</h2>
+          <span class="pill">základ loginu</span>
+        </div>
+
+        <div class="grid grid-2">
+          <div>
+            <label>Profil</label>
+            <select id="profileMode" onchange="handleProfileModeChange()">
+              <option value="admin">Admin</option>
+              <option value="employee">Zaměstnanec</option>
+            </select>
+          </div>
+          <div>
+            <label>Zaměstnanec</label>
+            <select id="profileEmployee"></select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:14px;">
+          <button class="info" onclick="saveProfileMode()">Uložit režim</button>
+          <button class="secondary" onclick="clearProfileMode()">Odhlásit profil</button>
+        </div>
+
+        <div class="info-box">
+          Tento režim je zatím pouze frontendový filtr uložený v prohlížeči.
+          Pro skutečné přihlášení je další krok napojení na Supabase Auth + RLS.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-top row-between">
+          <h2>Můj přehled</h2>
+          <span class="pill" id="myDashboardBadge">bez profilu</span>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="mini-stat">
+            <div class="muted">Profil</div>
+            <div class="value" id="myName">—</div>
+          </div>
+          <div class="mini-stat">
+            <div class="muted">Zbývá dovolené</div>
+            <div class="value" id="myRemainingLeave">—</div>
+          </div>
+          <div class="mini-stat">
+            <div class="muted">Tento měsíc</div>
+            <div class="value" id="myThisMonth">—</div>
+          </div>
+        </div>
+
+        <div class="note" id="myDashboardNote">
+          Vyberte zaměstnance v režimu „Zaměstnanec“ a zobrazí se osobní přehled.
+        </div>
       </div>
     </div>
 
@@ -185,7 +395,7 @@
           </div>
           <div>
             <label>Pauza (min)</label>
-            <input id="attendanceBreak" type="number" value="30" />
+            <input id="attendanceBreak" type="number" value="30" min="0" />
           </div>
         </div>
         <div class="row" style="margin-top:14px;">
@@ -206,7 +416,7 @@
           </div>
           <div>
             <label>Počet hodin</label>
-            <input id="leaveHours" type="number" value="8" />
+            <input id="leaveHours" type="number" value="8" min="0" step="0.5" />
           </div>
           <div>
             <label>Poznámka</label>
@@ -216,7 +426,9 @@
         <div class="row" style="margin-top:14px;">
           <button onclick="addLeave()">Odeslat žádost</button>
         </div>
-        <div class="note">Tato verze ukládá data do Supabase databáze a sdílí je mezi zařízeními.</div>
+        <div class="note">
+          Tato verze ukládá data do Supabase databáze a sdílí je mezi zařízeními.
+        </div>
       </div>
     </div>
 
@@ -226,37 +438,60 @@
           <h2>Zaměstnanci</h2>
           <span class="pill">online data</span>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Jméno</th>
-              <th>Úvazek</th>
-              <th>Dovolená</th>
-              <th>Zbývá</th>
-              <th>Místa</th>
-            </tr>
-          </thead>
-          <tbody id="employeeTable"></tbody>
-        </table>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Jméno</th>
+                <th>Úvazek</th>
+                <th>Dovolená</th>
+                <th>Zbývá</th>
+                <th>Místa</th>
+              </tr>
+            </thead>
+            <tbody id="employeeTable"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card">
         <div class="row-between">
           <h2>Dovolená</h2>
-          <button class="secondary" onclick="reloadAll()">Obnovit data</button>
+          <div class="row">
+            <button class="secondary" onclick="reloadAll()">Obnovit data</button>
+          </div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Jméno</th>
-              <th>Datum</th>
-              <th>Hodiny</th>
-              <th>Stav</th>
-              <th>Akce</th>
-            </tr>
-          </thead>
-          <tbody id="leaveTable"></tbody>
-        </table>
+
+        <div class="grid grid-2" style="margin-bottom:12px;">
+          <div>
+            <label>Filtr zaměstnanec</label>
+            <select id="leaveFilterEmployee" onchange="renderLeaves()"></select>
+          </div>
+          <div>
+            <label>Filtr stav</label>
+            <select id="leaveFilterStatus" onchange="renderLeaves()">
+              <option value="">Vše</option>
+              <option value="čeká">Čeká</option>
+              <option value="schváleno">Schváleno</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Jméno</th>
+                <th>Datum</th>
+                <th>Hodiny</th>
+                <th>Stav</th>
+                <th>Poznámka</th>
+                <th>Akce</th>
+              </tr>
+            </thead>
+            <tbody id="leaveTable"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -269,18 +504,42 @@
           <button onclick="exportMonthExcel()">Export Excel</button>
         </div>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Zaměstnanec</th>
-            <th>Měsíc</th>
-            <th>Docházka</th>
-            <th>Dovolená</th>
-            <th>Součet hodin</th>
-          </tr>
-        </thead>
-        <tbody id="monthlyTable"></tbody>
-      </table>
+
+      <div class="grid grid-4" style="margin: 12px 0 4px;">
+        <div class="mini-stat">
+          <div class="muted">Souhrnná docházka</div>
+          <div class="value" id="summaryAttendanceTotal">0:00</div>
+        </div>
+        <div class="mini-stat">
+          <div class="muted">Souhrnná dovolená</div>
+          <div class="value" id="summaryLeaveTotal">0 h</div>
+        </div>
+        <div class="mini-stat">
+          <div class="muted">Záznamy docházky</div>
+          <div class="value" id="summaryAttendanceRows">0</div>
+        </div>
+        <div class="mini-stat">
+          <div class="muted">Žádosti v měsíci</div>
+          <div class="value" id="summaryLeaveRows">0</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Zaměstnanec</th>
+              <th>Měsíc</th>
+              <th>Docházka</th>
+              <th>Dovolená</th>
+              <th>Pracovní dny</th>
+              <th>Záznamy</th>
+              <th>Součet hodin</th>
+            </tr>
+          </thead>
+          <tbody id="monthlyTable"></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="card" style="margin-top:16px;">
@@ -291,19 +550,42 @@
           <button class="warn" onclick="exportAttendanceCsv()">Export CSV</button>
         </div>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Datum</th>
-            <th>Jméno</th>
-            <th>Místo</th>
-            <th>Typ</th>
-            <th>Čas</th>
-            <th>Odpracováno</th>
-          </tr>
-        </thead>
-        <tbody id="attendanceTable"></tbody>
-      </table>
+
+      <div class="grid grid-3" style="margin-bottom:12px;">
+        <div>
+          <label>Filtr měsíc</label>
+          <input id="attendanceFilterMonth" type="month" onchange="renderAttendance()" />
+        </div>
+        <div>
+          <label>Filtr zaměstnanec</label>
+          <select id="attendanceFilterEmployee" onchange="renderAttendance()"></select>
+        </div>
+        <div>
+          <label>Zobrazení</label>
+          <select id="attendanceViewMode" onchange="renderAttendance()">
+            <option value="all">Vše</option>
+            <option value="today">Pouze dnešek</option>
+            <option value="month">Pouze zvolený měsíc</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Jméno</th>
+              <th>Místo</th>
+              <th>Typ</th>
+              <th>Čas</th>
+              <th>Pauza</th>
+              <th>Odpracováno</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTable"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -316,6 +598,8 @@
     let attendance = [];
     let leaves = [];
 
+    const PROFILE_STORAGE_KEY = "dochazka_profile_v1";
+
     function today() {
       return new Date().toISOString().slice(0, 10);
     }
@@ -325,14 +609,41 @@
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
     function showError(message) {
       const box = document.getElementById("errorBox");
       box.style.display = "block";
       box.textContent = message;
+      setTimeout(() => {
+        if (box.textContent === message) clearError();
+      }, 5000);
     }
 
     function clearError() {
       const box = document.getElementById("errorBox");
+      box.style.display = "none";
+      box.textContent = "";
+    }
+
+    function showSuccess(message) {
+      const box = document.getElementById("successBox");
+      box.style.display = "block";
+      box.textContent = message;
+      setTimeout(() => {
+        if (box.textContent === message) clearSuccess();
+      }, 3000);
+    }
+
+    function clearSuccess() {
+      const box = document.getElementById("successBox");
       box.style.display = "none";
       box.textContent = "";
     }
@@ -342,32 +653,144 @@
       return e ? e.name : "—";
     }
 
+    function currentProfile() {
+      try {
+        return JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY)) || { mode: "admin", employeeId: "" };
+      } catch {
+        return { mode: "admin", employeeId: "" };
+      }
+    }
+
+    function getSelectedEmployeeIdForProfile() {
+      const profile = currentProfile();
+      return profile.mode === "employee" ? Number(profile.employeeId || 0) : null;
+    }
+
+    function applyProfileToFormFields() {
+      const profile = currentProfile();
+      const isEmployee = profile.mode === "employee" && profile.employeeId;
+
+      const attendanceEmployee = document.getElementById("attendanceEmployee");
+      const leaveEmployee = document.getElementById("leaveEmployee");
+
+      if (isEmployee) {
+        attendanceEmployee.value = String(profile.employeeId);
+        leaveEmployee.value = String(profile.employeeId);
+        attendanceEmployee.disabled = true;
+        leaveEmployee.disabled = true;
+      } else {
+        attendanceEmployee.disabled = false;
+        leaveEmployee.disabled = false;
+      }
+
+      const badge = document.getElementById("profileBadge");
+      if (isEmployee) {
+        badge.textContent = `Režim: ${employeeName(profile.employeeId)}`;
+      } else {
+        badge.textContent = "Režim: admin";
+      }
+    }
+
+    function handleProfileModeChange() {
+      const mode = document.getElementById("profileMode").value;
+      const employeeSelect = document.getElementById("profileEmployee");
+      employeeSelect.disabled = mode !== "employee";
+    }
+
+    function saveProfileMode() {
+      const mode = document.getElementById("profileMode").value;
+      const employeeId = document.getElementById("profileEmployee").value;
+
+      if (mode === "employee" && !employeeId) {
+        showError("Vyberte zaměstnance pro zaměstnanecký režim.");
+        return;
+      }
+
+      const payload = {
+        mode,
+        employeeId: mode === "employee" ? employeeId : ""
+      };
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(payload));
+      syncProfileUI();
+      renderAll();
+      showSuccess("Režim byl uložen.");
+    }
+
+    function clearProfileMode() {
+      localStorage.removeItem(PROFILE_STORAGE_KEY);
+      syncProfileUI();
+      renderAll();
+      showSuccess("Profil byl odhlášen.");
+    }
+
+    function syncProfileUI() {
+      const profile = currentProfile();
+      document.getElementById("profileMode").value = profile.mode || "admin";
+      document.getElementById("profileEmployee").value = profile.employeeId || "";
+      handleProfileModeChange();
+      applyProfileToFormFields();
+      renderMyDashboard();
+    }
+
     function calcWorkedMinutes(from, to, breakMinutes) {
-      const [fh, fm] = String(from || "00:00").split(":").map(Number);
-      const [th, tm] = String(to || "00:00").split(":").map(Number);
+      if (!from || !to) return 0;
+      const [fh, fm] = String(from).split(":").map(Number);
+      const [th, tm] = String(to).split(":").map(Number);
       const start = fh * 60 + fm;
       const end = th * 60 + tm;
       return Math.max(0, end - start - Number(breakMinutes || 0));
     }
 
-    function calcWorked(from, to, breakMinutes) {
-      const total = calcWorkedMinutes(from, to, breakMinutes);
-      const h = Math.floor(total / 60);
-      const m = total % 60;
+    function formatMinutesToHours(minutes) {
+      const safe = Math.max(0, Number(minutes || 0));
+      const h = Math.floor(safe / 60);
+      const m = safe % 60;
       return `${h}:${String(m).padStart(2, "0")}`;
+    }
+
+    function calcWorked(from, to, breakMinutes) {
+      return formatMinutesToHours(calcWorkedMinutes(from, to, breakMinutes));
     }
 
     function monthMatches(dateStr, monthValue) {
       return String(dateStr || "").startsWith(monthValue);
     }
 
+    function getMonthRange(monthValue) {
+      const [y, m] = monthValue.split("-").map(Number);
+      const start = new Date(y, m - 1, 1);
+      const end = new Date(y, m, 0);
+      return { start, end };
+    }
+
+    function uniqueWorkDays(records) {
+      return new Set(records.map(x => x.date)).size;
+    }
+
     function populateSelects() {
-      const options = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join("");
-      document.getElementById("attendanceEmployee").innerHTML = options;
-      document.getElementById("leaveEmployee").innerHTML = options;
-      document.getElementById("attendanceDate").value = today();
-      document.getElementById("leaveDate").value = today();
+      const employeeOptions = employees.map(e =>
+        `<option value="${e.id}">${escapeHtml(e.name)}</option>`
+      ).join("");
+
+      const employeeOptionsWithAll = `<option value="">Všichni</option>${employeeOptions}`;
+
+      document.getElementById("attendanceEmployee").innerHTML = employeeOptions;
+      document.getElementById("leaveEmployee").innerHTML = employeeOptions;
+      document.getElementById("profileEmployee").innerHTML = `<option value="">Vyberte zaměstnance</option>${employeeOptions}`;
+      document.getElementById("attendanceFilterEmployee").innerHTML = employeeOptionsWithAll;
+      document.getElementById("leaveFilterEmployee").innerHTML = employeeOptionsWithAll;
+
+      if (!document.getElementById("attendanceDate").value) {
+        document.getElementById("attendanceDate").value = today();
+      }
+      if (!document.getElementById("leaveDate").value) {
+        document.getElementById("leaveDate").value = today();
+      }
+
       document.getElementById("summaryMonth").value = currentMonthValue();
+      document.getElementById("attendanceFilterMonth").value = currentMonthValue();
+
+      syncProfileUI();
     }
 
     function remainingLeaveHours(employeeId) {
@@ -380,84 +803,251 @@
     }
 
     function renderEmployees() {
-      document.getElementById("employeeTable").innerHTML = employees.map(e => `
+      const profileEmployeeId = getSelectedEmployeeIdForProfile();
+      const visibleEmployees = profileEmployeeId
+        ? employees.filter(e => Number(e.id) === Number(profileEmployeeId))
+        : employees;
+
+      document.getElementById("employeeTable").innerHTML = visibleEmployees.map(e => `
         <tr>
-          <td>${e.name}</td>
-          <td>${e.weekly}</td>
-          <td>${e.leave_days} dní / ${e.leave_hours} h</td>
+          <td>${escapeHtml(e.name)}</td>
+          <td>${escapeHtml(e.weekly ?? "—")}</td>
+          <td>${escapeHtml(e.leave_days ?? 0)} dní / ${escapeHtml(e.leave_hours ?? 0)} h</td>
           <td>${remainingLeaveHours(e.id)} h</td>
-          <td>${e.offices}</td>
+          <td>${escapeHtml(e.offices ?? "—")}</td>
         </tr>
-      `).join("");
+      `).join("") || `
+        <tr><td colspan="5" class="muted">Žádní zaměstnanci.</td></tr>
+      `;
+
       document.getElementById("employeeCount").textContent = employees.length;
     }
 
+    function getFilteredAttendance() {
+      const month = document.getElementById("attendanceFilterMonth").value || currentMonthValue();
+      const employeeId = document.getElementById("attendanceFilterEmployee").value;
+      const viewMode = document.getElementById("attendanceViewMode").value;
+      const profileEmployeeId = getSelectedEmployeeIdForProfile();
+
+      let rows = [...attendance];
+
+      if (profileEmployeeId) {
+        rows = rows.filter(a => Number(a.employee_id) === Number(profileEmployeeId));
+      }
+
+      if (employeeId) {
+        rows = rows.filter(a => Number(a.employee_id) === Number(employeeId));
+      }
+
+      if (viewMode === "today") {
+        rows = rows.filter(a => a.date === today());
+      } else if (viewMode === "month") {
+        rows = rows.filter(a => monthMatches(a.date, month));
+      }
+
+      return rows.sort((a, b) => {
+        if (a.date === b.date) return Number(b.id || 0) - Number(a.id || 0);
+        return String(b.date).localeCompare(String(a.date));
+      });
+    }
+
     function renderAttendance() {
-      document.getElementById("attendanceTable").innerHTML = attendance.slice().reverse().map(a => `
+      const rows = getFilteredAttendance();
+
+      document.getElementById("attendanceTable").innerHTML = rows.map(a => `
         <tr>
-          <td>${a.date}</td>
-          <td>${employeeName(a.employee_id)}</td>
-          <td>${a.office}</td>
-          <td>${a.type}</td>
-          <td>${a.time_from}–${a.time_to}</td>
+          <td>${escapeHtml(a.date)}</td>
+          <td>${escapeHtml(employeeName(a.employee_id))}</td>
+          <td>${escapeHtml(a.office ?? "")}</td>
+          <td>${escapeHtml(a.type ?? "")}</td>
+          <td class="nowrap">${escapeHtml(a.time_from ?? "—")}–${escapeHtml(a.time_to ?? "—")}</td>
+          <td>${escapeHtml(a.break_minutes ?? 0)} min</td>
           <td>${calcWorked(a.time_from, a.time_to, a.break_minutes)}</td>
         </tr>
-      `).join("");
+      `).join("") || `
+        <tr><td colspan="7" class="muted">Žádná docházka pro zvolený filtr.</td></tr>
+      `;
+
       document.getElementById("attendanceCount").textContent = attendance.filter(a => a.date === today()).length;
     }
 
+    function getFilteredLeaves() {
+      const employeeId = document.getElementById("leaveFilterEmployee").value;
+      const status = document.getElementById("leaveFilterStatus").value;
+      const profileEmployeeId = getSelectedEmployeeIdForProfile();
+
+      let rows = [...leaves];
+
+      if (profileEmployeeId) {
+        rows = rows.filter(l => Number(l.employee_id) === Number(profileEmployeeId));
+      }
+
+      if (employeeId) {
+        rows = rows.filter(l => Number(l.employee_id) === Number(employeeId));
+      }
+
+      if (status) {
+        rows = rows.filter(l => l.status === status);
+      }
+
+      return rows.sort((a, b) => {
+        if (a.date === b.date) return Number(b.id || 0) - Number(a.id || 0);
+        return String(b.date).localeCompare(String(a.date));
+      });
+    }
+
     function renderLeaves() {
-      document.getElementById("leaveTable").innerHTML = leaves.slice().reverse().map(l => `
+      const profileEmployeeId = getSelectedEmployeeIdForProfile();
+      const rows = getFilteredLeaves();
+
+      document.getElementById("leaveTable").innerHTML = rows.map(l => `
         <tr>
-          <td>${employeeName(l.employee_id)}</td>
-          <td>${l.date}</td>
-          <td>${l.hours} h</td>
-          <td><span class="${l.status === "schváleno" ? "status-ok" : "status-wait"}">${l.status}</span></td>
-          <td>${l.status === "čeká" ? `<button onclick="approveLeave(${l.id})">Schválit</button>` : ""}</td>
+          <td>${escapeHtml(employeeName(l.employee_id))}</td>
+          <td>${escapeHtml(l.date)}</td>
+          <td>${escapeHtml(l.hours)} h</td>
+          <td>
+            <span class="${l.status === "schváleno" ? "status-ok" : "status-wait"}">
+              ${escapeHtml(l.status)}
+            </span>
+          </td>
+          <td>${escapeHtml(l.note ?? "")}</td>
+          <td>
+            ${
+              l.status === "čeká" && !profileEmployeeId
+                ? `<button onclick="approveLeave(${Number(l.id)})">Schválit</button>`
+                : ""
+            }
+          </td>
         </tr>
-      `).join("");
+      `).join("") || `
+        <tr><td colspan="6" class="muted">Žádné žádosti o dovolenou.</td></tr>
+      `;
+
       document.getElementById("pendingCount").textContent = leaves.filter(l => l.status === "čeká").length;
-      document.getElementById("approvedHours").textContent = leaves.filter(l => l.status === "schváleno").reduce((sum, l) => sum + Number(l.hours), 0);
+      document.getElementById("approvedHours").textContent = leaves
+        .filter(l => l.status === "schváleno")
+        .reduce((sum, l) => sum + Number(l.hours || 0), 0);
+    }
+
+    function renderMyDashboard() {
+      const employeeId = getSelectedEmployeeIdForProfile();
+      const month = document.getElementById("summaryMonth").value || currentMonthValue();
+
+      const badge = document.getElementById("myDashboardBadge");
+      const myName = document.getElementById("myName");
+      const myRemainingLeave = document.getElementById("myRemainingLeave");
+      const myThisMonth = document.getElementById("myThisMonth");
+      const note = document.getElementById("myDashboardNote");
+
+      if (!employeeId) {
+        badge.textContent = "bez profilu";
+        myName.textContent = "—";
+        myRemainingLeave.textContent = "—";
+        myThisMonth.textContent = "—";
+        note.textContent = "Vyberte zaměstnance v režimu „Zaměstnanec“ a zobrazí se osobní přehled.";
+        return;
+      }
+
+      const empAttendance = attendance.filter(a =>
+        Number(a.employee_id) === Number(employeeId) && monthMatches(a.date, month)
+      );
+      const minutes = empAttendance.reduce((sum, a) =>
+        sum + calcWorkedMinutes(a.time_from, a.time_to, a.break_minutes), 0
+      );
+      const leaveHours = leaves
+        .filter(l =>
+          Number(l.employee_id) === Number(employeeId) &&
+          l.status === "schváleno" &&
+          monthMatches(l.date, month)
+        )
+        .reduce((sum, l) => sum + Number(l.hours || 0), 0);
+
+      badge.textContent = "aktivní profil";
+      myName.textContent = employeeName(employeeId);
+      myRemainingLeave.textContent = `${remainingLeaveHours(employeeId)} h`;
+      myThisMonth.textContent = `${formatMinutesToHours(minutes)} + ${leaveHours} h`;
+      note.textContent = `Souhrn za ${month}. Docházka je v čase HH:MM, dovolená v hodinách.`;
     }
 
     function renderMonthlySummary() {
       const month = document.getElementById("summaryMonth").value || currentMonthValue();
-      const rows = employees.map(employee => {
-        const empAttendance = attendance.filter(a => Number(a.employee_id) === Number(employee.id) && monthMatches(a.date, month));
-        const attendanceMinutes = empAttendance.reduce((sum, a) => sum + calcWorkedMinutes(a.time_from, a.time_to, a.break_minutes), 0);
-        const leaveHours = leaves
-          .filter(l => Number(l.employee_id) === Number(employee.id) && monthMatches(l.date, month) && l.status === "schváleno")
-          .reduce((sum, l) => sum + Number(l.hours || 0), 0);
-        const attendanceHours = `${Math.floor(attendanceMinutes / 60)}:${String(attendanceMinutes % 60).padStart(2, "0")}`;
+      const profileEmployeeId = getSelectedEmployeeIdForProfile();
+      const visibleEmployees = profileEmployeeId
+        ? employees.filter(e => Number(e.id) === Number(profileEmployeeId))
+        : employees;
+
+      let totalAttendanceMinutes = 0;
+      let totalLeaveHours = 0;
+      let totalAttendanceRows = 0;
+      let totalLeaveRows = 0;
+
+      const rows = visibleEmployees.map(employee => {
+        const empAttendance = attendance.filter(a =>
+          Number(a.employee_id) === Number(employee.id) && monthMatches(a.date, month)
+        );
+
+        const attendanceMinutes = empAttendance.reduce((sum, a) =>
+          sum + calcWorkedMinutes(a.time_from, a.time_to, a.break_minutes), 0
+        );
+
+        const approvedLeaves = leaves.filter(l =>
+          Number(l.employee_id) === Number(employee.id) &&
+          monthMatches(l.date, month) &&
+          l.status === "schváleno"
+        );
+
+        const leaveHours = approvedLeaves.reduce((sum, l) => sum + Number(l.hours || 0), 0);
+        const attendanceHours = formatMinutesToHours(attendanceMinutes);
+        const workDays = uniqueWorkDays(empAttendance);
+
+        totalAttendanceMinutes += attendanceMinutes;
+        totalLeaveHours += leaveHours;
+        totalAttendanceRows += empAttendance.length;
+        totalLeaveRows += approvedLeaves.length;
+
         return {
           employee: employee.name,
           month,
           attendanceHours,
           leaveHours,
+          workDays,
+          recordCount: empAttendance.length,
           totalHours: (attendanceMinutes / 60 + leaveHours).toFixed(2)
         };
       });
 
       document.getElementById("monthlyTable").innerHTML = rows.map(r => `
         <tr>
-          <td>${r.employee}</td>
-          <td>${r.month}</td>
-          <td>${r.attendanceHours}</td>
-          <td>${r.leaveHours} h</td>
-          <td>${r.totalHours} h</td>
+          <td>${escapeHtml(r.employee)}</td>
+          <td>${escapeHtml(r.month)}</td>
+          <td>${escapeHtml(r.attendanceHours)}</td>
+          <td>${escapeHtml(r.leaveHours)} h</td>
+          <td>${escapeHtml(r.workDays)}</td>
+          <td>${escapeHtml(r.recordCount)}</td>
+          <td>${escapeHtml(r.totalHours)} h</td>
         </tr>
-      `).join("");
+      `).join("") || `
+        <tr><td colspan="7" class="muted">Žádná data pro zvolený měsíc.</td></tr>
+      `;
 
+      document.getElementById("summaryAttendanceTotal").textContent = formatMinutesToHours(totalAttendanceMinutes);
+      document.getElementById("summaryLeaveTotal").textContent = `${totalLeaveHours} h`;
+      document.getElementById("summaryAttendanceRows").textContent = totalAttendanceRows;
+      document.getElementById("summaryLeaveRows").textContent = totalLeaveRows;
+
+      renderMyDashboard();
       return rows;
     }
 
     async function loadEmployees() {
       const { data, error } = await db.from("employees").select("*").order("id");
+
       if (error) {
         console.error(error);
         showError("Nepodařilo se načíst zaměstnance ze Supabase.");
         return;
       }
+
       employees = data || [];
       populateSelects();
       renderEmployees();
@@ -465,83 +1055,147 @@
 
     async function loadAttendance() {
       const { data, error } = await db.from("attendance").select("*").order("id");
+
       if (error) {
         console.error(error);
         showError("Nepodařilo se načíst docházku ze Supabase.");
         return;
       }
+
       attendance = data || [];
       renderAttendance();
     }
 
     async function loadLeaves() {
       const { data, error } = await db.from("leaves").select("*").order("id");
+
       if (error) {
         console.error(error);
         showError("Nepodařilo se načíst dovolené ze Supabase.");
         return;
       }
+
       leaves = data || [];
       renderLeaves();
       renderEmployees();
     }
 
+    function validateAttendancePayload(payload) {
+      if (!payload.employee_id) return "Vyberte zaměstnance.";
+      if (!payload.date) return "Vyberte datum.";
+      if (!payload.time_from || !payload.time_to) return "Vyplňte příchod i odchod.";
+      if (calcWorkedMinutes(payload.time_from, payload.time_to, payload.break_minutes) < 0) {
+        return "Neplatný čas docházky.";
+      }
+      return "";
+    }
+
     async function addAttendance() {
       clearError();
+      clearSuccess();
+
       const payload = {
         employee_id: Number(document.getElementById("attendanceEmployee").value),
         date: document.getElementById("attendanceDate").value,
-        office: document.getElementById("attendanceOffice").value,
+        office: document.getElementById("attendanceOffice").value.trim(),
         type: document.getElementById("attendanceType").value,
         time_from: document.getElementById("attendanceIn").value,
         time_to: document.getElementById("attendanceOut").value,
         break_minutes: Number(document.getElementById("attendanceBreak").value || 0)
       };
+
+      const validation = validateAttendancePayload(payload);
+      if (validation) {
+        showError(validation);
+        return;
+      }
+
       const { error } = await db.from("attendance").insert(payload);
+
       if (error) {
         console.error(error);
         showError("Nepodařilo se uložit docházku.");
         return;
       }
+
+      document.getElementById("attendanceOffice").value = "";
+      document.getElementById("attendanceIn").value = "";
+      document.getElementById("attendanceOut").value = "";
+      document.getElementById("attendanceBreak").value = 30;
+
       await loadAttendance();
       renderMonthlySummary();
-      alert("Docházka uložena.");
+      showSuccess("Docházka byla uložena.");
     }
 
     async function addLeave() {
       clearError();
+      clearSuccess();
+
       const payload = {
         employee_id: Number(document.getElementById("leaveEmployee").value),
         date: document.getElementById("leaveDate").value,
         hours: Number(document.getElementById("leaveHours").value || 0),
-        note: document.getElementById("leaveNote").value,
+        note: document.getElementById("leaveNote").value.trim(),
         status: "čeká"
       };
+
+      if (!payload.employee_id) {
+        showError("Vyberte zaměstnance.");
+        return;
+      }
+
+      if (!payload.date) {
+        showError("Vyberte datum dovolené.");
+        return;
+      }
+
+      if (payload.hours <= 0) {
+        showError("Počet hodin musí být větší než 0.");
+        return;
+      }
+
       const { error } = await db.from("leaves").insert(payload);
+
       if (error) {
         console.error(error);
         showError("Nepodařilo se uložit žádost o dovolenou.");
         return;
       }
+
+      document.getElementById("leaveHours").value = 8;
+      document.getElementById("leaveNote").value = "";
+
       await loadLeaves();
       renderMonthlySummary();
-      alert("Žádost o dovolenou byla uložena.");
+      showSuccess("Žádost o dovolenou byla uložena.");
     }
 
     async function approveLeave(id) {
       clearError();
+      clearSuccess();
+
       const { error } = await db.from("leaves").update({ status: "schváleno" }).eq("id", id);
+
       if (error) {
         console.error(error);
         showError("Nepodařilo se schválit dovolenou.");
         return;
       }
+
       await loadLeaves();
       renderMonthlySummary();
+      showSuccess("Dovolená byla schválena.");
     }
 
     function exportJson() {
-      const data = { employees, attendance, leaves };
+      const data = {
+        exported_at: new Date().toISOString(),
+        employees,
+        attendance,
+        leaves
+      };
+
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -555,54 +1209,93 @@
       const rows = [
         ["Datum", "Zaměstnanec", "Místo", "Typ", "Příchod", "Odchod", "Pauza", "Odpracováno"]
       ];
-      attendance.forEach(a => {
+
+      getFilteredAttendance().forEach(a => {
         rows.push([
           a.date,
           employeeName(a.employee_id),
-          a.office,
-          a.type,
-          a.time_from,
-          a.time_to,
-          a.break_minutes,
+          a.office ?? "",
+          a.type ?? "",
+          a.time_from ?? "",
+          a.time_to ?? "",
+          a.break_minutes ?? 0,
           calcWorked(a.time_from, a.time_to, a.break_minutes)
         ]);
       });
-      const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"', '""')}"`).join(";")).join("
-");
+
+      const csv = rows
+        .map(r => r.map(v => `"${String(v).replaceAll('"', '""')}"`).join(";"))
+        .join("\n");
+
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `dochazka_${currentMonthValue()}.csv`;
+      a.download = `dochazka_${document.getElementById("attendanceFilterMonth").value || currentMonthValue()}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     }
 
     function exportMonthExcel() {
+      const month = document.getElementById("summaryMonth").value || currentMonthValue();
       const summary = renderMonthlySummary();
-      const ws = XLSX.utils.json_to_sheet(summary.map(r => ({
+
+      const attendanceRows = getFilteredAttendance().filter(a => monthMatches(a.date, month)).map(a => ({
+        Datum: a.date,
+        Zaměstnanec: employeeName(a.employee_id),
+        Místo: a.office ?? "",
+        Typ: a.type ?? "",
+        Příchod: a.time_from ?? "",
+        Odchod: a.time_to ?? "",
+        Pauza_min: a.break_minutes ?? 0,
+        Odpracováno: calcWorked(a.time_from, a.time_to, a.break_minutes)
+      }));
+
+      const wsSummary = XLSX.utils.json_to_sheet(summary.map(r => ({
         Zaměstnanec: r.employee,
         Měsíc: r.month,
         Docházka: r.attendanceHours,
         Dovolená_hodiny: r.leaveHours,
+        Pracovní_dny: r.workDays,
+        Záznamy: r.recordCount,
         Součet_hodin: r.totalHours
       })));
+
+      const wsAttendance = XLSX.utils.json_to_sheet(attendanceRows);
+
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Souhrn");
-      XLSX.writeFile(wb, `dochazka_souhrn_${document.getElementById("summaryMonth").value || currentMonthValue()}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Souhrn");
+      XLSX.utils.book_append_sheet(wb, wsAttendance, "Docházka");
+
+      XLSX.writeFile(wb, `dochazka_souhrn_${month}.xlsx`);
     }
 
     async function reloadAll() {
       clearError();
+      clearSuccess();
       await loadEmployees();
       await loadAttendance();
       await loadLeaves();
+      renderAll();
+    }
+
+    function renderAll() {
+      renderEmployees();
+      renderAttendance();
+      renderLeaves();
       renderMonthlySummary();
+      syncProfileUI();
     }
 
     async function init() {
       clearError();
+      clearSuccess();
+
+      document.getElementById("attendanceDate").value = today();
+      document.getElementById("leaveDate").value = today();
       document.getElementById("summaryMonth").value = currentMonthValue();
+      document.getElementById("attendanceFilterMonth").value = currentMonthValue();
+
       await reloadAll();
     }
 
