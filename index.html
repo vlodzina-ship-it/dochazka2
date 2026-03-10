@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docházkový systém</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --accent: #0f172a;
+      --ok: #166534;
+      --warn: #92400e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1, h2, h3 { margin: 0 0 12px; }
+    p { margin: 0 0 10px; }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .muted { color: var(--muted); }
+    .big { font-size: 32px; font-weight: 700; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    label { font-size: 14px; color: var(--muted); display: block; margin-bottom: 6px; }
+    input, select, button {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 14px;
+      background: white;
+    }
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+      border: none;
+      width: auto;
+      min-width: 120px;
+    }
+    button.secondary {
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+    .status-ok { color: var(--ok); font-weight: 700; }
+    .status-wait { color: var(--warn); font-weight: 700; }
+    .toolbar { margin-bottom: 18px; }
+    .note {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    @media (max-width: 700px) {
+      .wrap { padding: 14px; }
+      .big { font-size: 26px; }
+      th:nth-child(4), td:nth-child(4), th:nth-child(5), td:nth-child(5) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <h1>Docházkový systém</h1>
+      <p class="muted">Jednoduchá verze bez build procesu. Funguje jako jeden HTML soubor a dá se nasadit na Vercel velmi snadno.</p>
+    </div>
+
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="muted">Zaměstnanci</div>
+        <div class="big" id="employeeCount">0</div>
+      </div>
+      <div class="card">
+        <div class="muted">Dnešní docházka</div>
+        <div class="big" id="attendanceCount">0</div>
+      </div>
+      <div class="card">
+        <div class="muted">Čekající dovolené</div>
+        <div class="big" id="pendingCount">0</div>
+      </div>
+      <div class="card">
+        <div class="muted">Schválené hodiny dovolené</div>
+        <div class="big" id="approvedHours">0</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <h2>Nový záznam docházky</h2>
+        <div class="grid grid-2">
+          <div>
+            <label>Zaměstnanec</label>
+            <select id="attendanceEmployee"></select>
+          </div>
+          <div>
+            <label>Datum</label>
+            <input id="attendanceDate" type="date" />
+          </div>
+          <div>
+            <label>Místo / kancelář</label>
+            <input id="attendanceOffice" type="text" placeholder="Např. Osoblaha" />
+          </div>
+          <div>
+            <label>Typ</label>
+            <select id="attendanceType">
+              <option value="práce">práce</option>
+              <option value="home office">home office</option>
+              <option value="služební cesta">služební cesta</option>
+            </select>
+          </div>
+          <div>
+            <label>Příchod</label>
+            <input id="attendanceIn" type="time" />
+          </div>
+          <div>
+            <label>Odchod</label>
+            <input id="attendanceOut" type="time" />
+          </div>
+          <div>
+            <label>Pauza (min)</label>
+            <input id="attendanceBreak" type="number" value="30" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:14px;">
+          <button onclick="addAttendance()">Uložit docházku</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Žádost o dovolenou</h2>
+        <div class="grid grid-2">
+          <div>
+            <label>Zaměstnanec</label>
+            <select id="leaveEmployee"></select>
+          </div>
+          <div>
+            <label>Datum</label>
+            <input id="leaveDate" type="date" />
+          </div>
+          <div>
+            <label>Počet hodin</label>
+            <input id="leaveHours" type="number" value="8" />
+          </div>
+          <div>
+            <label>Poznámka</label>
+            <input id="leaveNote" type="text" placeholder="Např. lékař" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:14px;">
+          <button onclick="addLeave()">Odeslat žádost</button>
+        </div>
+        <div class="note">Data se ukládají jen v prohlížeči tohoto zařízení. Na začátek je to ideální, protože se to nasadí bez komplikací.</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <h2>Zaměstnanci</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Jméno</th>
+              <th>Úvazek</th>
+              <th>Dovolená</th>
+              <th>Místa</th>
+            </tr>
+          </thead>
+          <tbody id="employeeTable"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Dovolená</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Jméno</th>
+              <th>Datum</th>
+              <th>Hodiny</th>
+              <th>Stav</th>
+              <th>Akce</th>
+            </tr>
+          </thead>
+          <tbody id="leaveTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="row" style="justify-content: space-between; align-items: center;">
+        <h2>Docházka</h2>
+        <button class="secondary" onclick="exportJson()">Stáhnout data JSON</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Jméno</th>
+            <th>Místo</th>
+            <th>Typ</th>
+            <th>Čas</th>
+            <th>Odpracováno</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const employees = [
+      {
+        id: 1,
+        name: "Petra Řezníčková Kunovská",
+        weekly: "1/2 úvazek",
+        leaveDays: 10,
+        leaveHours: 80,
+        offices: "Osoblaha, Vysoká"
+      },
+      {
+        id: 2,
+        name: "Andrea Agustýnová",
+        weekly: "plný úvazek",
+        leaveDays: 20,
+        leaveHours: 160,
+        offices: "Dívčí Hrad, Slezské Pavlovice, home office"
+      },
+      {
+        id: 3,
+        name: "Jana Sulková",
+        weekly: "plný úvazek",
+        leaveDays: 20,
+        leaveHours: 160,
+        offices: "kancelář dle potřeby"
+      },
+      {
+        id: 4,
+        name: "Pavlína Chovančáková",
+        weekly: "1/2 úvazek",
+        leaveDays: 10,
+        leaveHours: 80,
+        offices: "Hlinka"
+      },
+      {
+        id: 5,
+        name: "Lucie Nováková",
+        weekly: "plný úvazek",
+        leaveDays: 20,
+        leaveHours: 160,
+        offices: "kancelář dle potřeby"
+      }
+    ];
+
+    const seedAttendance = [
+      { id: 1, date: today(), employeeId: 1, office: "Osoblaha", type: "práce", from: "08:00", to: "12:00", breakMinutes: 0 },
+      { id: 2, date: today(), employeeId: 2, office: "Slezské Pavlovice", type: "práce", from: "08:00", to: "15:00", breakMinutes: 30 }
+    ];
+
+    const seedLeaves = [
+      { id: 1, date: today(), employeeId: 4, hours: 4, note: "Osobní volno", status: "čeká" }
+    ];
+
+    let attendance = load("attendance", seedAttendance);
+    let leaves = load("leaves", seedLeaves);
+
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function load(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function save() {
+      localStorage.setItem("attendance", JSON.stringify(attendance));
+      localStorage.setItem("leaves", JSON.stringify(leaves));
+    }
+
+    function employeeName(id) {
+      const e = employees.find(x => x.id === id);
+      return e ? e.name : "—";
+    }
+
+    function calcWorked(from, to, breakMinutes) {
+      const [fh, fm] = from.split(":").map(Number);
+      const [th, tm] = to.split(":").map(Number);
+      const start = fh * 60 + fm;
+      const end = th * 60 + tm;
+      const total = Math.max(0, end - start - Number(breakMinutes || 0));
+      const h = Math.floor(total / 60);
+      const m = total % 60;
+      return `${h}:${String(m).padStart(2, "0")}`;
+    }
+
+    function populateSelects() {
+      const options = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join("");
+      document.getElementById("attendanceEmployee").innerHTML = options;
+      document.getElementById("leaveEmployee").innerHTML = options;
+      document.getElementById("attendanceDate").value = today();
+      document.getElementById("leaveDate").value = today();
+    }
+
+    function renderEmployees() {
+      document.getElementById("employeeTable").innerHTML = employees.map(e => `
+        <tr>
+          <td>${e.name}</td>
+          <td>${e.weekly}</td>
+          <td>${e.leaveDays} dní / ${e.leaveHours} h</td>
+          <td>${e.offices}</td>
+        </tr>
+      `).join("");
+      document.getElementById("employeeCount").textContent = employees.length;
+    }
+
+    function renderAttendance() {
+      document.getElementById("attendanceTable").innerHTML = attendance.slice().reverse().map(a => `
+        <tr>
+          <td>${a.date}</td>
+          <td>${employeeName(a.employeeId)}</td>
+          <td>${a.office}</td>
+          <td>${a.type}</td>
+          <td>${a.from}–${a.to}</td>
+          <td>${calcWorked(a.from, a.to, a.breakMinutes)}</td>
+        </tr>
+      `).join("");
+      document.getElementById("attendanceCount").textContent = attendance.filter(a => a.date === today()).length;
+    }
+
+    function renderLeaves() {
+      document.getElementById("leaveTable").innerHTML = leaves.slice().reverse().map(l => `
+        <tr>
+          <td>${employeeName(l.employeeId)}</td>
+          <td>${l.date}</td>
+          <td>${l.hours} h</td>
+          <td><span class="${l.status === "schváleno" ? "status-ok" : "status-wait"}">${l.status}</span></td>
+          <td>
+            ${l.status === "čeká" ? `<div class="row"><button onclick="approveLeave(${l.id})">Schválit</button></div>` : ""}
+          </td>
+        </tr>
+      `).join("");
+      document.getElementById("pendingCount").textContent = leaves.filter(l => l.status === "čeká").length;
+      document.getElementById("approvedHours").textContent = leaves.filter(l => l.status === "schváleno").reduce((sum, l) => sum + Number(l.hours), 0);
+    }
+
+    function addAttendance() {
+      attendance.push({
+        id: Date.now(),
+        employeeId: Number(document.getElementById("attendanceEmployee").value),
+        date: document.getElementById("attendanceDate").value,
+        office: document.getElementById("attendanceOffice").value,
+        type: document.getElementById("attendanceType").value,
+        from: document.getElementById("attendanceIn").value,
+        to: document.getElementById("attendanceOut").value,
+        breakMinutes: Number(document.getElementById("attendanceBreak").value || 0)
+      });
+      save();
+      renderAttendance();
+      alert("Docházka uložena.");
+    }
+
+    function addLeave() {
+      leaves.push({
+        id: Date.now(),
+        employeeId: Number(document.getElementById("leaveEmployee").value),
+        date: document.getElementById("leaveDate").value,
+        hours: Number(document.getElementById("leaveHours").value || 0),
+        note: document.getElementById("leaveNote").value,
+        status: "čeká"
+      });
+      save();
+      renderLeaves();
+      alert("Žádost o dovolenou byla uložena.");
+    }
+
+    function approveLeave(id) {
+      const row = leaves.find(x => x.id === id);
+      if (!row) return;
+      row.status = "schváleno";
+      save();
+      renderLeaves();
+    }
+
+    function exportJson() {
+      const data = {
+        employees,
+        attendance,
+        leaves
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "dochazka-data.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    populateSelects();
+    renderEmployees();
+    renderAttendance();
+    renderLeaves();
+  </script>
+</body>
+</html>
