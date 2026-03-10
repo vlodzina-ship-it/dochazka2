@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Docházkový systém</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --bg: #f8fafc;
@@ -15,6 +16,7 @@
       --accent: #0f172a;
       --ok: #166534;
       --warn: #92400e;
+      --danger: #991b1b;
     }
     * { box-sizing: border-box; }
     body {
@@ -24,16 +26,13 @@
       color: var(--text);
     }
     .wrap {
-      max-width: 1200px;
+      max-width: 1250px;
       margin: 0 auto;
       padding: 24px;
     }
     h1, h2, h3 { margin: 0 0 12px; }
     p { margin: 0 0 10px; }
-    .grid {
-      display: grid;
-      gap: 16px;
-    }
+    .grid { display: grid; gap: 16px; }
     .grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     .grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
     .card {
@@ -46,6 +45,7 @@
     .muted { color: var(--muted); }
     .big { font-size: 32px; font-weight: 700; }
     .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .row-between { display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
     label { font-size: 14px; color: var(--muted); display: block; margin-bottom: 6px; }
     input, select, button {
       width: 100%;
@@ -67,6 +67,14 @@
       background: white;
       color: var(--text);
       border: 1px solid var(--line);
+    }
+    button.warn {
+      background: #854d0e;
+      color: white;
+    }
+    button.danger {
+      background: #b91c1c;
+      color: white;
     }
     table {
       width: 100%;
@@ -94,17 +102,25 @@
     .error {
       background: #fef2f2;
       border: 1px solid #fecaca;
-      color: #991b1b;
+      color: var(--danger);
       padding: 12px;
       border-radius: 12px;
       margin-top: 12px;
       font-size: 14px;
       display: none;
     }
+    .pill {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 12px;
+    }
     @media (max-width: 700px) {
       .wrap { padding: 14px; }
       .big { font-size: 26px; }
-      th:nth-child(4), td:nth-child(4), th:nth-child(5), td:nth-child(5) { display: none; }
+      table { font-size: 13px; }
     }
   </style>
 </head>
@@ -112,7 +128,7 @@
   <div class="wrap">
     <div class="toolbar">
       <h1>Docházkový systém</h1>
-      <p class="muted">Verze napojená na Supabase databázi. Data se sdílí mezi zařízeními.</p>
+      <p class="muted">Verze napojená na Supabase databázi. Data se sdílí mezi zařízeními a umí měsíční souhrn i export pro účetní.</p>
       <div class="error" id="errorBox"></div>
     </div>
 
@@ -206,13 +222,17 @@
 
     <div class="grid grid-2" style="margin-top:16px;">
       <div class="card">
-        <h2>Zaměstnanci</h2>
+        <div class="row-between">
+          <h2>Zaměstnanci</h2>
+          <span class="pill">online data</span>
+        </div>
         <table>
           <thead>
             <tr>
               <th>Jméno</th>
               <th>Úvazek</th>
               <th>Dovolená</th>
+              <th>Zbývá</th>
               <th>Místa</th>
             </tr>
           </thead>
@@ -221,7 +241,10 @@
       </div>
 
       <div class="card">
-        <h2>Dovolená</h2>
+        <div class="row-between">
+          <h2>Dovolená</h2>
+          <button class="secondary" onclick="reloadAll()">Obnovit data</button>
+        </div>
         <table>
           <thead>
             <tr>
@@ -238,9 +261,35 @@
     </div>
 
     <div class="card" style="margin-top:16px;">
-      <div class="row" style="justify-content: space-between; align-items: center;">
+      <div class="row-between">
+        <h2>Měsíční souhrn</h2>
+        <div class="row">
+          <input id="summaryMonth" type="month" />
+          <button class="secondary" onclick="renderMonthlySummary()">Zobrazit měsíc</button>
+          <button onclick="exportMonthExcel()">Export Excel</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Zaměstnanec</th>
+            <th>Měsíc</th>
+            <th>Docházka</th>
+            <th>Dovolená</th>
+            <th>Součet hodin</th>
+          </tr>
+        </thead>
+        <tbody id="monthlyTable"></tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="row-between" style="align-items: center;">
         <h2>Docházka</h2>
-        <button class="secondary" onclick="exportJson()">Stáhnout data JSON</button>
+        <div class="row">
+          <button class="secondary" onclick="exportJson()">Stáhnout data JSON</button>
+          <button class="warn" onclick="exportAttendanceCsv()">Export CSV</button>
+        </div>
       </div>
       <table>
         <thead>
@@ -271,6 +320,11 @@
       return new Date().toISOString().slice(0, 10);
     }
 
+    function currentMonthValue() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    }
+
     function showError(message) {
       const box = document.getElementById("errorBox");
       box.style.display = "block";
@@ -288,15 +342,23 @@
       return e ? e.name : "—";
     }
 
-    function calcWorked(from, to, breakMinutes) {
-      const [fh, fm] = from.split(":").map(Number);
-      const [th, tm] = to.split(":").map(Number);
+    function calcWorkedMinutes(from, to, breakMinutes) {
+      const [fh, fm] = String(from || "00:00").split(":").map(Number);
+      const [th, tm] = String(to || "00:00").split(":").map(Number);
       const start = fh * 60 + fm;
       const end = th * 60 + tm;
-      const total = Math.max(0, end - start - Number(breakMinutes || 0));
+      return Math.max(0, end - start - Number(breakMinutes || 0));
+    }
+
+    function calcWorked(from, to, breakMinutes) {
+      const total = calcWorkedMinutes(from, to, breakMinutes);
       const h = Math.floor(total / 60);
       const m = total % 60;
       return `${h}:${String(m).padStart(2, "0")}`;
+    }
+
+    function monthMatches(dateStr, monthValue) {
+      return String(dateStr || "").startsWith(monthValue);
     }
 
     function populateSelects() {
@@ -305,6 +367,16 @@
       document.getElementById("leaveEmployee").innerHTML = options;
       document.getElementById("attendanceDate").value = today();
       document.getElementById("leaveDate").value = today();
+      document.getElementById("summaryMonth").value = currentMonthValue();
+    }
+
+    function remainingLeaveHours(employeeId) {
+      const employee = employees.find(e => Number(e.id) === Number(employeeId));
+      if (!employee) return 0;
+      const used = leaves
+        .filter(l => Number(l.employee_id) === Number(employeeId) && l.status === "schváleno")
+        .reduce((sum, l) => sum + Number(l.hours || 0), 0);
+      return Number(employee.leave_hours || 0) - used;
     }
 
     function renderEmployees() {
@@ -313,6 +385,7 @@
           <td>${e.name}</td>
           <td>${e.weekly}</td>
           <td>${e.leave_days} dní / ${e.leave_hours} h</td>
+          <td>${remainingLeaveHours(e.id)} h</td>
           <td>${e.offices}</td>
         </tr>
       `).join("");
@@ -347,6 +420,37 @@
       document.getElementById("approvedHours").textContent = leaves.filter(l => l.status === "schváleno").reduce((sum, l) => sum + Number(l.hours), 0);
     }
 
+    function renderMonthlySummary() {
+      const month = document.getElementById("summaryMonth").value || currentMonthValue();
+      const rows = employees.map(employee => {
+        const empAttendance = attendance.filter(a => Number(a.employee_id) === Number(employee.id) && monthMatches(a.date, month));
+        const attendanceMinutes = empAttendance.reduce((sum, a) => sum + calcWorkedMinutes(a.time_from, a.time_to, a.break_minutes), 0);
+        const leaveHours = leaves
+          .filter(l => Number(l.employee_id) === Number(employee.id) && monthMatches(l.date, month) && l.status === "schváleno")
+          .reduce((sum, l) => sum + Number(l.hours || 0), 0);
+        const attendanceHours = `${Math.floor(attendanceMinutes / 60)}:${String(attendanceMinutes % 60).padStart(2, "0")}`;
+        return {
+          employee: employee.name,
+          month,
+          attendanceHours,
+          leaveHours,
+          totalHours: (attendanceMinutes / 60 + leaveHours).toFixed(2)
+        };
+      });
+
+      document.getElementById("monthlyTable").innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.employee}</td>
+          <td>${r.month}</td>
+          <td>${r.attendanceHours}</td>
+          <td>${r.leaveHours} h</td>
+          <td>${r.totalHours} h</td>
+        </tr>
+      `).join("");
+
+      return rows;
+    }
+
     async function loadEmployees() {
       const { data, error } = await db.from("employees").select("*").order("id");
       if (error) {
@@ -379,6 +483,7 @@
       }
       leaves = data || [];
       renderLeaves();
+      renderEmployees();
     }
 
     async function addAttendance() {
@@ -399,6 +504,7 @@
         return;
       }
       await loadAttendance();
+      renderMonthlySummary();
       alert("Docházka uložena.");
     }
 
@@ -418,6 +524,7 @@
         return;
       }
       await loadLeaves();
+      renderMonthlySummary();
       alert("Žádost o dovolenou byla uložena.");
     }
 
@@ -430,6 +537,7 @@
         return;
       }
       await loadLeaves();
+      renderMonthlySummary();
     }
 
     function exportJson() {
@@ -443,11 +551,59 @@
       URL.revokeObjectURL(url);
     }
 
-    async function init() {
+    function exportAttendanceCsv() {
+      const rows = [
+        ["Datum", "Zaměstnanec", "Místo", "Typ", "Příchod", "Odchod", "Pauza", "Odpracováno"]
+      ];
+      attendance.forEach(a => {
+        rows.push([
+          a.date,
+          employeeName(a.employee_id),
+          a.office,
+          a.type,
+          a.time_from,
+          a.time_to,
+          a.break_minutes,
+          calcWorked(a.time_from, a.time_to, a.break_minutes)
+        ]);
+      });
+      const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"', '""')}"`).join(";")).join("
+");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dochazka_${currentMonthValue()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportMonthExcel() {
+      const summary = renderMonthlySummary();
+      const ws = XLSX.utils.json_to_sheet(summary.map(r => ({
+        Zaměstnanec: r.employee,
+        Měsíc: r.month,
+        Docházka: r.attendanceHours,
+        Dovolená_hodiny: r.leaveHours,
+        Součet_hodin: r.totalHours
+      })));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Souhrn");
+      XLSX.writeFile(wb, `dochazka_souhrn_${document.getElementById("summaryMonth").value || currentMonthValue()}.xlsx`);
+    }
+
+    async function reloadAll() {
       clearError();
       await loadEmployees();
       await loadAttendance();
       await loadLeaves();
+      renderMonthlySummary();
+    }
+
+    async function init() {
+      clearError();
+      document.getElementById("summaryMonth").value = currentMonthValue();
+      await reloadAll();
     }
 
     init();
