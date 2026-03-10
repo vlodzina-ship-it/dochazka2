@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Docházkový systém</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #f8fafc;
@@ -78,14 +79,6 @@
       border-bottom: 1px solid var(--line);
       vertical-align: top;
     }
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      background: #eef2ff;
-      color: #3730a3;
-    }
     .status-ok { color: var(--ok); font-weight: 700; }
     .status-wait { color: var(--warn); font-weight: 700; }
     .toolbar { margin-bottom: 18px; }
@@ -98,6 +91,16 @@
       margin-top: 12px;
       font-size: 14px;
     }
+    .error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 12px;
+      font-size: 14px;
+      display: none;
+    }
     @media (max-width: 700px) {
       .wrap { padding: 14px; }
       .big { font-size: 26px; }
@@ -109,7 +112,8 @@
   <div class="wrap">
     <div class="toolbar">
       <h1>Docházkový systém</h1>
-      <p class="muted">Jednoduchá verze bez build procesu. Funguje jako jeden HTML soubor a dá se nasadit na Vercel velmi snadno.</p>
+      <p class="muted">Verze napojená na Supabase databázi. Data se sdílí mezi zařízeními.</p>
+      <div class="error" id="errorBox"></div>
     </div>
 
     <div class="grid grid-4">
@@ -196,7 +200,7 @@
         <div class="row" style="margin-top:14px;">
           <button onclick="addLeave()">Odeslat žádost</button>
         </div>
-        <div class="note">Data se ukládají jen v prohlížeči tohoto zařízení. Na začátek je to ideální, protože se to nasadí bez komplikací.</div>
+        <div class="note">Tato verze ukládá data do Supabase databáze a sdílí je mezi zařízeními.</div>
       </div>
     </div>
 
@@ -255,81 +259,32 @@
   </div>
 
   <script>
-    const employees = [
-      {
-        id: 1,
-        name: "Petra Řezníčková Kunovská",
-        weekly: "1/2 úvazek",
-        leaveDays: 10,
-        leaveHours: 80,
-        offices: "Osoblaha, Vysoká"
-      },
-      {
-        id: 2,
-        name: "Andrea Agustýnová",
-        weekly: "plný úvazek",
-        leaveDays: 20,
-        leaveHours: 160,
-        offices: "Dívčí Hrad, Slezské Pavlovice, home office"
-      },
-      {
-        id: 3,
-        name: "Jana Sulková",
-        weekly: "plný úvazek",
-        leaveDays: 20,
-        leaveHours: 160,
-        offices: "kancelář dle potřeby"
-      },
-      {
-        id: 4,
-        name: "Pavlína Chovančáková",
-        weekly: "1/2 úvazek",
-        leaveDays: 10,
-        leaveHours: 80,
-        offices: "Hlinka"
-      },
-      {
-        id: 5,
-        name: "Lucie Nováková",
-        weekly: "plný úvazek",
-        leaveDays: 20,
-        leaveHours: 160,
-        offices: "kancelář dle potřeby"
-      }
-    ];
+    const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2amtrZGZ6enVkdG1scW9sYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNDE1MzgsImV4cCI6MjA4ODcxNzUzOH0.ff7uzeH5iq8nHRPl2SzL-BvxLLIj4RvaA4zSskZBYTE";
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const seedAttendance = [
-      { id: 1, date: today(), employeeId: 1, office: "Osoblaha", type: "práce", from: "08:00", to: "12:00", breakMinutes: 0 },
-      { id: 2, date: today(), employeeId: 2, office: "Slezské Pavlovice", type: "práce", from: "08:00", to: "15:00", breakMinutes: 30 }
-    ];
-
-    const seedLeaves = [
-      { id: 1, date: today(), employeeId: 4, hours: 4, note: "Osobní volno", status: "čeká" }
-    ];
-
-    let attendance = load("attendance", seedAttendance);
-    let leaves = load("leaves", seedLeaves);
+    let employees = [];
+    let attendance = [];
+    let leaves = [];
 
     function today() {
       return new Date().toISOString().slice(0, 10);
     }
 
-    function load(key, fallback) {
-      try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-      } catch {
-        return fallback;
-      }
+    function showError(message) {
+      const box = document.getElementById("errorBox");
+      box.style.display = "block";
+      box.textContent = message;
     }
 
-    function save() {
-      localStorage.setItem("attendance", JSON.stringify(attendance));
-      localStorage.setItem("leaves", JSON.stringify(leaves));
+    function clearError() {
+      const box = document.getElementById("errorBox");
+      box.style.display = "none";
+      box.textContent = "";
     }
 
     function employeeName(id) {
-      const e = employees.find(x => x.id === id);
+      const e = employees.find(x => Number(x.id) === Number(id));
       return e ? e.name : "—";
     }
 
@@ -357,7 +312,7 @@
         <tr>
           <td>${e.name}</td>
           <td>${e.weekly}</td>
-          <td>${e.leaveDays} dní / ${e.leaveHours} h</td>
+          <td>${e.leave_days} dní / ${e.leave_hours} h</td>
           <td>${e.offices}</td>
         </tr>
       `).join("");
@@ -368,11 +323,11 @@
       document.getElementById("attendanceTable").innerHTML = attendance.slice().reverse().map(a => `
         <tr>
           <td>${a.date}</td>
-          <td>${employeeName(a.employeeId)}</td>
+          <td>${employeeName(a.employee_id)}</td>
           <td>${a.office}</td>
           <td>${a.type}</td>
-          <td>${a.from}–${a.to}</td>
-          <td>${calcWorked(a.from, a.to, a.breakMinutes)}</td>
+          <td>${a.time_from}–${a.time_to}</td>
+          <td>${calcWorked(a.time_from, a.time_to, a.break_minutes)}</td>
         </tr>
       `).join("");
       document.getElementById("attendanceCount").textContent = attendance.filter(a => a.date === today()).length;
@@ -381,63 +336,104 @@
     function renderLeaves() {
       document.getElementById("leaveTable").innerHTML = leaves.slice().reverse().map(l => `
         <tr>
-          <td>${employeeName(l.employeeId)}</td>
+          <td>${employeeName(l.employee_id)}</td>
           <td>${l.date}</td>
           <td>${l.hours} h</td>
           <td><span class="${l.status === "schváleno" ? "status-ok" : "status-wait"}">${l.status}</span></td>
-          <td>
-            ${l.status === "čeká" ? `<div class="row"><button onclick="approveLeave(${l.id})">Schválit</button></div>` : ""}
-          </td>
+          <td>${l.status === "čeká" ? `<button onclick="approveLeave(${l.id})">Schválit</button>` : ""}</td>
         </tr>
       `).join("");
       document.getElementById("pendingCount").textContent = leaves.filter(l => l.status === "čeká").length;
       document.getElementById("approvedHours").textContent = leaves.filter(l => l.status === "schváleno").reduce((sum, l) => sum + Number(l.hours), 0);
     }
 
-    function addAttendance() {
-      attendance.push({
-        id: Date.now(),
-        employeeId: Number(document.getElementById("attendanceEmployee").value),
+    async function loadEmployees() {
+      const { data, error } = await db.from("employees").select("*").order("id");
+      if (error) {
+        console.error(error);
+        showError("Nepodařilo se načíst zaměstnance ze Supabase.");
+        return;
+      }
+      employees = data || [];
+      populateSelects();
+      renderEmployees();
+    }
+
+    async function loadAttendance() {
+      const { data, error } = await db.from("attendance").select("*").order("id");
+      if (error) {
+        console.error(error);
+        showError("Nepodařilo se načíst docházku ze Supabase.");
+        return;
+      }
+      attendance = data || [];
+      renderAttendance();
+    }
+
+    async function loadLeaves() {
+      const { data, error } = await db.from("leaves").select("*").order("id");
+      if (error) {
+        console.error(error);
+        showError("Nepodařilo se načíst dovolené ze Supabase.");
+        return;
+      }
+      leaves = data || [];
+      renderLeaves();
+    }
+
+    async function addAttendance() {
+      clearError();
+      const payload = {
+        employee_id: Number(document.getElementById("attendanceEmployee").value),
         date: document.getElementById("attendanceDate").value,
         office: document.getElementById("attendanceOffice").value,
         type: document.getElementById("attendanceType").value,
-        from: document.getElementById("attendanceIn").value,
-        to: document.getElementById("attendanceOut").value,
-        breakMinutes: Number(document.getElementById("attendanceBreak").value || 0)
-      });
-      save();
-      renderAttendance();
+        time_from: document.getElementById("attendanceIn").value,
+        time_to: document.getElementById("attendanceOut").value,
+        break_minutes: Number(document.getElementById("attendanceBreak").value || 0)
+      };
+      const { error } = await db.from("attendance").insert(payload);
+      if (error) {
+        console.error(error);
+        showError("Nepodařilo se uložit docházku.");
+        return;
+      }
+      await loadAttendance();
       alert("Docházka uložena.");
     }
 
-    function addLeave() {
-      leaves.push({
-        id: Date.now(),
-        employeeId: Number(document.getElementById("leaveEmployee").value),
+    async function addLeave() {
+      clearError();
+      const payload = {
+        employee_id: Number(document.getElementById("leaveEmployee").value),
         date: document.getElementById("leaveDate").value,
         hours: Number(document.getElementById("leaveHours").value || 0),
         note: document.getElementById("leaveNote").value,
         status: "čeká"
-      });
-      save();
-      renderLeaves();
+      };
+      const { error } = await db.from("leaves").insert(payload);
+      if (error) {
+        console.error(error);
+        showError("Nepodařilo se uložit žádost o dovolenou.");
+        return;
+      }
+      await loadLeaves();
       alert("Žádost o dovolenou byla uložena.");
     }
 
-    function approveLeave(id) {
-      const row = leaves.find(x => x.id === id);
-      if (!row) return;
-      row.status = "schváleno";
-      save();
-      renderLeaves();
+    async function approveLeave(id) {
+      clearError();
+      const { error } = await db.from("leaves").update({ status: "schváleno" }).eq("id", id);
+      if (error) {
+        console.error(error);
+        showError("Nepodařilo se schválit dovolenou.");
+        return;
+      }
+      await loadLeaves();
     }
 
     function exportJson() {
-      const data = {
-        employees,
-        attendance,
-        leaves
-      };
+      const data = { employees, attendance, leaves };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -447,18 +443,14 @@
       URL.revokeObjectURL(url);
     }
 
-    populateSelects();
-    renderEmployees();
-    renderAttendance();
-    renderLeaves();
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    async function init() {
+      clearError();
+      await loadEmployees();
+      await loadAttendance();
+      await loadLeaves();
+    }
 
-<script>
-const supabase = supabase.createClient(
-"https://avjkkdfzzudtmlqolbzk.supabase.co",
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2amtrZGZ6enVkdG1scW9sYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNDE1MzgsImV4cCI6MjA4ODcxNzUzOH0.ff7uzeH5iq8nHRPl2SzL-BvxLLIj4RvaA4zSskZBYTE"
-);
-</script>
+    init();
   </script>
 </body>
 </html>
