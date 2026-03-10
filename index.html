@@ -146,7 +146,6 @@
 
     .status-ok { color: var(--ok); font-weight: 700; }
     .status-wait { color: var(--warn); font-weight: 700; }
-    .status-info { color: var(--info); font-weight: 700; }
 
     .toolbar { margin-bottom: 18px; }
 
@@ -207,23 +206,8 @@
       color: var(--ok);
     }
 
-    .toolbar-title {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .toolbar-sub {
-      margin-top: 10px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .section-top {
-      margin-bottom: 12px;
+    .hidden {
+      display: none !important;
     }
 
     .mini-stat {
@@ -237,18 +221,6 @@
       font-size: 22px;
       font-weight: 700;
       margin-top: 6px;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .right {
-      text-align: right;
-    }
-
-    .nowrap {
-      white-space: nowrap;
     }
 
     @media (max-width: 700px) {
@@ -270,20 +242,78 @@
 <body>
   <div class="wrap">
     <div class="toolbar">
-      <div class="toolbar-title">
-        <h1>Docházkový systém</h1>
-        <span class="pill">Supabase</span>
-        <span class="pill ok" id="profileBadge">Režim: admin</span>
+      <div class="row-between">
+        <div>
+          <h1>Docházkový systém</h1>
+          <p class="muted">
+            Verze napojená na Supabase databázi. Obsahuje Auth login, měsíční souhrny, export do Excelu a mobilní rozložení.
+          </p>
+        </div>
+        <div class="row">
+          <span class="pill" id="authStateBadge">Nepřihlášen</span>
+          <span class="pill ok" id="profileBadge">Režim: admin</span>
+        </div>
       </div>
-      <p class="muted">
-        Verze napojená na Supabase databázi. Obsahuje měsíční souhrny, export do Excelu,
-        mobilnější rozložení a základ zaměstnaneckého režimu.
-      </p>
       <div class="error" id="errorBox"></div>
       <div class="success" id="successBox"></div>
     </div>
 
-    <div class="grid grid-4">
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card" id="loginCard">
+        <div class="row-between">
+          <h2>Přihlášení zaměstnance</h2>
+          <span class="pill">Supabase Auth</span>
+        </div>
+
+        <div class="grid grid-2">
+          <div>
+            <label>E-mail</label>
+            <input id="loginEmail" type="email" placeholder="napr. jan.novak@firma.cz" />
+          </div>
+          <div>
+            <label>Heslo</label>
+            <input id="loginPassword" type="password" placeholder="Heslo" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:14px;">
+          <button onclick="login()">Přihlásit</button>
+          <button class="secondary" onclick="registerUser()">Vytvořit účet</button>
+        </div>
+
+        <div class="note">
+          Přihlášený zaměstnanec uvidí jen svůj profil v aplikaci. Pro plné zabezpečení dat ještě nastavte RLS v Supabase.
+        </div>
+      </div>
+
+      <div class="card hidden" id="sessionCard">
+        <div class="row-between">
+          <h2>Aktivní session</h2>
+          <span class="pill ok">Přihlášeno</span>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="mini-stat">
+            <div class="muted">E-mail</div>
+            <div class="value" id="sessionEmail">—</div>
+          </div>
+          <div class="mini-stat">
+            <div class="muted">Profil zaměstnance</div>
+            <div class="value" id="sessionEmployeeName">—</div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:14px;">
+          <button class="danger" onclick="logout()">Odhlásit</button>
+        </div>
+
+        <div class="info-box" id="sessionInfoBox">
+          Session je aktivní.
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-4" style="margin-top:16px;">
       <div class="card">
         <div class="muted">Zaměstnanci</div>
         <div class="big" id="employeeCount">0</div>
@@ -304,38 +334,7 @@
 
     <div class="grid grid-2" style="margin-top:16px;">
       <div class="card">
-        <div class="section-top row-between">
-          <h2>Zaměstnanecký režim</h2>
-          <span class="pill">základ loginu</span>
-        </div>
-
-        <div class="grid grid-2">
-          <div>
-            <label>Profil</label>
-            <select id="profileMode" onchange="handleProfileModeChange()">
-              <option value="admin">Admin</option>
-              <option value="employee">Zaměstnanec</option>
-            </select>
-          </div>
-          <div>
-            <label>Zaměstnanec</label>
-            <select id="profileEmployee"></select>
-          </div>
-        </div>
-
-        <div class="row" style="margin-top:14px;">
-          <button class="info" onclick="saveProfileMode()">Uložit režim</button>
-          <button class="secondary" onclick="clearProfileMode()">Odhlásit profil</button>
-        </div>
-
-        <div class="info-box">
-          Tento režim je zatím pouze frontendový filtr uložený v prohlížeči.
-          Pro skutečné přihlášení je další krok napojení na Supabase Auth + RLS.
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="section-top row-between">
+        <div class="row-between">
           <h2>Můj přehled</h2>
           <span class="pill" id="myDashboardBadge">bez profilu</span>
         </div>
@@ -356,12 +355,10 @@
         </div>
 
         <div class="note" id="myDashboardNote">
-          Vyberte zaměstnance v režimu „Zaměstnanec“ a zobrazí se osobní přehled.
+          Po přihlášení se zobrazí osobní přehled zaměstnance.
         </div>
       </div>
-    </div>
 
-    <div class="grid grid-2" style="margin-top:16px;">
       <div class="card">
         <h2>Nový záznam docházky</h2>
         <div class="grid grid-2">
@@ -402,7 +399,9 @@
           <button onclick="addAttendance()">Uložit docházku</button>
         </div>
       </div>
+    </div>
 
+    <div class="grid grid-2" style="margin-top:16px;">
       <div class="card">
         <h2>Žádost o dovolenou</h2>
         <div class="grid grid-2">
@@ -426,13 +425,8 @@
         <div class="row" style="margin-top:14px;">
           <button onclick="addLeave()">Odeslat žádost</button>
         </div>
-        <div class="note">
-          Tato verze ukládá data do Supabase databáze a sdílí je mezi zařízeními.
-        </div>
       </div>
-    </div>
 
-    <div class="grid grid-2" style="margin-top:16px;">
       <div class="card">
         <div class="row-between">
           <h2>Zaměstnanci</h2>
@@ -443,38 +437,23 @@
             <thead>
               <tr>
                 <th>Jméno</th>
+                <th>E-mail</th>
                 <th>Úvazek</th>
                 <th>Dovolená</th>
                 <th>Zbývá</th>
-                <th>Místa</th>
               </tr>
             </thead>
             <tbody id="employeeTable"></tbody>
           </table>
         </div>
       </div>
+    </div>
 
+    <div class="grid grid-2" style="margin-top:16px;">
       <div class="card">
         <div class="row-between">
           <h2>Dovolená</h2>
-          <div class="row">
-            <button class="secondary" onclick="reloadAll()">Obnovit data</button>
-          </div>
-        </div>
-
-        <div class="grid grid-2" style="margin-bottom:12px;">
-          <div>
-            <label>Filtr zaměstnanec</label>
-            <select id="leaveFilterEmployee" onchange="renderLeaves()"></select>
-          </div>
-          <div>
-            <label>Filtr stav</label>
-            <select id="leaveFilterStatus" onchange="renderLeaves()">
-              <option value="">Vše</option>
-              <option value="čeká">Čeká</option>
-              <option value="schváleno">Schváleno</option>
-            </select>
-          </div>
+          <button class="secondary" onclick="reloadAll()">Obnovit data</button>
         </div>
 
         <div class="table-wrap">
@@ -493,57 +472,37 @@
           </table>
         </div>
       </div>
+
+      <div class="card">
+        <div class="row-between">
+          <h2>Měsíční souhrn</h2>
+          <div class="row">
+            <input id="summaryMonth" type="month" />
+            <button class="secondary" onclick="renderMonthlySummary()">Zobrazit měsíc</button>
+            <button onclick="exportMonthExcel()">Export Excel</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Zaměstnanec</th>
+                <th>Měsíc</th>
+                <th>Docházka</th>
+                <th>Dovolená</th>
+                <th>Pracovní dny</th>
+                <th>Součet hodin</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyTable"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <div class="card" style="margin-top:16px;">
       <div class="row-between">
-        <h2>Měsíční souhrn</h2>
-        <div class="row">
-          <input id="summaryMonth" type="month" />
-          <button class="secondary" onclick="renderMonthlySummary()">Zobrazit měsíc</button>
-          <button onclick="exportMonthExcel()">Export Excel</button>
-        </div>
-      </div>
-
-      <div class="grid grid-4" style="margin: 12px 0 4px;">
-        <div class="mini-stat">
-          <div class="muted">Souhrnná docházka</div>
-          <div class="value" id="summaryAttendanceTotal">0:00</div>
-        </div>
-        <div class="mini-stat">
-          <div class="muted">Souhrnná dovolená</div>
-          <div class="value" id="summaryLeaveTotal">0 h</div>
-        </div>
-        <div class="mini-stat">
-          <div class="muted">Záznamy docházky</div>
-          <div class="value" id="summaryAttendanceRows">0</div>
-        </div>
-        <div class="mini-stat">
-          <div class="muted">Žádosti v měsíci</div>
-          <div class="value" id="summaryLeaveRows">0</div>
-        </div>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Zaměstnanec</th>
-              <th>Měsíc</th>
-              <th>Docházka</th>
-              <th>Dovolená</th>
-              <th>Pracovní dny</th>
-              <th>Záznamy</th>
-              <th>Součet hodin</th>
-            </tr>
-          </thead>
-          <tbody id="monthlyTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:16px;">
-      <div class="row-between" style="align-items: center;">
         <h2>Docházka</h2>
         <div class="row">
           <button class="secondary" onclick="exportJson()">Stáhnout data JSON</button>
@@ -591,14 +550,14 @@
 
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2amtrZGZ6enVkdG1scW9sYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNDE1MzgsImV4cCI6MjA4ODcxNzUzOH0.ff7uzeH5iq8nHRPl2SzL-BvxLLIj4RvaA4zSskZBYTE";
+    const SUPABASE_KEY = "VAŠE_ANON_KEY";
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let employees = [];
     let attendance = [];
     let leaves = [];
-
-    const PROFILE_STORAGE_KEY = "dochazka_profile_v1";
+    let currentSession = null;
+    let currentEmployeeProfile = null;
 
     function today() {
       return new Date().toISOString().slice(0, 10);
@@ -653,83 +612,148 @@
       return e ? e.name : "—";
     }
 
-    function currentProfile() {
-      try {
-        return JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY)) || { mode: "admin", employeeId: "" };
-      } catch {
-        return { mode: "admin", employeeId: "" };
+    function getProfileEmployeeId() {
+      return currentEmployeeProfile ? Number(currentEmployeeProfile.id) : null;
+    }
+
+    function isLoggedInEmployee() {
+      return !!currentSession && !!currentEmployeeProfile;
+    }
+
+    function updateAuthUI() {
+      const badge = document.getElementById("authStateBadge");
+      const profileBadge = document.getElementById("profileBadge");
+      const loginCard = document.getElementById("loginCard");
+      const sessionCard = document.getElementById("sessionCard");
+      const sessionEmail = document.getElementById("sessionEmail");
+      const sessionEmployeeName = document.getElementById("sessionEmployeeName");
+      const sessionInfoBox = document.getElementById("sessionInfoBox");
+
+      if (currentSession?.user) {
+        badge.textContent = "Přihlášen";
+        badge.className = "pill ok";
+        loginCard.classList.add("hidden");
+        sessionCard.classList.remove("hidden");
+        sessionEmail.textContent = currentSession.user.email || "—";
+
+        if (currentEmployeeProfile) {
+          sessionEmployeeName.textContent = currentEmployeeProfile.name || "—";
+          profileBadge.textContent = `Režim: ${currentEmployeeProfile.name}`;
+          sessionInfoBox.textContent = "Účet je spárovaný se zaměstnancem podle employees.email.";
+        } else {
+          sessionEmployeeName.textContent = "nenalezen";
+          profileBadge.textContent = "Režim: přihlášený uživatel";
+          sessionInfoBox.textContent = "Uživatel je přihlášen, ale nebyl nalezen odpovídající záznam v tabulce employees.";
+        }
+      } else {
+        badge.textContent = "Nepřihlášen";
+        badge.className = "pill";
+        profileBadge.textContent = "Režim: admin";
+        loginCard.classList.remove("hidden");
+        sessionCard.classList.add("hidden");
       }
+
+      applyProfileToForms();
+      renderMyDashboard();
     }
 
-    function getSelectedEmployeeIdForProfile() {
-      const profile = currentProfile();
-      return profile.mode === "employee" ? Number(profile.employeeId || 0) : null;
-    }
-
-    function applyProfileToFormFields() {
-      const profile = currentProfile();
-      const isEmployee = profile.mode === "employee" && profile.employeeId;
-
+    function applyProfileToForms() {
+      const employeeId = getProfileEmployeeId();
       const attendanceEmployee = document.getElementById("attendanceEmployee");
       const leaveEmployee = document.getElementById("leaveEmployee");
+      const attendanceFilterEmployee = document.getElementById("attendanceFilterEmployee");
 
-      if (isEmployee) {
-        attendanceEmployee.value = String(profile.employeeId);
-        leaveEmployee.value = String(profile.employeeId);
+      if (employeeId) {
+        attendanceEmployee.value = String(employeeId);
+        leaveEmployee.value = String(employeeId);
+        attendanceFilterEmployee.value = String(employeeId);
         attendanceEmployee.disabled = true;
         leaveEmployee.disabled = true;
+        attendanceFilterEmployee.disabled = true;
       } else {
         attendanceEmployee.disabled = false;
         leaveEmployee.disabled = false;
-      }
-
-      const badge = document.getElementById("profileBadge");
-      if (isEmployee) {
-        badge.textContent = `Režim: ${employeeName(profile.employeeId)}`;
-      } else {
-        badge.textContent = "Režim: admin";
+        attendanceFilterEmployee.disabled = false;
       }
     }
 
-    function handleProfileModeChange() {
-      const mode = document.getElementById("profileMode").value;
-      const employeeSelect = document.getElementById("profileEmployee");
-      employeeSelect.disabled = mode !== "employee";
-    }
+    async function login() {
+      clearError();
+      clearSuccess();
 
-    function saveProfileMode() {
-      const mode = document.getElementById("profileMode").value;
-      const employeeId = document.getElementById("profileEmployee").value;
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
 
-      if (mode === "employee" && !employeeId) {
-        showError("Vyberte zaměstnance pro zaměstnanecký režim.");
+      if (!email || !password) {
+        showError("Vyplňte e-mail i heslo.");
         return;
       }
 
-      const payload = {
-        mode,
-        employeeId: mode === "employee" ? employeeId : ""
-      };
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(payload));
-      syncProfileUI();
-      renderAll();
-      showSuccess("Režim byl uložen.");
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        console.error(error);
+        showError("Přihlášení se nezdařilo.");
+        return;
+      }
+
+      currentSession = data.session || null;
+      await resolveCurrentEmployeeProfile();
+      await reloadAll();
+      showSuccess("Přihlášení proběhlo úspěšně.");
     }
 
-    function clearProfileMode() {
-      localStorage.removeItem(PROFILE_STORAGE_KEY);
-      syncProfileUI();
-      renderAll();
-      showSuccess("Profil byl odhlášen.");
+    async function registerUser() {
+      clearError();
+      clearSuccess();
+
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      if (!email || !password) {
+        showError("Pro vytvoření účtu vyplňte e-mail i heslo.");
+        return;
+      }
+
+      const { error } = await db.auth.signUp({ email, password });
+
+      if (error) {
+        console.error(error);
+        showError("Nepodařilo se vytvořit účet.");
+        return;
+      }
+
+      showSuccess("Účet byl vytvořen. Pokud máte v Supabase zapnuté potvrzení e-mailu, potvrďte adresu v poště.");
     }
 
-    function syncProfileUI() {
-      const profile = currentProfile();
-      document.getElementById("profileMode").value = profile.mode || "admin";
-      document.getElementById("profileEmployee").value = profile.employeeId || "";
-      handleProfileModeChange();
-      applyProfileToFormFields();
-      renderMyDashboard();
+    async function logout() {
+      clearError();
+      clearSuccess();
+
+      const { error } = await db.auth.signOut();
+
+      if (error) {
+        console.error(error);
+        showError("Nepodařilo se odhlásit.");
+        return;
+      }
+
+      currentSession = null;
+      currentEmployeeProfile = null;
+      await reloadAll();
+      showSuccess("Byli jste odhlášeni.");
+    }
+
+    async function resolveCurrentEmployeeProfile() {
+      currentEmployeeProfile = null;
+
+      const email = currentSession?.user?.email;
+      if (!email) return;
+
+      const match = employees.find(e => String(e.email || "").toLowerCase() === String(email).toLowerCase());
+      if (match) {
+        currentEmployeeProfile = match;
+      }
     }
 
     function calcWorkedMinutes(from, to, breakMinutes) {
@@ -756,78 +780,71 @@
       return String(dateStr || "").startsWith(monthValue);
     }
 
-    function getMonthRange(monthValue) {
-      const [y, m] = monthValue.split("-").map(Number);
-      const start = new Date(y, m - 1, 1);
-      const end = new Date(y, m, 0);
-      return { start, end };
-    }
-
     function uniqueWorkDays(records) {
       return new Set(records.map(x => x.date)).size;
-    }
-
-    function populateSelects() {
-      const employeeOptions = employees.map(e =>
-        `<option value="${e.id}">${escapeHtml(e.name)}</option>`
-      ).join("");
-
-      const employeeOptionsWithAll = `<option value="">Všichni</option>${employeeOptions}`;
-
-      document.getElementById("attendanceEmployee").innerHTML = employeeOptions;
-      document.getElementById("leaveEmployee").innerHTML = employeeOptions;
-      document.getElementById("profileEmployee").innerHTML = `<option value="">Vyberte zaměstnance</option>${employeeOptions}`;
-      document.getElementById("attendanceFilterEmployee").innerHTML = employeeOptionsWithAll;
-      document.getElementById("leaveFilterEmployee").innerHTML = employeeOptionsWithAll;
-
-      if (!document.getElementById("attendanceDate").value) {
-        document.getElementById("attendanceDate").value = today();
-      }
-      if (!document.getElementById("leaveDate").value) {
-        document.getElementById("leaveDate").value = today();
-      }
-
-      document.getElementById("summaryMonth").value = currentMonthValue();
-      document.getElementById("attendanceFilterMonth").value = currentMonthValue();
-
-      syncProfileUI();
     }
 
     function remainingLeaveHours(employeeId) {
       const employee = employees.find(e => Number(e.id) === Number(employeeId));
       if (!employee) return 0;
+
       const used = leaves
         .filter(l => Number(l.employee_id) === Number(employeeId) && l.status === "schváleno")
         .reduce((sum, l) => sum + Number(l.hours || 0), 0);
+
       return Number(employee.leave_hours || 0) - used;
     }
 
+    function getVisibleEmployees() {
+      const employeeId = getProfileEmployeeId();
+      if (employeeId) {
+        return employees.filter(e => Number(e.id) === Number(employeeId));
+      }
+      return employees;
+    }
+
+    function populateSelects() {
+      const visibleEmployees = getVisibleEmployees();
+      const allOptions = employees.map(e =>
+        `<option value="${e.id}">${escapeHtml(e.name)}</option>`
+      ).join("");
+      const visibleOptions = visibleEmployees.map(e =>
+        `<option value="${e.id}">${escapeHtml(e.name)}</option>`
+      ).join("");
+
+      document.getElementById("attendanceEmployee").innerHTML = visibleOptions;
+      document.getElementById("leaveEmployee").innerHTML = visibleOptions;
+      document.getElementById("attendanceFilterEmployee").innerHTML = `<option value="">Všichni</option>${allOptions}`;
+
+      document.getElementById("attendanceDate").value ||= today();
+      document.getElementById("leaveDate").value ||= today();
+      document.getElementById("summaryMonth").value ||= currentMonthValue();
+      document.getElementById("attendanceFilterMonth").value ||= currentMonthValue();
+
+      applyProfileToForms();
+    }
+
     function renderEmployees() {
-      const profileEmployeeId = getSelectedEmployeeIdForProfile();
-      const visibleEmployees = profileEmployeeId
-        ? employees.filter(e => Number(e.id) === Number(profileEmployeeId))
-        : employees;
+      const visibleEmployees = getVisibleEmployees();
 
       document.getElementById("employeeTable").innerHTML = visibleEmployees.map(e => `
         <tr>
           <td>${escapeHtml(e.name)}</td>
+          <td>${escapeHtml(e.email ?? "")}</td>
           <td>${escapeHtml(e.weekly ?? "—")}</td>
           <td>${escapeHtml(e.leave_days ?? 0)} dní / ${escapeHtml(e.leave_hours ?? 0)} h</td>
           <td>${remainingLeaveHours(e.id)} h</td>
-          <td>${escapeHtml(e.offices ?? "—")}</td>
         </tr>
-      `).join("") || `
-        <tr><td colspan="5" class="muted">Žádní zaměstnanci.</td></tr>
-      `;
+      `).join("") || `<tr><td colspan="5" class="muted">Žádní zaměstnanci.</td></tr>`;
 
       document.getElementById("employeeCount").textContent = employees.length;
     }
 
     function getFilteredAttendance() {
       const month = document.getElementById("attendanceFilterMonth").value || currentMonthValue();
-      const employeeId = document.getElementById("attendanceFilterEmployee").value;
+      const selectedEmployeeId = document.getElementById("attendanceFilterEmployee").value;
       const viewMode = document.getElementById("attendanceViewMode").value;
-      const profileEmployeeId = getSelectedEmployeeIdForProfile();
+      const profileEmployeeId = getProfileEmployeeId();
 
       let rows = [...attendance];
 
@@ -835,8 +852,8 @@
         rows = rows.filter(a => Number(a.employee_id) === Number(profileEmployeeId));
       }
 
-      if (employeeId) {
-        rows = rows.filter(a => Number(a.employee_id) === Number(employeeId));
+      if (selectedEmployeeId) {
+        rows = rows.filter(a => Number(a.employee_id) === Number(selectedEmployeeId));
       }
 
       if (viewMode === "today") {
@@ -860,68 +877,38 @@
           <td>${escapeHtml(employeeName(a.employee_id))}</td>
           <td>${escapeHtml(a.office ?? "")}</td>
           <td>${escapeHtml(a.type ?? "")}</td>
-          <td class="nowrap">${escapeHtml(a.time_from ?? "—")}–${escapeHtml(a.time_to ?? "—")}</td>
+          <td>${escapeHtml(a.time_from ?? "—")}–${escapeHtml(a.time_to ?? "—")}</td>
           <td>${escapeHtml(a.break_minutes ?? 0)} min</td>
           <td>${calcWorked(a.time_from, a.time_to, a.break_minutes)}</td>
         </tr>
-      `).join("") || `
-        <tr><td colspan="7" class="muted">Žádná docházka pro zvolený filtr.</td></tr>
-      `;
+      `).join("") || `<tr><td colspan="7" class="muted">Žádná docházka.</td></tr>`;
 
       document.getElementById("attendanceCount").textContent = attendance.filter(a => a.date === today()).length;
     }
 
-    function getFilteredLeaves() {
-      const employeeId = document.getElementById("leaveFilterEmployee").value;
-      const status = document.getElementById("leaveFilterStatus").value;
-      const profileEmployeeId = getSelectedEmployeeIdForProfile();
+    function renderLeaves() {
+      const profileEmployeeId = getProfileEmployeeId();
 
       let rows = [...leaves];
-
       if (profileEmployeeId) {
         rows = rows.filter(l => Number(l.employee_id) === Number(profileEmployeeId));
       }
 
-      if (employeeId) {
-        rows = rows.filter(l => Number(l.employee_id) === Number(employeeId));
-      }
-
-      if (status) {
-        rows = rows.filter(l => l.status === status);
-      }
-
-      return rows.sort((a, b) => {
+      rows.sort((a, b) => {
         if (a.date === b.date) return Number(b.id || 0) - Number(a.id || 0);
         return String(b.date).localeCompare(String(a.date));
       });
-    }
-
-    function renderLeaves() {
-      const profileEmployeeId = getSelectedEmployeeIdForProfile();
-      const rows = getFilteredLeaves();
 
       document.getElementById("leaveTable").innerHTML = rows.map(l => `
         <tr>
           <td>${escapeHtml(employeeName(l.employee_id))}</td>
           <td>${escapeHtml(l.date)}</td>
           <td>${escapeHtml(l.hours)} h</td>
-          <td>
-            <span class="${l.status === "schváleno" ? "status-ok" : "status-wait"}">
-              ${escapeHtml(l.status)}
-            </span>
-          </td>
+          <td><span class="${l.status === "schváleno" ? "status-ok" : "status-wait"}">${escapeHtml(l.status)}</span></td>
           <td>${escapeHtml(l.note ?? "")}</td>
-          <td>
-            ${
-              l.status === "čeká" && !profileEmployeeId
-                ? `<button onclick="approveLeave(${Number(l.id)})">Schválit</button>`
-                : ""
-            }
-          </td>
+          <td>${l.status === "čeká" && !profileEmployeeId ? `<button onclick="approveLeave(${Number(l.id)})">Schválit</button>` : ""}</td>
         </tr>
-      `).join("") || `
-        <tr><td colspan="6" class="muted">Žádné žádosti o dovolenou.</td></tr>
-      `;
+      `).join("") || `<tr><td colspan="6" class="muted">Žádné žádosti o dovolenou.</td></tr>`;
 
       document.getElementById("pendingCount").textContent = leaves.filter(l => l.status === "čeká").length;
       document.getElementById("approvedHours").textContent = leaves
@@ -930,7 +917,7 @@
     }
 
     function renderMyDashboard() {
-      const employeeId = getSelectedEmployeeIdForProfile();
+      const employeeId = getProfileEmployeeId();
       const month = document.getElementById("summaryMonth").value || currentMonthValue();
 
       const badge = document.getElementById("myDashboardBadge");
@@ -944,16 +931,18 @@
         myName.textContent = "—";
         myRemainingLeave.textContent = "—";
         myThisMonth.textContent = "—";
-        note.textContent = "Vyberte zaměstnance v režimu „Zaměstnanec“ a zobrazí se osobní přehled.";
+        note.textContent = "Po přihlášení se zobrazí osobní přehled zaměstnance.";
         return;
       }
 
       const empAttendance = attendance.filter(a =>
         Number(a.employee_id) === Number(employeeId) && monthMatches(a.date, month)
       );
+
       const minutes = empAttendance.reduce((sum, a) =>
         sum + calcWorkedMinutes(a.time_from, a.time_to, a.break_minutes), 0
       );
+
       const leaveHours = leaves
         .filter(l =>
           Number(l.employee_id) === Number(employeeId) &&
@@ -966,20 +955,12 @@
       myName.textContent = employeeName(employeeId);
       myRemainingLeave.textContent = `${remainingLeaveHours(employeeId)} h`;
       myThisMonth.textContent = `${formatMinutesToHours(minutes)} + ${leaveHours} h`;
-      note.textContent = `Souhrn za ${month}. Docházka je v čase HH:MM, dovolená v hodinách.`;
+      note.textContent = `Souhrn za ${month}.`;
     }
 
     function renderMonthlySummary() {
       const month = document.getElementById("summaryMonth").value || currentMonthValue();
-      const profileEmployeeId = getSelectedEmployeeIdForProfile();
-      const visibleEmployees = profileEmployeeId
-        ? employees.filter(e => Number(e.id) === Number(profileEmployeeId))
-        : employees;
-
-      let totalAttendanceMinutes = 0;
-      let totalLeaveHours = 0;
-      let totalAttendanceRows = 0;
-      let totalLeaveRows = 0;
+      const visibleEmployees = getVisibleEmployees();
 
       const rows = visibleEmployees.map(employee => {
         const empAttendance = attendance.filter(a =>
@@ -997,21 +978,13 @@
         );
 
         const leaveHours = approvedLeaves.reduce((sum, l) => sum + Number(l.hours || 0), 0);
-        const attendanceHours = formatMinutesToHours(attendanceMinutes);
-        const workDays = uniqueWorkDays(empAttendance);
-
-        totalAttendanceMinutes += attendanceMinutes;
-        totalLeaveHours += leaveHours;
-        totalAttendanceRows += empAttendance.length;
-        totalLeaveRows += approvedLeaves.length;
 
         return {
           employee: employee.name,
           month,
-          attendanceHours,
+          attendanceHours: formatMinutesToHours(attendanceMinutes),
           leaveHours,
-          workDays,
-          recordCount: empAttendance.length,
+          workDays: uniqueWorkDays(empAttendance),
           totalHours: (attendanceMinutes / 60 + leaveHours).toFixed(2)
         };
       });
@@ -1023,17 +996,9 @@
           <td>${escapeHtml(r.attendanceHours)}</td>
           <td>${escapeHtml(r.leaveHours)} h</td>
           <td>${escapeHtml(r.workDays)}</td>
-          <td>${escapeHtml(r.recordCount)}</td>
           <td>${escapeHtml(r.totalHours)} h</td>
         </tr>
-      `).join("") || `
-        <tr><td colspan="7" class="muted">Žádná data pro zvolený měsíc.</td></tr>
-      `;
-
-      document.getElementById("summaryAttendanceTotal").textContent = formatMinutesToHours(totalAttendanceMinutes);
-      document.getElementById("summaryLeaveTotal").textContent = `${totalLeaveHours} h`;
-      document.getElementById("summaryAttendanceRows").textContent = totalAttendanceRows;
-      document.getElementById("summaryLeaveRows").textContent = totalLeaveRows;
+      `).join("") || `<tr><td colspan="6" class="muted">Žádná data pro zvolený měsíc.</td></tr>`;
 
       renderMyDashboard();
       return rows;
@@ -1041,52 +1006,38 @@
 
     async function loadEmployees() {
       const { data, error } = await db.from("employees").select("*").order("id");
-
       if (error) {
         console.error(error);
-        showError("Nepodařilo se načíst zaměstnance ze Supabase.");
+        showError("Nepodařilo se načíst zaměstnance.");
         return;
       }
-
       employees = data || [];
-      populateSelects();
-      renderEmployees();
     }
 
     async function loadAttendance() {
       const { data, error } = await db.from("attendance").select("*").order("id");
-
       if (error) {
         console.error(error);
-        showError("Nepodařilo se načíst docházku ze Supabase.");
+        showError("Nepodařilo se načíst docházku.");
         return;
       }
-
       attendance = data || [];
-      renderAttendance();
     }
 
     async function loadLeaves() {
       const { data, error } = await db.from("leaves").select("*").order("id");
-
       if (error) {
         console.error(error);
-        showError("Nepodařilo se načíst dovolené ze Supabase.");
+        showError("Nepodařilo se načíst dovolené.");
         return;
       }
-
       leaves = data || [];
-      renderLeaves();
-      renderEmployees();
     }
 
     function validateAttendancePayload(payload) {
       if (!payload.employee_id) return "Vyberte zaměstnance.";
       if (!payload.date) return "Vyberte datum.";
       if (!payload.time_from || !payload.time_to) return "Vyplňte příchod i odchod.";
-      if (calcWorkedMinutes(payload.time_from, payload.time_to, payload.break_minutes) < 0) {
-        return "Neplatný čas docházky.";
-      }
       return "";
     }
 
@@ -1111,7 +1062,6 @@
       }
 
       const { error } = await db.from("attendance").insert(payload);
-
       if (error) {
         console.error(error);
         showError("Nepodařilo se uložit docházku.");
@@ -1124,6 +1074,7 @@
       document.getElementById("attendanceBreak").value = 30;
 
       await loadAttendance();
+      renderAttendance();
       renderMonthlySummary();
       showSuccess("Docházka byla uložena.");
     }
@@ -1156,7 +1107,6 @@
       }
 
       const { error } = await db.from("leaves").insert(payload);
-
       if (error) {
         console.error(error);
         showError("Nepodařilo se uložit žádost o dovolenou.");
@@ -1167,6 +1117,7 @@
       document.getElementById("leaveNote").value = "";
 
       await loadLeaves();
+      renderLeaves();
       renderMonthlySummary();
       showSuccess("Žádost o dovolenou byla uložena.");
     }
@@ -1176,7 +1127,6 @@
       clearSuccess();
 
       const { error } = await db.from("leaves").update({ status: "schváleno" }).eq("id", id);
-
       if (error) {
         console.error(error);
         showError("Nepodařilo se schválit dovolenou.");
@@ -1184,6 +1134,7 @@
       }
 
       await loadLeaves();
+      renderLeaves();
       renderMonthlySummary();
       showSuccess("Dovolená byla schválena.");
     }
@@ -1240,16 +1191,18 @@
       const month = document.getElementById("summaryMonth").value || currentMonthValue();
       const summary = renderMonthlySummary();
 
-      const attendanceRows = getFilteredAttendance().filter(a => monthMatches(a.date, month)).map(a => ({
-        Datum: a.date,
-        Zaměstnanec: employeeName(a.employee_id),
-        Místo: a.office ?? "",
-        Typ: a.type ?? "",
-        Příchod: a.time_from ?? "",
-        Odchod: a.time_to ?? "",
-        Pauza_min: a.break_minutes ?? 0,
-        Odpracováno: calcWorked(a.time_from, a.time_to, a.break_minutes)
-      }));
+      const attendanceRows = getFilteredAttendance()
+        .filter(a => monthMatches(a.date, month))
+        .map(a => ({
+          Datum: a.date,
+          Zaměstnanec: employeeName(a.employee_id),
+          Místo: a.office ?? "",
+          Typ: a.type ?? "",
+          Příchod: a.time_from ?? "",
+          Odchod: a.time_to ?? "",
+          Pauza_min: a.break_minutes ?? 0,
+          Odpracováno: calcWorked(a.time_from, a.time_to, a.break_minutes)
+        }));
 
       const wsSummary = XLSX.utils.json_to_sheet(summary.map(r => ({
         Zaměstnanec: r.employee,
@@ -1257,7 +1210,6 @@
         Docházka: r.attendanceHours,
         Dovolená_hodiny: r.leaveHours,
         Pracovní_dny: r.workDays,
-        Záznamy: r.recordCount,
         Součet_hodin: r.totalHours
       })));
 
@@ -1273,29 +1225,42 @@
     async function reloadAll() {
       clearError();
       clearSuccess();
+
       await loadEmployees();
+      await resolveCurrentEmployeeProfile();
+      populateSelects();
       await loadAttendance();
       await loadLeaves();
-      renderAll();
-    }
 
-    function renderAll() {
       renderEmployees();
       renderAttendance();
       renderLeaves();
       renderMonthlySummary();
-      syncProfileUI();
+      updateAuthUI();
+    }
+
+    async function initAuth() {
+      const { data, error } = await db.auth.getSession();
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      currentSession = data.session || null;
+
+      db.auth.onAuthStateChange(async (_event, session) => {
+        currentSession = session || null;
+        await reloadAll();
+      });
     }
 
     async function init() {
-      clearError();
-      clearSuccess();
-
       document.getElementById("attendanceDate").value = today();
       document.getElementById("leaveDate").value = today();
       document.getElementById("summaryMonth").value = currentMonthValue();
       document.getElementById("attendanceFilterMonth").value = currentMonthValue();
 
+      await initAuth();
       await reloadAll();
     }
 
