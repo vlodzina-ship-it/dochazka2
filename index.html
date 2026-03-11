@@ -276,7 +276,7 @@
         </div>
 
         <div class="note">
-          Přihlášený zaměstnanec uvidí jen svůj profil v aplikaci. Pro plné zabezpečení dat ještě nastavte RLS v Supabase.
+          Přihlášený zaměstnanec uvidí jen svůj profil v aplikaci.
         </div>
       </div>
 
@@ -421,7 +421,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="employeesCard">
         <div class="row-between">
           <h2>Zaměstnanci</h2>
           <span class="pill">online data</span>
@@ -614,6 +614,15 @@
       return !!currentEmployeeProfile?.is_admin;
     }
 
+    function updateUiVisibility() {
+      const employeesCard = document.getElementById("employeesCard");
+      if (currentSession?.user && !isAdmin()) {
+        employeesCard.classList.add("hidden");
+      } else {
+        employeesCard.classList.remove("hidden");
+      }
+    }
+
     function updateAuthUI() {
       const badge = document.getElementById("authStateBadge");
       const profileBadge = document.getElementById("profileBadge");
@@ -652,6 +661,7 @@
       }
 
       applyProfileToForms();
+      updateUiVisibility();
       renderMyDashboard();
     }
 
@@ -822,7 +832,9 @@
 
       document.getElementById("attendanceEmployee").innerHTML = visibleOptions;
       document.getElementById("leaveEmployee").innerHTML = visibleOptions;
-      document.getElementById("attendanceFilterEmployee").innerHTML = `<option value="">Všichni</option>${allOptions}`;
+      document.getElementById("attendanceFilterEmployee").innerHTML = isAdmin()
+        ? `<option value="">Všichni</option>${allOptions}`
+        : visibleOptions;
 
       document.getElementById("attendanceDate").value ||= today();
       document.getElementById("leaveDate").value ||= today();
