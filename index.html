@@ -444,6 +444,45 @@
     </div>
 
     <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card" id="addEmployeeCard">
+        <h2>Přidat zaměstnance</h2>
+
+        <div class="grid grid-2">
+          <div>
+            <label>Jméno</label>
+            <input id="newEmployeeName" type="text" />
+          </div>
+          <div>
+            <label>E-mail</label>
+            <input id="newEmployeeEmail" type="email" />
+          </div>
+          <div>
+            <label>Úvazek (hod/týden)</label>
+            <input id="newEmployeeWeekly" type="number" value="40" />
+          </div>
+          <div>
+            <label>Dovolená (hodiny)</label>
+            <input id="newEmployeeLeave" type="number" value="200" />
+          </div>
+          <div>
+            <label>Dovolená (dny)</label>
+            <input id="newEmployeeLeaveDays" type="number" value="25" />
+          </div>
+          <div>
+            <label>Kancelář / místo</label>
+            <input id="newEmployeeOffice" type="text" value="Osoblaha" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:14px;">
+          <button onclick="addEmployee()">Přidat zaměstnance</button>
+        </div>
+
+        <div class="note">
+          Nový zaměstnanec se přidá do tabulky employees. Login účet mu pak vytvoříte v Supabase Authentication.
+        </div>
+      </div>
+
       <div class="card">
         <div class="row-between">
           <h2>Dovolená</h2>
@@ -466,32 +505,32 @@
           </table>
         </div>
       </div>
+    </div>
 
-      <div class="card">
-        <div class="row-between">
-          <h2>Měsíční souhrn</h2>
-          <div class="row">
-            <input id="summaryMonth" type="month" />
-            <button class="secondary" onclick="renderMonthlySummary()">Zobrazit měsíc</button>
-            <button onclick="exportMonthExcel()">Export Excel</button>
-          </div>
+    <div class="card" style="margin-top:16px;">
+      <div class="row-between">
+        <h2>Měsíční souhrn</h2>
+        <div class="row">
+          <input id="summaryMonth" type="month" />
+          <button class="secondary" onclick="renderMonthlySummary()">Zobrazit měsíc</button>
+          <button onclick="exportMonthExcel()">Export Excel</button>
         </div>
+      </div>
 
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Zaměstnanec</th>
-                <th>Měsíc</th>
-                <th>Docházka</th>
-                <th>Dovolená</th>
-                <th>Pracovní dny</th>
-                <th>Součet hodin</th>
-              </tr>
-            </thead>
-            <tbody id="monthlyTable"></tbody>
-          </table>
-        </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Zaměstnanec</th>
+              <th>Měsíc</th>
+              <th>Docházka</th>
+              <th>Dovolená</th>
+              <th>Pracovní dny</th>
+              <th>Součet hodin</th>
+            </tr>
+          </thead>
+          <tbody id="monthlyTable"></tbody>
+        </table>
       </div>
     </div>
 
@@ -616,10 +655,14 @@
 
     function updateUiVisibility() {
       const employeesCard = document.getElementById("employeesCard");
+      const addEmployeeCard = document.getElementById("addEmployeeCard");
+
       if (currentSession?.user && !isAdmin()) {
         employeesCard.classList.add("hidden");
+        addEmployeeCard.classList.add("hidden");
       } else {
         employeesCard.classList.remove("hidden");
+        addEmployeeCard.classList.remove("hidden");
       }
     }
 
@@ -1157,6 +1200,56 @@
       renderLeaves();
       renderMonthlySummary();
       showSuccess("Dovolená byla schválena.");
+    }
+
+    async function addEmployee() {
+      clearError();
+      clearSuccess();
+
+      const name = document.getElementById("newEmployeeName").value.trim();
+      const email = document.getElementById("newEmployeeEmail").value.trim();
+      const weekly = Number(document.getElementById("newEmployeeWeekly").value || 40);
+      const leave_hours = Number(document.getElementById("newEmployeeLeave").value || 200);
+      const leave_days = Number(document.getElementById("newEmployeeLeaveDays").value || 25);
+      const offices = document.getElementById("newEmployeeOffice").value.trim() || "Osoblaha";
+
+      if (!isAdmin()) {
+        showError("Zaměstnance může přidávat pouze admin.");
+        return;
+      }
+
+      if (!name || !email) {
+        showError("Vyplňte jméno a e-mail.");
+        return;
+      }
+
+      const { error } = await db.from("employees").insert({
+        name,
+        email,
+        weekly,
+        leave_days,
+        leave_hours,
+        offices,
+        is_admin: false
+      });
+
+      if (error) {
+        console.error(error);
+        showError("Nepodařilo se vytvořit zaměstnance.");
+        return;
+      }
+
+      document.getElementById("newEmployeeName").value = "";
+      document.getElementById("newEmployeeEmail").value = "";
+      document.getElementById("newEmployeeWeekly").value = 40;
+      document.getElementById("newEmployeeLeave").value = 200;
+      document.getElementById("newEmployeeLeaveDays").value = 25;
+      document.getElementById("newEmployeeOffice").value = "Osoblaha";
+
+      await loadEmployees();
+      populateSelects();
+      renderEmployees();
+      showSuccess("Zaměstnanec byl přidán.");
     }
 
     function exportJson() {
