@@ -268,12 +268,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ====== KONFIGURACE ======
     const SUPABASE_URL = 'https://avjkkdfzzudtmlqolbzk.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-';
 
-    // ====== JEDINÁ INSTANCE KLIENTA ======
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -281,7 +279,6 @@
       }
     });
 
-    // ====== DOM ======
     const loginForm = document.getElementById('loginForm');
     const logoutBtn = document.getElementById('logoutBtn');
     const refreshDebugBtn = document.getElementById('refreshDebugBtn');
@@ -293,7 +290,6 @@
     const storageDumpEl = document.getElementById('storageDump');
     const sessionBadgeEl = document.getElementById('sessionBadge');
 
-    // ====== STAV ======
     const authEventLog = [];
 
     function nowIso() {
@@ -382,7 +378,7 @@
     async function refreshDebug(reason) {
       dumpLocalStorage();
 
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await supabaseClient.auth.getSession();
 
       sessionDumpEl.textContent = safeJson({
         reason,
@@ -420,8 +416,7 @@
       }
     }
 
-    // ====== AUTH EVENTY ======
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
       pushAuthEvent(event, session);
       renderUser(session);
       dumpLocalStorage();
@@ -441,7 +436,6 @@
       }
     });
 
-    // ====== LOGIN ======
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -450,7 +444,7 @@
 
       setMessage('Přihlašuji...', 'warn');
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password
       });
@@ -466,11 +460,10 @@
       await refreshDebug('after signIn success');
     });
 
-    // ====== LOGOUT ======
     logoutBtn.addEventListener('click', async () => {
       setMessage('Odhlašuji...', 'warn');
 
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabaseClient.auth.signOut();
 
       if (error) {
         setMessage('Logout chyba: ' + error.message, 'err');
@@ -482,12 +475,10 @@
       await refreshDebug('after signOut success');
     });
 
-    // ====== MANUÁLNÍ OBNOVA DEBUGU ======
     refreshDebugBtn.addEventListener('click', async () => {
       await refreshDebug('manual refreshDebug button');
     });
 
-    // ====== START ======
     (async function bootstrap() {
       pushAuthEvent('BOOTSTRAP_START', null);
       await refreshDebug('initial page load');
