@@ -422,17 +422,33 @@
       dumpLocalStorage();
 
       if (event === 'SIGNED_IN') {
-        setMessage('SIGNED_IN proběhl. Teď dej F5 a ověř, že session zůstane.', 'ok');
+        setMessage('SIGNED_IN proběhl. Chvíli počkej na zápis do storage, pak dej F5.', 'ok');
+
+        setTimeout(() => {
+          refreshDebug('after SIGNED_IN delayed');
+        }, 700);
       } else if (event === 'SIGNED_OUT') {
         setMessage('SIGNED_OUT proběhl.', 'warn');
+
+        setTimeout(() => {
+          refreshDebug('after SIGNED_OUT delayed');
+        }, 100);
       } else if (event === 'INITIAL_SESSION') {
         if (session) {
           setMessage('INITIAL_SESSION načetl existující session ze storage.', 'ok');
         } else {
           setMessage('INITIAL_SESSION: ve storage není aktivní session.', 'warn');
         }
+
+        setTimeout(() => {
+          refreshDebug('after INITIAL_SESSION delayed');
+        }, 100);
       } else if (event === 'TOKEN_REFRESHED') {
         setMessage('TOKEN_REFRESHED proběhl.', 'ok');
+
+        setTimeout(() => {
+          refreshDebug('after TOKEN_REFRESHED delayed');
+        }, 100);
       }
     });
 
@@ -455,9 +471,12 @@
         return;
       }
 
-      setMessage('Login OK. Teď stiskni F5 a sleduj, zda session přetrvá.', 'ok');
       renderUser(data.session || null);
-      await refreshDebug('after signIn success');
+      setMessage('Login OK. Čekám na dopsání session do storage...', 'ok');
+
+      setTimeout(() => {
+        refreshDebug('after signIn success delayed');
+      }, 700);
     });
 
     logoutBtn.addEventListener('click', async () => {
@@ -472,7 +491,10 @@
       }
 
       setMessage('Odhlášeno.', 'warn');
-      await refreshDebug('after signOut success');
+
+      setTimeout(() => {
+        refreshDebug('after signOut success delayed');
+      }, 100);
     });
 
     refreshDebugBtn.addEventListener('click', async () => {
