@@ -1,174 +1,1681 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docházkový systém</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-<title>Docházkový systém</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --accent: #0f172a;
+      --ok: #166534;
+      --warn: #92400e;
+      --danger: #991b1b;
+      --info: #1d4ed8;
+    }
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    * { box-sizing: border-box; }
 
-<style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
 
-body{
-font-family:Arial;
-background:#f6f7fb;
-margin:0;
-padding:40px;
-}
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px;
+    }
 
-.box{
-max-width:420px;
-margin:auto;
-background:white;
-padding:30px;
-border-radius:10px;
-box-shadow:0 5px 20px rgba(0,0,0,0.08);
-}
+    h1, h2, h3 { margin: 0 0 12px; }
+    p { margin: 0 0 10px; }
 
-input,button{
-width:100%;
-padding:10px;
-margin-top:8px;
-}
+    .grid { display: grid; gap: 16px; }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 
-button{
-background:#0f172a;
-color:white;
-border:none;
-cursor:pointer;
-}
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
 
-.logout{
-background:#64748b;
-}
+    .muted { color: var(--muted); }
+    .big { font-size: 32px; font-weight: 700; }
 
-</style>
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
 
+    .row-between {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    label {
+      font-size: 14px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input, select, button, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 14px;
+      background: white;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid #c7d2fe;
+      outline-offset: 1px;
+    }
+
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+      border: none;
+      width: auto;
+      min-width: 120px;
+      transition: 0.15s ease;
+    }
+
+    button:hover { opacity: 0.95; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    button.secondary {
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    button.warn {
+      background: #854d0e;
+      color: white;
+    }
+
+    button.danger {
+      background: #b91c1c;
+      color: white;
+    }
+
+    button.info {
+      background: var(--info);
+      color: white;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 840px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    .status-ok { color: var(--ok); font-weight: 700; }
+    .status-wait { color: var(--warn); font-weight: 700; }
+
+    .toolbar { margin-bottom: 18px; }
+
+    .note {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .info-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: var(--ok);
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 12px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: var(--danger);
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 12px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.ok {
+      background: #ecfdf5;
+      color: var(--ok);
+    }
+
+    .hidden { display: none !important; }
+
+    .mini-stat {
+      padding: 12px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+
+    .mini-stat .value {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 6px;
+      word-break: break-word;
+    }
+
+    .quick-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .quick-buttons button {
+      width: 100%;
+      min-height: 58px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .small-btn {
+      min-width: auto;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 700px) {
+      .wrap { padding: 14px; }
+      .big { font-size: 26px; }
+      table { font-size: 13px; }
+      .row > button,
+      .row > input,
+      .row > select {
+        width: 100%;
+      }
+      .card {
+        padding: 14px;
+        border-radius: 16px;
+      }
+      .quick-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
-
 <body>
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="row-between">
+        <div>
+          <h1>Docházkový systém</h1>
+          <p class="muted">
+            Verze napojená na Supabase databázi. Obsahuje Auth login, správu zaměstnanců, rychlý příchod/odchod, měsíční souhrny a export do Excelu.
+          </p>
+        </div>
+        <div class="row">
+          <span class="pill" id="authStateBadge">Načítání session…</span>
+          <span class="pill ok" id="profileBadge">Režim: admin</span>
+        </div>
+      </div>
+      <div class="error" id="errorBox"></div>
+      <div class="success" id="successBox"></div>
+    </div>
 
-<div class="box">
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card" id="loginCard">
+        <div class="row-between">
+          <h2>Přihlášení zaměstnance</h2>
+          <span class="pill">Supabase Auth</span>
+        </div>
 
-<h2>Docházkový systém</h2>
+        <div class="grid grid-2">
+          <div>
+            <label>E-mail</label>
+            <input id="loginEmail" type="email" placeholder="napr. jan.novak@firma.cz" />
+          </div>
+          <div>
+            <label>Heslo</label>
+            <input id="loginPassword" type="password" placeholder="Heslo" />
+          </div>
+        </div>
 
-<div id="loginBox">
+        <div class="row" style="margin-top:14px;">
+          <button id="loginButton">Přihlásit</button>
+        </div>
 
-<input id="email" placeholder="email">
-<input id="password" type="password" placeholder="heslo">
+        <div class="note">
+          Přihlášený zaměstnanec uvidí jen svůj profil v aplikaci.
+        </div>
+      </div>
 
-<button id="loginBtn">Přihlásit</button>
+      <div class="card hidden" id="sessionCard">
+        <div class="row-between">
+          <h2>Aktivní session</h2>
+          <span class="pill ok">Přihlášeno</span>
+        </div>
 
-</div>
+        <div class="grid grid-2">
+          <div class="mini-stat">
+            <div class="muted">E-mail</div>
+            <div class="value" id="sessionEmail">—</div>
+          </div>
+          <div class="mini-stat">
+            <div class="muted">Profil zaměstnance</div>
+            <div class="value" id="sessionEmployeeName">—</div>
+          </div>
+        </div>
 
-<div id="appBox" style="display:none">
+        <div class="row" style="margin-top:14px;">
+          <button class="danger" id="logoutButton">Odhlásit</button>
+        </div>
 
-<p>Přihlášen: <b id="userEmail"></b></p>
+        <div class="info-box" id="sessionInfoBox">
+          Session je aktivní.
+        </div>
+      </div>
+    </div>
 
-<button class="logout" id="logoutBtn">Odhlásit</button>
+    <div class="grid grid-4" style="margin-top:16px;">
+      <div class="card">
+        <div class="muted">Zaměstnanci</div>
+        <div class="big" id="employeeCount">0</div>
+      </div>
+      <div class="card">
+        <div class="muted">Dnešní docházka</div>
+        <div class="big" id="attendanceCount">0</div>
+      </div>
+      <div class="card">
+        <div class="muted">Čekající dovolené</div>
+        <div class="big" id="pendingCount">0</div>
+      </div>
+      <div class="card">
+        <div class="muted">Schválené hodiny dovolené</div>
+        <div class="big" id="approvedHours">0</div>
+      </div>
+    </div>
 
-</div>
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <div class="row-between">
+          <h2>Můj přehled</h2>
+          <span class="pill" id="myDashboardBadge">bez profilu</span>
+        </div>
 
-</div>
+        <div class="grid grid-3">
+          <div class="mini-stat">
+            <div class="muted">Profil</div>
+            <div class="value" id="myName">—</div>
+          </div>
+          <div class="mini-stat">
+            <div class="muted">Zbývá dovolené</div>
+            <div class="value" id="myRemainingLeave">—</div>
+          </div>
+          <div class="mini-stat">
+            <div class="muted">Tento měsíc</div>
+            <div class="value" id="myThisMonth">—</div>
+          </div>
+        </div>
 
-<script>
+        <div class="note" id="myDashboardNote">
+          Po přihlášení se zobrazí osobní přehled zaměstnance.
+        </div>
+      </div>
 
-const SUPABASE_URL="https://avjkkdfzzudtmlqolbzk.supabase.co"
+      <div class="card">
+        <div class="row-between">
+          <h2>Rychlý příchod / odchod</h2>
+          <span class="pill">mobilní režim</span>
+        </div>
 
-const SUPABASE_KEY="sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-"
+        <div class="grid grid-2">
+          <div>
+            <label>Zaměstnanec</label>
+            <select id="quickEmployee"></select>
+          </div>
+          <div>
+            <label>Místo / kancelář</label>
+            <input id="quickOffice" type="text" value="Osoblaha" />
+          </div>
+          <div>
+            <label>Typ</label>
+            <select id="quickType">
+              <option value="práce">práce</option>
+              <option value="home office">home office</option>
+              <option value="služební cesta">služební cesta</option>
+            </select>
+          </div>
+          <div>
+            <label>Pauza (min)</label>
+            <input id="quickBreak" type="number" value="30" min="0" />
+          </div>
+        </div>
 
-const supabaseClient = window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY,
-{
-auth:{
-persistSession:true,
-autoRefreshToken:true,
-detectSessionInUrl:true
-}
-}
-)
+        <div class="quick-buttons" style="margin-top:14px;">
+          <button id="quickInButton">Příchod</button>
+          <button class="warn" id="quickOutButton">Odchod</button>
+        </div>
 
-const loginBox=document.getElementById("loginBox")
-const appBox=document.getElementById("appBox")
-const userEmail=document.getElementById("userEmail")
+        <div class="note">
+          Příchod uloží nový záznam s aktuálním časem. Odchod doplní čas do dnešního posledního otevřeného záznamu.
+        </div>
+      </div>
+    </div>
 
-function showLogin(){
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <h2>Nový záznam docházky</h2>
+        <div class="grid grid-2">
+          <div>
+            <label>Zaměstnanec</label>
+            <select id="attendanceEmployee"></select>
+          </div>
+          <div>
+            <label>Datum</label>
+            <input id="attendanceDate" type="date" />
+          </div>
+          <div>
+            <label>Místo / kancelář</label>
+            <input id="attendanceOffice" type="text" placeholder="Např. Osoblaha" />
+          </div>
+          <div>
+            <label>Typ</label>
+            <select id="attendanceType">
+              <option value="práce">práce</option>
+              <option value="home office">home office</option>
+              <option value="služební cesta">služební cesta</option>
+            </select>
+          </div>
+          <div>
+            <label>Příchod</label>
+            <input id="attendanceIn" type="time" />
+          </div>
+          <div>
+            <label>Odchod</label>
+            <input id="attendanceOut" type="time" />
+          </div>
+          <div>
+            <label>Pauza (min)</label>
+            <input id="attendanceBreak" type="number" value="30" min="0" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:14px;">
+          <button id="addAttendanceButton">Uložit docházku</button>
+        </div>
+      </div>
 
-loginBox.style.display="block"
-appBox.style.display="none"
+      <div class="card">
+        <h2>Žádost o dovolenou</h2>
+        <div class="grid grid-2">
+          <div>
+            <label>Zaměstnanec</label>
+            <select id="leaveEmployee"></select>
+          </div>
+          <div>
+            <label>Datum</label>
+            <input id="leaveDate" type="date" />
+          </div>
+          <div>
+            <label>Počet hodin</label>
+            <input id="leaveHours" type="number" value="8" min="0" step="0.5" />
+          </div>
+          <div>
+            <label>Poznámka</label>
+            <input id="leaveNote" type="text" placeholder="Např. lékař" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:14px;">
+          <button id="addLeaveButton">Odeslat žádost</button>
+        </div>
+      </div>
+    </div>
 
-}
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card" id="employeesCard">
+        <div class="row-between">
+          <h2>Zaměstnanci</h2>
+          <span class="pill">online data</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Jméno</th>
+                <th>E-mail</th>
+                <th>Úvazek</th>
+                <th>Dovolená</th>
+                <th>Zbývá</th>
+                <th>Akce</th>
+              </tr>
+            </thead>
+            <tbody id="employeeTable"></tbody>
+          </table>
+        </div>
+      </div>
 
-function showApp(user){
+      <div class="card" id="addEmployeeCard">
+        <h2 id="employeeFormTitle">Přidat zaměstnance</h2>
 
-loginBox.style.display="none"
-appBox.style.display="block"
-userEmail.innerText=user.email
+        <input id="editEmployeeId" type="hidden" />
 
-}
+        <div class="grid grid-2">
+          <div>
+            <label>Jméno</label>
+            <input id="newEmployeeName" type="text" />
+          </div>
+          <div>
+            <label>E-mail</label>
+            <input id="newEmployeeEmail" type="email" />
+          </div>
+          <div>
+            <label>Úvazek (hod/týden)</label>
+            <input id="newEmployeeWeekly" type="number" value="40" />
+          </div>
+          <div>
+            <label>Dovolená (hodiny)</label>
+            <input id="newEmployeeLeave" type="number" value="200" />
+          </div>
+          <div>
+            <label>Dovolená (dny)</label>
+            <input id="newEmployeeLeaveDays" type="number" value="25" />
+          </div>
+          <div>
+            <label>Kancelář / místo</label>
+            <input id="newEmployeeOffice" type="text" value="Osoblaha" />
+          </div>
+        </div>
 
-document.getElementById("loginBtn").onclick = async () => {
+        <div class="row" style="margin-top:14px;">
+          <button id="saveEmployeeButton">Uložit zaměstnance</button>
+          <button class="secondary hidden" id="cancelEditButton">Zrušit úpravu</button>
+        </div>
 
-const email=document.getElementById("email").value
-const password=document.getElementById("password").value
+        <div class="note">
+          Nový zaměstnanec se přidá do tabulky employees. Aby po loginu viděl svůj profil, musí mít v tabulce employees vyplněné auth_user_id nebo e-mail shodný s Auth účtem.
+        </div>
+      </div>
+    </div>
 
-const {data,error}=await supabaseClient.auth.signInWithPassword({
-email,
-password
-})
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <div class="row-between">
+          <h2>Dovolená</h2>
+          <button class="secondary" id="reloadButton">Obnovit data</button>
+        </div>
 
-if(error){
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Jméno</th>
+                <th>Datum</th>
+                <th>Hodiny</th>
+                <th>Stav</th>
+                <th>Poznámka</th>
+                <th>Akce</th>
+              </tr>
+            </thead>
+            <tbody id="leaveTable"></tbody>
+          </table>
+        </div>
+      </div>
 
-alert(error.message)
+      <div class="card">
+        <div class="row-between">
+          <h2>Měsíční souhrn</h2>
+          <div class="row">
+            <input id="summaryMonth" type="month" />
+            <button class="secondary" id="showMonthButton">Zobrazit měsíc</button>
+            <button id="exportExcelButton">Export Excel</button>
+          </div>
+        </div>
 
-return
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Zaměstnanec</th>
+                <th>Měsíc</th>
+                <th>Docházka</th>
+                <th>Dovolená</th>
+                <th>Pracovní dny</th>
+                <th>Součet hodin</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-}
+    <div class="card" style="margin-top:16px;">
+      <div class="row-between">
+        <h2>Docházka</h2>
+        <div class="row">
+          <button class="secondary" id="exportJsonButton">Stáhnout data JSON</button>
+          <button class="warn" id="exportCsvButton">Export CSV</button>
+        </div>
+      </div>
 
-}
+      <div class="grid grid-3" style="margin-bottom:12px;">
+        <div>
+          <label>Filtr měsíc</label>
+          <input id="attendanceFilterMonth" type="month" />
+        </div>
+        <div>
+          <label>Filtr zaměstnanec</label>
+          <select id="attendanceFilterEmployee"></select>
+        </div>
+        <div>
+          <label>Zobrazení</label>
+          <select id="attendanceViewMode">
+            <option value="all">Vše</option>
+            <option value="today">Pouze dnešek</option>
+            <option value="month">Pouze zvolený měsíc</option>
+          </select>
+        </div>
+      </div>
 
-document.getElementById("logoutBtn").onclick = async () => {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Jméno</th>
+              <th>Místo</th>
+              <th>Typ</th>
+              <th>Čas</th>
+              <th>Pauza</th>
+              <th>Odpracováno</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-await supabaseClient.auth.signOut()
+  <script>
+    const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-";
 
-}
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
 
-supabaseClient.auth.onAuthStateChange((event,session)=>{
+    let employees = [];
+    let attendance = [];
+    let leaves = [];
+    let currentSession = null;
+    let currentEmployeeProfile = null;
+    let authReady = false;
 
-if(session){
+    function today() {
+      const d = new Date();
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 10);
+    }
 
-showApp(session.user)
+    function currentTimeValue() {
+      const d = new Date();
+      return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    }
 
-}else{
+    function currentMonthValue() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    }
 
-showLogin()
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
 
-}
+    function showError(message) {
+      const box = document.getElementById("errorBox");
+      box.style.display = "block";
+      box.textContent = message;
+      setTimeout(() => {
+        if (box.textContent === message) clearError();
+      }, 6000);
+    }
 
-})
+    function clearError() {
+      const box = document.getElementById("errorBox");
+      box.style.display = "none";
+      box.textContent = "";
+    }
 
-async function init(){
+    function showSuccess(message) {
+      const box = document.getElementById("successBox");
+      box.style.display = "block";
+      box.textContent = message;
+      setTimeout(() => {
+        if (box.textContent === message) clearSuccess();
+      }, 3000);
+    }
 
-const {data}=await supabaseClient.auth.getSession()
+    function clearSuccess() {
+      const box = document.getElementById("successBox");
+      box.style.display = "none";
+      box.textContent = "";
+    }
 
-if(data.session){
+    function employeeName(id) {
+      const e = employees.find(x => Number(x.id) === Number(id));
+      return e ? e.name : "—";
+    }
 
-showApp(data.session.user)
+    function getProfileEmployeeId() {
+      return currentEmployeeProfile ? Number(currentEmployeeProfile.id) : null;
+    }
 
-}else{
+    function isAdmin() {
+      return !!currentEmployeeProfile?.is_admin;
+    }
 
-showLogin()
+    function updateUiVisibility() {
+      const employeesCard = document.getElementById("employeesCard");
+      const addEmployeeCard = document.getElementById("addEmployeeCard");
 
-}
+      if (currentSession?.user && !isAdmin()) {
+        employeesCard.classList.add("hidden");
+        addEmployeeCard.classList.add("hidden");
+      } else {
+        employeesCard.classList.remove("hidden");
+        addEmployeeCard.classList.remove("hidden");
+      }
+    }
 
-}
+    function updateAuthUI() {
+      const badge = document.getElementById("authStateBadge");
+      const profileBadge = document.getElementById("profileBadge");
+      const loginCard = document.getElementById("loginCard");
+      const sessionCard = document.getElementById("sessionCard");
+      const sessionEmail = document.getElementById("sessionEmail");
+      const sessionEmployeeName = document.getElementById("sessionEmployeeName");
+      const sessionInfoBox = document.getElementById("sessionInfoBox");
 
-init()
+      if (!authReady) {
+        badge.textContent = "Načítání session…";
+        badge.className = "pill";
+        loginCard.classList.add("hidden");
+        sessionCard.classList.add("hidden");
+        return;
+      }
 
-</script>
+      if (currentSession?.user) {
+        badge.textContent = "Přihlášen";
+        badge.className = "pill ok";
+        loginCard.classList.add("hidden");
+        sessionCard.classList.remove("hidden");
+        sessionEmail.textContent = currentSession.user.email || "—";
 
+        if (currentEmployeeProfile) {
+          sessionEmployeeName.textContent = currentEmployeeProfile.name || "—";
+          profileBadge.textContent = currentEmployeeProfile.is_admin
+            ? "Režim: admin"
+            : `Režim: ${currentEmployeeProfile.name}`;
+          sessionInfoBox.textContent = currentEmployeeProfile.is_admin
+            ? "Přihlášený účet je spárovaný s administrátorem."
+            : "Přihlášený účet je spárovaný se zaměstnancem.";
+        } else {
+          sessionEmployeeName.textContent = "nenalezen";
+          profileBadge.textContent = "Režim: přihlášený uživatel";
+          sessionInfoBox.textContent = "Uživatel je přihlášen, ale nebyl nalezen odpovídající záznam v tabulce employees.";
+        }
+      } else {
+        badge.textContent = "Nepřihlášen";
+        badge.className = "pill";
+        profileBadge.textContent = "Režim: admin";
+        loginCard.classList.remove("hidden");
+        sessionCard.classList.add("hidden");
+        sessionEmail.textContent = "—";
+        sessionEmployeeName.textContent = "—";
+        sessionInfoBox.textContent = "Session není aktivní.";
+      }
+
+      applyProfileToForms();
+      updateUiVisibility();
+      renderMyDashboard();
+    }
+
+    function applyProfileToForms() {
+      const employeeId = getProfileEmployeeId();
+      const attendanceEmployee = document.getElementById("attendanceEmployee");
+      const leaveEmployee = document.getElementById("leaveEmployee");
+      const attendanceFilterEmployee = document.getElementById("attendanceFilterEmployee");
+      const quickEmployee = document.getElementById("quickEmployee");
+
+      if (!attendanceEmployee || !leaveEmployee || !attendanceFilterEmployee || !quickEmployee) return;
+
+      if (employeeId && !isAdmin()) {
+        attendanceEmployee.value = String(employeeId);
+        leaveEmployee.value = String(employeeId);
+        attendanceFilterEmployee.value = String(employeeId);
+        quickEmployee.value = String(employeeId);
+        attendanceEmployee.disabled = true;
+        leaveEmployee.disabled = true;
+        attendanceFilterEmployee.disabled = true;
+        quickEmployee.disabled = true;
+      } else {
+        attendanceEmployee.disabled = false;
+        leaveEmployee.disabled = false;
+        attendanceFilterEmployee.disabled = false;
+        quickEmployee.disabled = false;
+      }
+    }
+
+    async function login() {
+      clearError();
+      clearSuccess();
+
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      if (!email || !password) {
+        showError("Vyplňte e-mail i heslo.");
+        return;
+      }
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        showError("Přihlášení se nezdařilo: " + error.message);
+        return;
+      }
+
+      currentSession = data.session || null;
+      showSuccess("Přihlášení proběhlo úspěšně.");
+    }
+
+    async function logout() {
+      clearError();
+      clearSuccess();
+
+      const { error } = await supabaseClient.auth.signOut();
+
+      if (error) {
+        showError("Nepodařilo se odhlásit: " + error.message);
+        return;
+      }
+
+      currentSession = null;
+      currentEmployeeProfile = null;
+      showSuccess("Byli jste odhlášeni.");
+    }
+
+    async function resolveCurrentEmployeeProfile() {
+      currentEmployeeProfile = null;
+
+      const user = currentSession?.user;
+      if (!user?.id && !user?.email) return;
+
+      let query = supabaseClient
+        .from("employees")
+        .select("*");
+
+      if (user.id) {
+        const byId = await query.eq("auth_user_id", user.id).maybeSingle();
+        if (!byId.error && byId.data) {
+          currentEmployeeProfile = byId.data;
+          return;
+        }
+      }
+
+      if (user.email) {
+        const byEmail = await supabaseClient
+          .from("employees")
+          .select("*")
+          .eq("email", user.email)
+          .maybeSingle();
+
+        if (!byEmail.error && byEmail.data) {
+          currentEmployeeProfile = byEmail.data;
+
+          if (!byEmail.data.auth_user_id && user.id) {
+            await supabaseClient
+              .from("employees")
+              .update({ auth_user_id: user.id })
+              .eq("id", byEmail.data.id);
+
+            currentEmployeeProfile.auth_user_id = user.id;
+          }
+        }
+      }
+    }
+
+    function calcWorkedMinutes(from, to, breakMinutes) {
+      if (!from || !to) return 0;
+      const [fh, fm] = String(from).split(":").map(Number);
+      const [th, tm] = String(to).split(":").map(Number);
+      const start = fh * 60 + fm;
+      const end = th * 60 + tm;
+      return Math.max(0, end - start - Number(breakMinutes || 0));
+    }
+
+    function formatMinutesToHours(minutes) {
+      const safe = Math.max(0, Number(minutes || 0));
+      const h = Math.floor(safe / 60);
+      const m = safe % 60;
+      return `${h}:${String(m).padStart(2, "0")}`;
+    }
+
+    function calcWorked(from, to, breakMinutes) {
+      return formatMinutesToHours(calcWorkedMinutes(from, to, breakMinutes));
+    }
+
+    function monthMatches(dateStr, monthValue) {
+      return String(dateStr || "").startsWith(monthValue);
+    }
+
+    function uniqueWorkDays(records) {
+      return new Set(records.map(x => x.date)).size;
+    }
+
+    function remainingLeaveHours(employeeId) {
+      const employee = employees.find(e => Number(e.id) === Number(employeeId));
+      if (!employee) return 0;
+
+      const used = leaves
+        .filter(l => Number(l.employee_id) === Number(employeeId) && l.status === "schváleno")
+        .reduce((sum, l) => sum + Number(l.hours || 0), 0);
+
+      return Number(employee.leave_hours || 0) - used;
+    }
+
+    function getVisibleEmployees() {
+      const employeeId = getProfileEmployeeId();
+
+      if (employeeId && !isAdmin()) {
+        return employees.filter(e => Number(e.id) === Number(employeeId));
+      }
+
+      return employees;
+    }
+
+    function populateSelects() {
+      const visibleEmployees = getVisibleEmployees();
+      const allOptions = employees.map(e =>
+        `<option value="${e.id}">${escapeHtml(e.name)}</option>`
+      ).join("");
+
+      const visibleOptions = visibleEmployees.map(e =>
+        `<option value="${e.id}">${escapeHtml(e.name)}</option>`
+      ).join("");
+
+      document.getElementById("attendanceEmployee").innerHTML = visibleOptions;
+      document.getElementById("leaveEmployee").innerHTML = visibleOptions;
+      document.getElementById("quickEmployee").innerHTML = visibleOptions;
+      document.getElementById("attendanceFilterEmployee").innerHTML = isAdmin()
+        ? `<option value="">Všichni</option>${allOptions}`
+        : visibleOptions;
+
+      document.getElementById("attendanceDate").value ||= today();
+      document.getElementById("leaveDate").value ||= today();
+      document.getElementById("summaryMonth").value ||= currentMonthValue();
+      document.getElementById("attendanceFilterMonth").value ||= currentMonthValue();
+
+      applyProfileToForms();
+    }
+
+    function renderEmployees() {
+      const visibleEmployees = getVisibleEmployees();
+
+      document.getElementById("employeeTable").innerHTML = visibleEmployees.map(e => `
+        <tr>
+          <td>${escapeHtml(e.name)}</td>
+          <td>${escapeHtml(e.email ?? "")}</td>
+          <td>${escapeHtml(e.weekly ?? "—")}</td>
+          <td>${escapeHtml(e.leave_days ?? 0)} dní / ${escapeHtml(e.leave_hours ?? 0)} h</td>
+          <td>${remainingLeaveHours(e.id)} h</td>
+          <td>
+            ${isAdmin() ? `
+              <div class="row">
+                <button class="secondary small-btn" data-edit-id="${Number(e.id)}">Upravit</button>
+                ${!e.is_admin ? `<button class="danger small-btn" data-delete-id="${Number(e.id)}">Smazat</button>` : ``}
+              </div>
+            ` : ``}
+          </td>
+        </tr>
+      `).join("") || `<tr><td colspan="6" class="muted">Žádní zaměstnanci.</td></tr>`;
+
+      document.getElementById("employeeCount").textContent = employees.length;
+    }
+
+    function getFilteredAttendance() {
+      const month = document.getElementById("attendanceFilterMonth").value || currentMonthValue();
+      const selectedEmployeeId = document.getElementById("attendanceFilterEmployee").value;
+      const viewMode = document.getElementById("attendanceViewMode").value;
+      const profileEmployeeId = getProfileEmployeeId();
+
+      let rows = [...attendance];
+
+      if (profileEmployeeId && !isAdmin()) {
+        rows = rows.filter(a => Number(a.employee_id) === Number(profileEmployeeId));
+      }
+
+      if (selectedEmployeeId) {
+        rows = rows.filter(a => Number(a.employee_id) === Number(selectedEmployeeId));
+      }
+
+      if (viewMode === "today") {
+        rows = rows.filter(a => a.date === today());
+      } else if (viewMode === "month") {
+        rows = rows.filter(a => monthMatches(a.date, month));
+      }
+
+      return rows.sort((a, b) => {
+        if (a.date === b.date) return Number(b.id || 0) - Number(a.id || 0);
+        return String(b.date).localeCompare(String(a.date));
+      });
+    }
+
+    function renderAttendance() {
+      const rows = getFilteredAttendance();
+
+      document.getElementById("attendanceTable").innerHTML = rows.map(a => `
+        <tr>
+          <td>${escapeHtml(a.date)}</td>
+          <td>${escapeHtml(employeeName(a.employee_id))}</td>
+          <td>${escapeHtml(a.office ?? "")}</td>
+          <td>${escapeHtml(a.type ?? "")}</td>
+          <td>${escapeHtml(a.time_from ?? "—")}–${escapeHtml(a.time_to ?? "—")}</td>
+          <td>${escapeHtml(a.break_minutes ?? 0)} min</td>
+          <td>${calcWorked(a.time_from, a.time_to, a.break_minutes)}</td>
+        </tr>
+      `).join("") || `<tr><td colspan="7" class="muted">Žádná docházka.</td></tr>`;
+
+      document.getElementById("attendanceCount").textContent = attendance.filter(a => a.date === today()).length;
+    }
+
+    function renderLeaves() {
+      const profileEmployeeId = getProfileEmployeeId();
+
+      let rows = [...leaves];
+      if (profileEmployeeId && !isAdmin()) {
+        rows = rows.filter(l => Number(l.employee_id) === Number(profileEmployeeId));
+      }
+
+      rows.sort((a, b) => {
+        if (a.date === b.date) return Number(b.id || 0) - Number(a.id || 0);
+        return String(b.date).localeCompare(String(a.date));
+      });
+
+      document.getElementById("leaveTable").innerHTML = rows.map(l => `
+        <tr>
+          <td>${escapeHtml(employeeName(l.employee_id))}</td>
+          <td>${escapeHtml(l.date)}</td>
+          <td>${escapeHtml(l.hours)} h</td>
+          <td><span class="${l.status === "schváleno" ? "status-ok" : "status-wait"}">${escapeHtml(l.status)}</span></td>
+          <td>${escapeHtml(l.note ?? "")}</td>
+          <td>${l.status === "čeká" && isAdmin() ? `<button data-approve-leave-id="${Number(l.id)}">Schválit</button>` : ""}</td>
+        </tr>
+      `).join("") || `<tr><td colspan="6" class="muted">Žádné žádosti o dovolenou.</td></tr>`;
+
+      document.getElementById("pendingCount").textContent = leaves.filter(l => l.status === "čeká").length;
+      document.getElementById("approvedHours").textContent = leaves
+        .filter(l => l.status === "schváleno")
+        .reduce((sum, l) => sum + Number(l.hours || 0), 0);
+    }
+
+    function renderMyDashboard() {
+      const employeeId = getProfileEmployeeId();
+      const month = document.getElementById("summaryMonth").value || currentMonthValue();
+
+      const badge = document.getElementById("myDashboardBadge");
+      const myName = document.getElementById("myName");
+      const myRemainingLeave = document.getElementById("myRemainingLeave");
+      const myThisMonth = document.getElementById("myThisMonth");
+      const note = document.getElementById("myDashboardNote");
+
+      if (!employeeId) {
+        badge.textContent = "bez profilu";
+        myName.textContent = "—";
+        myRemainingLeave.textContent = "—";
+        myThisMonth.textContent = "—";
+        note.textContent = "Po přihlášení se zobrazí osobní přehled zaměstnance.";
+        return;
+      }
+
+      const empAttendance = attendance.filter(a =>
+        Number(a.employee_id) === Number(employeeId) && monthMatches(a.date, month)
+      );
+
+      const minutes = empAttendance.reduce((sum, a) =>
+        sum + calcWorkedMinutes(a.time_from, a.time_to, a.break_minutes), 0
+      );
+
+      const leaveHours = leaves
+        .filter(l =>
+          Number(l.employee_id) === Number(employeeId) &&
+          l.status === "schváleno" &&
+          monthMatches(l.date, month)
+        )
+        .reduce((sum, l) => sum + Number(l.hours || 0), 0);
+
+      badge.textContent = currentEmployeeProfile?.is_admin ? "admin profil" : "aktivní profil";
+      myName.textContent = employeeName(employeeId);
+      myRemainingLeave.textContent = `${remainingLeaveHours(employeeId)} h`;
+      myThisMonth.textContent = `${formatMinutesToHours(minutes)} + ${leaveHours} h`;
+      note.textContent = `Souhrn za ${month}.`;
+    }
+
+    function renderMonthlySummary() {
+      const month = document.getElementById("summaryMonth").value || currentMonthValue();
+      const visibleEmployees = getVisibleEmployees();
+
+      const rows = visibleEmployees.map(employee => {
+        const empAttendance = attendance.filter(a =>
+          Number(a.employee_id) === Number(employee.id) && monthMatches(a.date, month)
+        );
+
+        const attendanceMinutes = empAttendance.reduce((sum, a) =>
+          sum + calcWorkedMinutes(a.time_from, a.time_to, a.break_minutes), 0
+        );
+
+        const approvedLeaves = leaves.filter(l =>
+          Number(l.employee_id) === Number(employee.id) &&
+          monthMatches(l.date, month) &&
+          l.status === "schváleno"
+        );
+
+        const leaveHours = approvedLeaves.reduce((sum, l) => sum + Number(l.hours || 0), 0);
+
+        return {
+          employee: employee.name,
+          month,
+          attendanceHours: formatMinutesToHours(attendanceMinutes),
+          leaveHours,
+          workDays: uniqueWorkDays(empAttendance),
+          totalHours: (attendanceMinutes / 60 + leaveHours).toFixed(2)
+        };
+      });
+
+      document.getElementById("monthlyTable").innerHTML = rows.map(r => `
+        <tr>
+          <td>${escapeHtml(r.employee)}</td>
+          <td>${escapeHtml(r.month)}</td>
+          <td>${escapeHtml(r.attendanceHours)}</td>
+          <td>${escapeHtml(r.leaveHours)} h</td>
+          <td>${escapeHtml(r.workDays)}</td>
+          <td>${escapeHtml(r.totalHours)} h</td>
+        </tr>
+      `).join("") || `<tr><td colspan="6" class="muted">Žádná data pro zvolený měsíc.</td></tr>`;
+
+      renderMyDashboard();
+      return rows;
+    }
+
+    async function loadEmployees() {
+      const { data, error } = await supabaseClient.from("employees").select("*").order("id");
+      if (error) {
+        showError("Nepodařilo se načíst zaměstnance: " + error.message);
+        return;
+      }
+      employees = data || [];
+    }
+
+    async function loadAttendance() {
+      const { data, error } = await supabaseClient.from("attendance").select("*").order("id");
+      if (error) {
+        showError("Nepodařilo se načíst docházku: " + error.message);
+        return;
+      }
+      attendance = data || [];
+    }
+
+    async function loadLeaves() {
+      const { data, error } = await supabaseClient.from("leaves").select("*").order("id");
+      if (error) {
+        showError("Nepodařilo se načíst dovolené: " + error.message);
+        return;
+      }
+      leaves = data || [];
+    }
+
+    function validateAttendancePayload(payload) {
+      if (!payload.employee_id) return "Vyberte zaměstnance.";
+      if (!payload.date) return "Vyberte datum.";
+      if (!payload.time_from || !payload.time_to) return "Vyplňte příchod i odchod.";
+      return "";
+    }
+
+    async function addAttendance() {
+      clearError();
+      clearSuccess();
+
+      const payload = {
+        employee_id: Number(document.getElementById("attendanceEmployee").value),
+        date: document.getElementById("attendanceDate").value,
+        office: document.getElementById("attendanceOffice").value.trim(),
+        type: document.getElementById("attendanceType").value,
+        time_from: document.getElementById("attendanceIn").value,
+        time_to: document.getElementById("attendanceOut").value,
+        break_minutes: Number(document.getElementById("attendanceBreak").value || 0)
+      };
+
+      const validation = validateAttendancePayload(payload);
+      if (validation) {
+        showError(validation);
+        return;
+      }
+
+      const { error } = await supabaseClient.from("attendance").insert(payload);
+      if (error) {
+        showError("Nepodařilo se uložit docházku: " + error.message);
+        return;
+      }
+
+      document.getElementById("attendanceOffice").value = "";
+      document.getElementById("attendanceIn").value = "";
+      document.getElementById("attendanceOut").value = "";
+      document.getElementById("attendanceBreak").value = 30;
+
+      await loadAttendance();
+      renderAttendance();
+      renderMonthlySummary();
+      showSuccess("Docházka byla uložena.");
+    }
+
+    async function addLeave() {
+      clearError();
+      clearSuccess();
+
+      const payload = {
+        employee_id: Number(document.getElementById("leaveEmployee").value),
+        date: document.getElementById("leaveDate").value,
+        hours: Number(document.getElementById("leaveHours").value || 0),
+        note: document.getElementById("leaveNote").value.trim(),
+        status: "čeká"
+      };
+
+      if (!payload.employee_id) {
+        showError("Vyberte zaměstnance.");
+        return;
+      }
+
+      if (!payload.date) {
+        showError("Vyberte datum dovolené.");
+        return;
+      }
+
+      if (payload.hours <= 0) {
+        showError("Počet hodin musí být větší než 0.");
+        return;
+      }
+
+      const { error } = await supabaseClient.from("leaves").insert(payload);
+      if (error) {
+        showError("Nepodařilo se uložit žádost o dovolenou: " + error.message);
+        return;
+      }
+
+      document.getElementById("leaveHours").value = 8;
+      document.getElementById("leaveNote").value = "";
+
+      await loadLeaves();
+      renderLeaves();
+      renderMonthlySummary();
+      showSuccess("Žádost o dovolenou byla uložena.");
+    }
+
+    async function approveLeave(id) {
+      clearError();
+      clearSuccess();
+
+      const { error } = await supabaseClient
+        .from("leaves")
+        .update({ status: "schváleno" })
+        .eq("id", id);
+
+      if (error) {
+        showError("Nepodařilo se schválit dovolenou: " + error.message);
+        return;
+      }
+
+      await loadLeaves();
+      renderLeaves();
+      renderMonthlySummary();
+      showSuccess("Dovolená byla schválena.");
+    }
+
+    async function quickCheckIn() {
+      clearError();
+      clearSuccess();
+
+      const employee_id = Number(document.getElementById("quickEmployee").value);
+      const office = document.getElementById("quickOffice").value.trim() || "Osoblaha";
+      const type = document.getElementById("quickType").value;
+      const break_minutes = Number(document.getElementById("quickBreak").value || 0);
+
+      if (!employee_id) {
+        showError("Vyberte zaměstnance.");
+        return;
+      }
+
+      const { error } = await supabaseClient.from("attendance").insert({
+        employee_id,
+        date: today(),
+        office,
+        type,
+        time_from: currentTimeValue(),
+        time_to: null,
+        break_minutes
+      });
+
+      if (error) {
+        showError("Nepodařilo se uložit příchod: " + error.message);
+        return;
+      }
+
+      await loadAttendance();
+      renderAttendance();
+      renderMonthlySummary();
+      showSuccess("Příchod byl uložen.");
+    }
+
+    async function quickCheckOut() {
+      clearError();
+      clearSuccess();
+
+      const employee_id = Number(document.getElementById("quickEmployee").value);
+
+      if (!employee_id) {
+        showError("Vyberte zaměstnance.");
+        return;
+      }
+
+      const openRecord = attendance
+        .filter(a =>
+          Number(a.employee_id) === employee_id &&
+          a.date === today() &&
+          !a.time_to
+        )
+        .sort((a, b) => Number(b.id || 0) - Number(a.id || 0))[0];
+
+      if (!openRecord) {
+        showError("Nebyl nalezen dnešní otevřený záznam pro odchod.");
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("attendance")
+        .update({ time_to: currentTimeValue() })
+        .eq("id", openRecord.id);
+
+      if (error) {
+        showError("Nepodařilo se uložit odchod: " + error.message);
+        return;
+      }
+
+      await loadAttendance();
+      renderAttendance();
+      renderMonthlySummary();
+      showSuccess("Odchod byl uložen.");
+    }
+
+    function resetEmployeeForm() {
+      document.getElementById("editEmployeeId").value = "";
+      document.getElementById("employeeFormTitle").textContent = "Přidat zaměstnance";
+      document.getElementById("saveEmployeeButton").textContent = "Uložit zaměstnance";
+      document.getElementById("cancelEditButton").classList.add("hidden");
+      document.getElementById("newEmployeeName").value = "";
+      document.getElementById("newEmployeeEmail").value = "";
+      document.getElementById("newEmployeeWeekly").value = 40;
+      document.getElementById("newEmployeeLeave").value = 200;
+      document.getElementById("newEmployeeLeaveDays").value = 25;
+      document.getElementById("newEmployeeOffice").value = "Osoblaha";
+    }
+
+    function startEmployeeEdit(id) {
+      if (!isAdmin()) return;
+
+      const e = employees.find(x => Number(x.id) === Number(id));
+      if (!e) {
+        showError("Zaměstnanec nebyl nalezen.");
+        return;
+      }
+
+      document.getElementById("editEmployeeId").value = e.id;
+      document.getElementById("employeeFormTitle").textContent = "Upravit zaměstnance";
+      document.getElementById("saveEmployeeButton").textContent = "Uložit změny";
+      document.getElementById("cancelEditButton").classList.remove("hidden");
+      document.getElementById("newEmployeeName").value = e.name || "";
+      document.getElementById("newEmployeeEmail").value = e.email || "";
+      document.getElementById("newEmployeeWeekly").value = e.weekly ?? 40;
+      document.getElementById("newEmployeeLeave").value = e.leave_hours ?? 200;
+      document.getElementById("newEmployeeLeaveDays").value = e.leave_days ?? 25;
+      document.getElementById("newEmployeeOffice").value = e.offices || "Osoblaha";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function cancelEmployeeEdit() {
+      resetEmployeeForm();
+    }
+
+    async function saveEmployee() {
+      clearError();
+      clearSuccess();
+
+      if (!isAdmin()) {
+        showError("Zaměstnance může spravovat pouze admin.");
+        return;
+      }
+
+      const id = document.getElementById("editEmployeeId").value;
+      const name = document.getElementById("newEmployeeName").value.trim();
+      const email = document.getElementById("newEmployeeEmail").value.trim();
+      const weekly = Number(document.getElementById("newEmployeeWeekly").value || 40);
+      const leave_hours = Number(document.getElementById("newEmployeeLeave").value || 200);
+      const leave_days = Number(document.getElementById("newEmployeeLeaveDays").value || 25);
+      const offices = document.getElementById("newEmployeeOffice").value.trim() || "Osoblaha";
+
+      if (!name || !email) {
+        showError("Vyplňte jméno a e-mail.");
+        return;
+      }
+
+      const payload = {
+        name,
+        email,
+        weekly,
+        leave_days,
+        leave_hours,
+        offices
+      };
+
+      let error;
+
+      if (id) {
+        ({ error } = await supabaseClient.from("employees").update(payload).eq("id", Number(id)));
+      } else {
+        ({ error } = await supabaseClient.from("employees").insert({
+          ...payload,
+          is_admin: false
+        }));
+      }
+
+      if (error) {
+        showError(id ? "Nepodařilo se upravit zaměstnance: " + error.message : "Nepodařilo se vytvořit zaměstnance: " + error.message);
+        return;
+      }
+
+      resetEmployeeForm();
+      await loadEmployees();
+      populateSelects();
+      renderEmployees();
+      showSuccess(id ? "Zaměstnanec byl upraven." : "Zaměstnanec byl přidán.");
+    }
+
+    async function deleteEmployee(id) {
+      clearError();
+      clearSuccess();
+
+      if (!isAdmin()) {
+        showError("Zaměstnance může mazat pouze admin.");
+        return;
+      }
+
+      const e = employees.find(x => Number(x.id) === Number(id));
+      if (!e) {
+        showError("Zaměstnanec nebyl nalezen.");
+        return;
+      }
+
+      const ok = confirm(`Opravdu smazat zaměstnance "${e.name}"?`);
+      if (!ok) return;
+
+      const { error } = await supabaseClient.from("employees").delete().eq("id", Number(id));
+
+      if (error) {
+        showError("Nepodařilo se smazat zaměstnance: " + error.message);
+        return;
+      }
+
+      await loadEmployees();
+      populateSelects();
+      renderEmployees();
+      showSuccess("Zaměstnanec byl smazán.");
+    }
+
+    function exportJson() {
+      const data = {
+        exported_at: new Date().toISOString(),
+        employees,
+        attendance,
+        leaves
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "dochazka-data.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportAttendanceCsv() {
+      const rows = [
+        ["Datum", "Zaměstnanec", "Místo", "Typ", "Příchod", "Odchod", "Pauza", "Odpracováno"]
+      ];
+
+      getFilteredAttendance().forEach(a => {
+        rows.push([
+          a.date,
+          employeeName(a.employee_id),
+          a.office ?? "",
+          a.type ?? "",
+          a.time_from ?? "",
+          a.time_to ?? "",
+          a.break_minutes ?? 0,
+          calcWorked(a.time_from, a.time_to, a.break_minutes)
+        ]);
+      });
+
+      const csv = rows
+        .map(r => r.map(v => `"${String(v).replaceAll('"', '""')}"`).join(";"))
+        .join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dochazka_${document.getElementById("attendanceFilterMonth").value || currentMonthValue()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportMonthExcel() {
+      const month = document.getElementById("summaryMonth").value || currentMonthValue();
+      const summary = renderMonthlySummary();
+
+      const attendanceRows = getFilteredAttendance()
+        .filter(a => monthMatches(a.date, month))
+        .map(a => ({
+          Datum: a.date,
+          Zaměstnanec: employeeName(a.employee_id),
+          Místo: a.office ?? "",
+          Typ: a.type ?? "",
+          Příchod: a.time_from ?? "",
+          Odchod: a.time_to ?? "",
+          Pauza_min: a.break_minutes ?? 0,
+          Odpracováno: calcWorked(a.time_from, a.time_to, a.break_minutes)
+        }));
+
+      const wsSummary = XLSX.utils.json_to_sheet(summary.map(r => ({
+        Zaměstnanec: r.employee,
+        Měsíc: r.month,
+        Docházka: r.attendanceHours,
+        Dovolená_hodiny: r.leaveHours,
+        Pracovní_dny: r.workDays,
+        Součet_hodin: r.totalHours
+      })));
+
+      const wsAttendance = XLSX.utils.json_to_sheet(attendanceRows);
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Souhrn");
+      XLSX.utils.book_append_sheet(wb, wsAttendance, "Docházka");
+
+      XLSX.writeFile(wb, `dochazka_souhrn_${month}.xlsx`);
+    }
+
+    async function reloadAll() {
+      await loadEmployees();
+      await resolveCurrentEmployeeProfile();
+      populateSelects();
+      await loadAttendance();
+      await loadLeaves();
+
+      renderEmployees();
+      renderAttendance();
+      renderLeaves();
+      renderMonthlySummary();
+      updateAuthUI();
+    }
+
+    async function initAuth() {
+      try {
+        const { data, error } = await supabaseClient.auth.getSession();
+
+        if (error) {
+          showError("Nepodařilo se načíst session: " + error.message);
+          currentSession = null;
+        } else {
+          currentSession = data.session || null;
+        }
+
+        authReady = true;
+        await reloadAll();
+
+        supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+          currentSession = session || null;
+          authReady = true;
+          await reloadAll();
+        });
+      } catch (error) {
+        authReady = true;
+        showError("Chyba inicializace auth.");
+        console.error(error);
+      }
+    }
+
+    function bindEvents() {
+      document.getElementById("loginButton").addEventListener("click", login);
+      document.getElementById("logoutButton").addEventListener("click", logout);
+      document.getElementById("quickInButton").addEventListener("click", quickCheckIn);
+      document.getElementById("quickOutButton").addEventListener("click", quickCheckOut);
+      document.getElementById("addAttendanceButton").addEventListener("click", addAttendance);
+      document.getElementById("addLeaveButton").addEventListener("click", addLeave);
+      document.getElementById("saveEmployeeButton").addEventListener("click", saveEmployee);
+      document.getElementById("cancelEditButton").addEventListener("click", cancelEmployeeEdit);
+      document.getElementById("reloadButton").addEventListener("click", reloadAll);
+      document.getElementById("showMonthButton").addEventListener("click", renderMonthlySummary);
+      document.getElementById("exportExcelButton").addEventListener("click", exportMonthExcel);
+      document.getElementById("exportJsonButton").addEventListener("click", exportJson);
+      document.getElementById("exportCsvButton").addEventListener("click", exportAttendanceCsv);
+      document.getElementById("attendanceFilterMonth").addEventListener("change", renderAttendance);
+      document.getElementById("attendanceFilterEmployee").addEventListener("change", renderAttendance);
+      document.getElementById("attendanceViewMode").addEventListener("change", renderAttendance);
+
+      document.getElementById("employeeTable").addEventListener("click", (e) => {
+        const editId = e.target.getAttribute("data-edit-id");
+        const deleteId = e.target.getAttribute("data-delete-id");
+
+        if (editId) startEmployeeEdit(Number(editId));
+        if (deleteId) deleteEmployee(Number(deleteId));
+      });
+
+      document.getElementById("leaveTable").addEventListener("click", (e) => {
+        const approveId = e.target.getAttribute("data-approve-leave-id");
+        if (approveId) approveLeave(Number(approveId));
+      });
+    }
+
+    async function init() {
+      document.getElementById("attendanceDate").value = today();
+      document.getElementById("leaveDate").value = today();
+      document.getElementById("summaryMonth").value = currentMonthValue();
+      document.getElementById("attendanceFilterMonth").value = currentMonthValue();
+
+      resetEmployeeForm();
+      bindEvents();
+      updateAuthUI();
+      await initAuth();
+    }
+
+    init();
+  </script>
 </body>
 </html>
