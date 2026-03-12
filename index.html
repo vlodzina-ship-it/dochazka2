@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Docházka v2 - Zaměstnanci</title>
+  <title>Docházka v3 - Zaměstnanci + Docházka</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -33,7 +33,7 @@
     }
 
     .wrap {
-      max-width: 1280px;
+      max-width: 1320px;
       margin: 0 auto;
       padding: 24px;
     }
@@ -64,7 +64,8 @@
       }
     }
 
-    .employees-layout {
+    .employees-layout,
+    .attendance-layout {
       display: grid;
       grid-template-columns: 1fr;
       gap: 20px;
@@ -74,6 +75,16 @@
       .employees-layout {
         grid-template-columns: 380px 1fr;
       }
+
+      .attendance-layout {
+        grid-template-columns: 420px 1fr;
+      }
+    }
+
+    .section-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
 
     .card {
@@ -107,7 +118,7 @@
       color: var(--muted);
     }
 
-    input, select {
+    input, select, textarea {
       width: 100%;
       padding: 12px;
       border-radius: 8px;
@@ -115,9 +126,10 @@
       background: var(--input);
       color: var(--text);
       outline: none;
+      resize: vertical;
     }
 
-    input:focus, select:focus {
+    input:focus, select:focus, textarea:focus {
       border-color: #60a5fa;
     }
 
@@ -242,7 +254,8 @@
       display: none;
     }
 
-    .employees-toolbar {
+    .employees-toolbar,
+    .attendance-toolbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -306,6 +319,26 @@
       color: var(--muted);
       background: rgba(255,255,255,0.02);
     }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .info-item {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+    }
+
+    .big-number {
+      font-size: 24px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
@@ -317,12 +350,12 @@
     <div class="grid-top">
       <section class="card">
         <div class="topline">
-          <h1>Docházka v2 - Zaměstnanci</h1>
+          <h1>Docházka v3 - Docházka</h1>
           <span id="sessionBadge" class="pill warn">bez session</span>
         </div>
 
         <p class="small">
-          Auth je ponechaný ve stejné logice jako ve verzi 1. Nad něj je přidaná pouze správa zaměstnanců.
+          Auth bootstrap zůstává zachovaný. Docházka ve verzi 3 funguje stylem: přihlášený uživatel zapisuje docházku sám sobě podle <span class="mono">auth_user_id</span>.
         </p>
 
         <form id="loginForm">
@@ -374,83 +407,155 @@
       </section>
     </div>
 
-    <section id="employeesSection" class="card hidden">
-      <div class="topline">
-        <h2>Zaměstnanci</h2>
-        <span class="small">verze 2: jen správa zaměstnanců, bez docházky</span>
-      </div>
+    <div id="appSection" class="section-stack hidden">
+      <section class="card">
+        <div class="topline">
+          <h2>Moje docházka</h2>
+          <span class="small">verze 3: přihlášený uživatel píše docházku sám sobě</span>
+        </div>
 
-      <div class="employees-layout">
-        <div class="card">
-          <h3 id="employeeFormTitle">Přidat zaměstnance</h3>
+        <div class="attendance-layout">
+          <div class="card">
+            <h3>Můj zaměstnanecký profil</h3>
 
-          <form id="employeeForm">
-            <input type="hidden" id="employeeId" />
-
-            <div class="row">
-              <label for="employeeName">Jméno</label>
-              <input id="employeeName" type="text" required />
+            <div id="attendanceProfileBox" class="muted-box">
+              Načítám vazbu mezi přihlášeným uživatelem a zaměstnancem...
             </div>
 
-            <div class="row">
-              <label for="employeeEmail">Email</label>
-              <input id="employeeEmail" type="email" required />
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="small">Otevřená směna</div>
+                <div id="openShiftValue" class="big-number">—</div>
+              </div>
+
+              <div class="info-item">
+                <div class="small">Dnešní příchod</div>
+                <div id="todayCheckInValue" class="big-number">—</div>
+              </div>
+
+              <div class="info-item">
+                <div class="small">Dnešní odchod</div>
+                <div id="todayCheckOutValue" class="big-number">—</div>
+              </div>
             </div>
 
-            <div class="row-inline">
-              <div class="row">
-                <label for="employeeRole">Role</label>
-                <select id="employeeRole" required>
-                  <option value="employee">employee</option>
-                  <option value="manager">manager</option>
-                  <option value="admin">admin</option>
-                </select>
-              </div>
-
-              <div class="row">
-                <label for="employeeActive">Aktivní</label>
-                <select id="employeeActive" required>
-                  <option value="true">ano</option>
-                  <option value="false">ne</option>
-                </select>
-              </div>
+            <div class="row" style="margin-top: 16px;">
+              <label for="attendanceNote">Poznámka</label>
+              <textarea id="attendanceNote" rows="3" placeholder="Volitelná poznámka k příchodu nebo odchodu"></textarea>
             </div>
 
             <div class="actions">
-              <button type="submit" id="employeeSubmitBtn">Uložit zaměstnance</button>
-              <button type="button" class="secondary" id="employeeCancelBtn">Zrušit editaci</button>
+              <button type="button" id="checkInBtn">Příchod</button>
+              <button type="button" class="secondary" id="checkOutBtn">Odchod</button>
+              <button type="button" class="secondary" id="reloadAttendanceBtn">Načíst znovu</button>
             </div>
-          </form>
 
-          <div id="employeeMessage" class="status warn">Přihlas se a načti zaměstnance.</div>
-        </div>
-
-        <div class="card">
-          <div class="employees-toolbar">
-            <h3>Seznam zaměstnanců</h3>
-            <button type="button" class="secondary" id="reloadEmployeesBtn">Načíst znovu</button>
+            <div id="attendanceMessage" class="status warn">Přihlas se a načti docházku.</div>
           </div>
 
-          <div id="employeesEmpty" class="muted-box">Zatím žádní zaměstnanci.</div>
+          <div class="card">
+            <div class="attendance-toolbar">
+              <h3>Moje poslední docházka</h3>
+            </div>
 
-          <div id="employeesTableWrap" class="table-wrap hidden">
-            <table>
-              <thead>
-                <tr>
-                  <th>Jméno</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Aktivní</th>
-                  <th>Vytvořeno</th>
-                  <th>Akce</th>
-                </tr>
-              </thead>
-              <tbody id="employeesTbody"></tbody>
-            </table>
+            <div id="attendanceEmpty" class="muted-box">Zatím žádné záznamy docházky.</div>
+
+            <div id="attendanceTableWrap" class="table-wrap hidden">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Příchod</th>
+                    <th>Odchod</th>
+                    <th>Poznámka</th>
+                    <th>Vytvořeno</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceTbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section id="employeesSection" class="card">
+        <div class="topline">
+          <h2>Zaměstnanci</h2>
+          <span class="small">verze 2 zůstává zachovaná</span>
+        </div>
+
+        <div class="employees-layout">
+          <div class="card">
+            <h3 id="employeeFormTitle">Přidat zaměstnance</h3>
+
+            <form id="employeeForm">
+              <input type="hidden" id="employeeId" />
+
+              <div class="row">
+                <label for="employeeName">Jméno</label>
+                <input id="employeeName" type="text" required />
+              </div>
+
+              <div class="row">
+                <label for="employeeEmail">Email</label>
+                <input id="employeeEmail" type="email" required />
+              </div>
+
+              <div class="row-inline">
+                <div class="row">
+                  <label for="employeeRole">Role</label>
+                  <select id="employeeRole" required>
+                    <option value="employee">employee</option>
+                    <option value="manager">manager</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+
+                <div class="row">
+                  <label for="employeeActive">Aktivní</label>
+                  <select id="employeeActive" required>
+                    <option value="true">ano</option>
+                    <option value="false">ne</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="actions">
+                <button type="submit" id="employeeSubmitBtn">Uložit zaměstnance</button>
+                <button type="button" class="secondary" id="employeeCancelBtn">Zrušit editaci</button>
+              </div>
+            </form>
+
+            <div id="employeeMessage" class="status warn">Přihlas se a načti zaměstnance.</div>
+          </div>
+
+          <div class="card">
+            <div class="employees-toolbar">
+              <h3>Seznam zaměstnanců</h3>
+              <button type="button" class="secondary" id="reloadEmployeesBtn">Načíst znovu</button>
+            </div>
+
+            <div id="employeesEmpty" class="muted-box">Zatím žádní zaměstnanci.</div>
+
+            <div id="employeesTableWrap" class="table-wrap hidden">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Jméno</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Aktivní</th>
+                    <th>Vytvořeno</th>
+                    <th>Akce</th>
+                  </tr>
+                </thead>
+                <tbody id="employeesTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -477,6 +582,7 @@
     const storageDumpEl = document.getElementById('storageDump');
     const sessionBadgeEl = document.getElementById('sessionBadge');
 
+    const appSectionEl = document.getElementById('appSection');
     const employeesSectionEl = document.getElementById('employeesSection');
     const employeeForm = document.getElementById('employeeForm');
     const employeeFormTitleEl = document.getElementById('employeeFormTitle');
@@ -494,8 +600,25 @@
     const employeeRoleEl = document.getElementById('employeeRole');
     const employeeActiveEl = document.getElementById('employeeActive');
 
+    const attendanceProfileBoxEl = document.getElementById('attendanceProfileBox');
+    const openShiftValueEl = document.getElementById('openShiftValue');
+    const todayCheckInValueEl = document.getElementById('todayCheckInValue');
+    const todayCheckOutValueEl = document.getElementById('todayCheckOutValue');
+    const attendanceNoteEl = document.getElementById('attendanceNote');
+    const checkInBtnEl = document.getElementById('checkInBtn');
+    const checkOutBtnEl = document.getElementById('checkOutBtn');
+    const reloadAttendanceBtnEl = document.getElementById('reloadAttendanceBtn');
+    const attendanceMessageEl = document.getElementById('attendanceMessage');
+    const attendanceEmptyEl = document.getElementById('attendanceEmpty');
+    const attendanceTableWrapEl = document.getElementById('attendanceTableWrap');
+    const attendanceTbodyEl = document.getElementById('attendanceTbody');
+
     const authEventLog = [];
     let employees = [];
+    let attendanceRows = [];
+    let currentSession = null;
+    let currentEmployee = null;
+    let currentOpenAttendance = null;
 
     function nowIso() {
       return new Date().toISOString();
@@ -517,6 +640,11 @@
     function setEmployeeMessage(text, type) {
       employeeMessageEl.textContent = text;
       employeeMessageEl.className = 'status ' + (type || 'warn');
+    }
+
+    function setAttendanceMessage(text, type) {
+      attendanceMessageEl.textContent = text;
+      attendanceMessageEl.className = 'status ' + (type || 'warn');
     }
 
     function setSessionBadge(hasSession) {
@@ -567,10 +695,14 @@
     }
 
     function renderUser(session) {
+      currentSession = session || null;
+
       if (!session || !session.user) {
         userInfoEl.textContent = 'Nikdo není přihlášen.';
         setSessionBadge(false);
-        employeesSectionEl.classList.add('hidden');
+        appSectionEl.classList.add('hidden');
+        currentEmployee = null;
+        currentOpenAttendance = null;
         return;
       }
 
@@ -584,7 +716,7 @@
       });
 
       setSessionBadge(true);
-      employeesSectionEl.classList.remove('hidden');
+      appSectionEl.classList.remove('hidden');
     }
 
     async function refreshDebug(reason) {
@@ -658,11 +790,32 @@
         .replaceAll("'", '&#039;');
     }
 
-    function formatDate(value) {
-      if (!value) return '';
+    function formatDateTime(value) {
+      if (!value) return '—';
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return value;
       return date.toLocaleString('cs-CZ');
+    }
+
+    function formatTimeOnly(value) {
+      if (!value) return '—';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleTimeString('cs-CZ', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
+    function isSameLocalDay(valueA, valueB) {
+      const a = new Date(valueA);
+      const b = new Date(valueB);
+      return (
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate()
+      );
     }
 
     function renderEmployees() {
@@ -689,7 +842,7 @@
               ${employee.active ? 'ano' : 'ne'}
             </span>
           </td>
-          <td>${escapeHtml(formatDate(employee.created_at))}</td>
+          <td>${escapeHtml(formatDateTime(employee.created_at))}</td>
           <td>
             <div class="actions">
               <button type="button" class="small secondary" data-action="edit" data-id="${employee.id}">Editovat</button>
@@ -699,6 +852,78 @@
         `;
 
         employeesTbodyEl.appendChild(tr);
+      }
+    }
+
+    function renderAttendanceProfile() {
+      if (!currentSession?.user) {
+        attendanceProfileBoxEl.textContent = 'Nejprve se přihlas.';
+        openShiftValueEl.textContent = '—';
+        todayCheckInValueEl.textContent = '—';
+        todayCheckOutValueEl.textContent = '—';
+        checkInBtnEl.disabled = true;
+        checkOutBtnEl.disabled = true;
+        return;
+      }
+
+      if (!currentEmployee) {
+        attendanceProfileBoxEl.innerHTML = `
+          Přihlášený uživatel zatím není spojený s žádným záznamem v <span class="mono">employees.auth_user_id</span>.<br><br>
+          Přihlášený user id:<br>
+          <span class="mono">${escapeHtml(currentSession.user.id)}</span>
+        `;
+        openShiftValueEl.textContent = 'ne';
+        todayCheckInValueEl.textContent = '—';
+        todayCheckOutValueEl.textContent = '—';
+        checkInBtnEl.disabled = true;
+        checkOutBtnEl.disabled = true;
+        return;
+      }
+
+      attendanceProfileBoxEl.innerHTML = `
+        <strong>${escapeHtml(currentEmployee.name || '')}</strong><br>
+        ${escapeHtml(currentEmployee.email || '')}<br>
+        role: <span class="mono">${escapeHtml(currentEmployee.role || '')}</span><br>
+        employee id: <span class="mono">${escapeHtml(currentEmployee.id)}</span><br>
+        auth_user_id: <span class="mono">${escapeHtml(currentEmployee.auth_user_id || '')}</span>
+      `;
+
+      checkInBtnEl.disabled = !!currentOpenAttendance;
+      checkOutBtnEl.disabled = !currentOpenAttendance;
+
+      if (currentOpenAttendance) {
+        openShiftValueEl.textContent = 'ano';
+      } else {
+        openShiftValueEl.textContent = 'ne';
+      }
+
+      const todayRow = attendanceRows.find(row => isSameLocalDay(row.check_in, new Date()));
+      todayCheckInValueEl.textContent = todayRow?.check_in ? formatTimeOnly(todayRow.check_in) : '—';
+      todayCheckOutValueEl.textContent = todayRow?.check_out ? formatTimeOnly(todayRow.check_out) : '—';
+    }
+
+    function renderAttendanceTable() {
+      attendanceTbodyEl.innerHTML = '';
+
+      if (!attendanceRows.length) {
+        attendanceEmptyEl.classList.remove('hidden');
+        attendanceTableWrapEl.classList.add('hidden');
+        return;
+      }
+
+      attendanceEmptyEl.classList.add('hidden');
+      attendanceTableWrapEl.classList.remove('hidden');
+
+      for (const row of attendanceRows) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(row.id)}</td>
+          <td>${escapeHtml(formatDateTime(row.check_in))}</td>
+          <td>${escapeHtml(formatDateTime(row.check_out))}</td>
+          <td>${escapeHtml(row.note || '')}</td>
+          <td>${escapeHtml(formatDateTime(row.created_at))}</td>
+        `;
+        attendanceTbodyEl.appendChild(tr);
       }
     }
 
@@ -729,6 +954,87 @@
       employees = Array.isArray(data) ? data : [];
       renderEmployees();
       setEmployeeMessage('Načteno zaměstnanců: ' + employees.length, 'ok');
+    }
+
+    async function resolveCurrentEmployee() {
+      if (!currentSession?.user?.id) {
+        currentEmployee = null;
+        renderAttendanceProfile();
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('employees')
+        .select('*')
+        .eq('auth_user_id', currentSession.user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        currentEmployee = null;
+        renderAttendanceProfile();
+        setAttendanceMessage('Chyba při hledání employee profilu: ' + error.message, 'err');
+        return;
+      }
+
+      currentEmployee = data || null;
+      renderAttendanceProfile();
+
+      if (!currentEmployee) {
+        setAttendanceMessage('Přihlášený uživatel nemá přiřazený employees.auth_user_id.', 'warn');
+      } else {
+        setAttendanceMessage('Načten zaměstnanec pro docházku: ' + currentEmployee.name, 'ok');
+      }
+    }
+
+    async function loadAttendance() {
+      if (!currentSession?.user) {
+        attendanceRows = [];
+        currentOpenAttendance = null;
+        renderAttendanceProfile();
+        renderAttendanceTable();
+        setAttendanceMessage('Nejprve se přihlas.', 'warn');
+        return;
+      }
+
+      await resolveCurrentEmployee();
+
+      if (!currentEmployee) {
+        attendanceRows = [];
+        currentOpenAttendance = null;
+        renderAttendanceTable();
+        return;
+      }
+
+      setAttendanceMessage('Načítám docházku...', 'warn');
+
+      const { data, error } = await supabaseClient
+        .from('attendance')
+        .select('*')
+        .eq('employee_id', currentEmployee.id)
+        .order('check_in', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        attendanceRows = [];
+        currentOpenAttendance = null;
+        renderAttendanceProfile();
+        renderAttendanceTable();
+        setAttendanceMessage('Chyba při načítání docházky: ' + error.message, 'err');
+        return;
+      }
+
+      attendanceRows = Array.isArray(data) ? data : [];
+      currentOpenAttendance = attendanceRows.find(row => !row.check_out) || null;
+
+      renderAttendanceProfile();
+      renderAttendanceTable();
+
+      if (currentOpenAttendance) {
+        setAttendanceMessage('Docházka načtena. Máš otevřenou směnu.', 'ok');
+      } else {
+        setAttendanceMessage('Docházka načtena. Nemáš otevřenou směnu.', 'ok');
+      }
     }
 
     async function createEmployee(payload) {
@@ -763,6 +1069,74 @@
       }
     }
 
+    async function doCheckIn() {
+      if (!currentEmployee) {
+        setAttendanceMessage('Pro příchod chybí propojení na employees.auth_user_id.', 'err');
+        return;
+      }
+
+      if (currentOpenAttendance) {
+        setAttendanceMessage('Nelze udělat nový příchod, dokud není ukončená otevřená směna.', 'err');
+        return;
+      }
+
+      const payload = {
+        employee_id: currentEmployee.id,
+        note: attendanceNoteEl.value.trim()
+      };
+
+      setAttendanceMessage('Zapisuji příchod...', 'warn');
+
+      const { error } = await supabaseClient
+        .from('attendance')
+        .insert([payload]);
+
+      if (error) {
+        setAttendanceMessage('Chyba při zápisu příchodu: ' + error.message, 'err');
+        return;
+      }
+
+      attendanceNoteEl.value = '';
+      await loadAttendance();
+      setAttendanceMessage('Příchod zapsán.', 'ok');
+    }
+
+    async function doCheckOut() {
+      if (!currentEmployee) {
+        setAttendanceMessage('Pro odchod chybí propojení na employees.auth_user_id.', 'err');
+        return;
+      }
+
+      if (!currentOpenAttendance) {
+        setAttendanceMessage('Nemáš otevřenou směnu, takže nelze zapsat odchod.', 'err');
+        return;
+      }
+
+      const currentNote = attendanceNoteEl.value.trim();
+      const newNote = currentNote
+        ? [currentOpenAttendance.note || '', currentNote].filter(Boolean).join(' | ')
+        : currentOpenAttendance.note || '';
+
+      setAttendanceMessage('Zapisuji odchod...', 'warn');
+
+      const { error } = await supabaseClient
+        .from('attendance')
+        .update({
+          check_out: new Date().toISOString(),
+          note: newNote
+        })
+        .eq('id', currentOpenAttendance.id);
+
+      if (error) {
+        setAttendanceMessage('Chyba při zápisu odchodu: ' + error.message, 'err');
+        return;
+      }
+
+      attendanceNoteEl.value = '';
+      await loadAttendance();
+      setAttendanceMessage('Odchod zapsán.', 'ok');
+    }
+
     supabaseClient.auth.onAuthStateChange((event, session) => {
       pushAuthEvent(event, session);
       renderUser(session);
@@ -773,13 +1147,20 @@
         setTimeout(() => {
           refreshDebug('after SIGNED_IN delayed');
           loadEmployees();
+          loadAttendance();
         }, 700);
       } else if (event === 'SIGNED_OUT') {
         setMessage('SIGNED_OUT proběhl.', 'warn');
         employees = [];
+        attendanceRows = [];
+        currentEmployee = null;
+        currentOpenAttendance = null;
         renderEmployees();
+        renderAttendanceProfile();
+        renderAttendanceTable();
         resetEmployeeForm();
         setEmployeeMessage('Odhlášeno. Přihlas se a načti zaměstnance.', 'warn');
+        setAttendanceMessage('Odhlášeno. Přihlas se a načti docházku.', 'warn');
         setTimeout(() => {
           refreshDebug('after SIGNED_OUT delayed');
         }, 100);
@@ -789,6 +1170,7 @@
           setTimeout(() => {
             refreshDebug('after INITIAL_SESSION delayed');
             loadEmployees();
+            loadAttendance();
           }, 100);
         } else {
           setMessage('INITIAL_SESSION: ve storage není aktivní session.', 'warn');
@@ -829,6 +1211,7 @@
       setTimeout(() => {
         refreshDebug('after signIn success delayed');
         loadEmployees();
+        loadAttendance();
       }, 700);
     });
 
@@ -861,6 +1244,18 @@
 
     reloadEmployeesBtnEl.addEventListener('click', async () => {
       await loadEmployees();
+    });
+
+    reloadAttendanceBtnEl.addEventListener('click', async () => {
+      await loadAttendance();
+    });
+
+    checkInBtnEl.addEventListener('click', async () => {
+      await doCheckIn();
+    });
+
+    checkOutBtnEl.addEventListener('click', async () => {
+      await doCheckOut();
     });
 
     employeeForm.addEventListener('submit', async (e) => {
@@ -903,7 +1298,7 @@
 
       const action = button.getAttribute('data-action');
       const id = button.getAttribute('data-id');
-      const employee = employees.find(item => item.id === id);
+      const employee = employees.find(item => String(item.id) === String(id));
 
       if (!employee) {
         setEmployeeMessage('Zaměstnanec nebyl nalezen v lokálním seznamu.', 'err');
@@ -924,10 +1319,11 @@
           setEmployeeMessage('Mažu zaměstnance...', 'warn');
           await deleteEmployee(id);
           setEmployeeMessage('Zaměstnanec smazán.', 'ok');
-          if (employeeIdEl.value === id) {
+          if (employeeIdEl.value === String(id)) {
             resetEmployeeForm();
           }
           await loadEmployees();
+          await loadAttendance();
         } catch (error) {
           setEmployeeMessage('Chyba při mazání zaměstnance: ' + error.message, 'err');
         }
@@ -936,7 +1332,10 @@
 
     (async function bootstrap() {
       resetEmployeeForm();
+      renderAttendanceProfile();
+      renderAttendanceTable();
       setEmployeeMessage('Přihlas se a načti zaměstnance.', 'warn');
+      setAttendanceMessage('Přihlas se a načti docházku.', 'warn');
       pushAuthEvent('BOOTSTRAP_START', null);
       await refreshDebug('initial page load');
     })();
