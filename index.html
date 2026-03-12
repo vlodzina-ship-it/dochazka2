@@ -23,12 +23,9 @@
       --danger-hover: #bd4343;
       --warn: #d7a01b;
       --input: #0a1124;
-      --shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -44,13 +41,9 @@
       padding: 24px;
     }
 
-    h1, h2, h3 {
-      margin: 0 0 14px 0;
-    }
+    h1, h2, h3 { margin: 0 0 14px 0; }
 
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
 
     .topbar {
       display: flex;
@@ -66,16 +59,13 @@
       font-weight: 700;
     }
 
-    .muted {
-      color: var(--muted);
-    }
+    .muted { color: var(--muted); }
 
     .card {
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 18px;
-      box-shadow: var(--shadow);
     }
 
     .stack {
@@ -122,15 +112,6 @@
       outline: none;
     }
 
-    input:focus, select:focus, textarea:focus {
-      border-color: #6f8fff;
-    }
-
-    textarea {
-      min-height: 90px;
-      resize: vertical;
-    }
-
     button {
       border: 0;
       border-radius: 10px;
@@ -145,37 +126,17 @@
       cursor: not-allowed;
     }
 
-    .btn-primary {
-      background: var(--primary);
-    }
+    .btn-primary { background: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); }
 
-    .btn-primary:hover {
-      background: var(--primary-hover);
-    }
+    .btn-secondary { background: var(--secondary); }
+    .btn-secondary:hover { background: var(--secondary-hover); }
 
-    .btn-secondary {
-      background: var(--secondary);
-    }
+    .btn-success { background: var(--success); }
+    .btn-success:hover { background: var(--success-hover); }
 
-    .btn-secondary:hover {
-      background: var(--secondary-hover);
-    }
-
-    .btn-success {
-      background: var(--success);
-    }
-
-    .btn-success:hover {
-      background: var(--success-hover);
-    }
-
-    .btn-danger {
-      background: var(--danger);
-    }
-
-    .btn-danger:hover {
-      background: var(--danger-hover);
-    }
+    .btn-danger { background: var(--danger); }
+    .btn-danger:hover { background: var(--danger-hover); }
 
     .actions {
       display: flex;
@@ -302,9 +263,7 @@
       background: rgba(255, 255, 255, 0.03);
     }
 
-    tr:last-child td {
-      border-bottom: 0;
-    }
+    tr:last-child td { border-bottom: 0; }
 
     .empty-box {
       padding: 14px;
@@ -325,9 +284,7 @@
     }
 
     @media (max-width: 1060px) {
-      .grid-main,
-      .grid-stats,
-      .grid-admin {
+      .grid-main, .grid-stats, .grid-admin {
         grid-template-columns: 1fr;
       }
 
@@ -511,55 +468,44 @@
 
     const loginView = document.getElementById("loginView");
     const appView = document.getElementById("appView");
-
     const emailEl = document.getElementById("email");
     const passwordEl = document.getElementById("password");
     const loginBtn = document.getElementById("loginBtn");
     const logoutBtn = document.getElementById("logoutBtn");
     const refreshBtn = document.getElementById("refreshBtn");
-
     const loginMessageEl = document.getElementById("loginMessage");
     const appMessageEl = document.getElementById("appMessage");
     const attendanceMessageEl = document.getElementById("attendanceMessage");
     const debugBoxEl = document.getElementById("debugBox");
-
     const sessionTextEl = document.getElementById("sessionText");
     const rolePillEl = document.getElementById("rolePill");
     const profileBoxEl = document.getElementById("profileBox");
-
     const openShiftValueEl = document.getElementById("openShiftValue");
     const todayArrivalValueEl = document.getElementById("todayArrivalValue");
     const todayDepartureValueEl = document.getElementById("todayDepartureValue");
-
     const officeEl = document.getElementById("office");
     const attendanceTypeEl = document.getElementById("attendanceType");
     const breakMinutesEl = document.getElementById("breakMinutes");
     const employeeOfficesInfoEl = document.getElementById("employeeOfficesInfo");
     const checkInBtn = document.getElementById("checkInBtn");
     const checkOutBtn = document.getElementById("checkOutBtn");
-
     const myAttendanceWrapEl = document.getElementById("myAttendanceWrap");
     const adminPanelEl = document.getElementById("adminPanel");
     const adminActiveWrapEl = document.getElementById("adminActiveWrap");
     const adminTodayWrapEl = document.getElementById("adminTodayWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
 
-    let currentSession = null;
     let currentUser = null;
     let currentEmployee = null;
     let myAttendanceRows = [];
     let myOpenShift = null;
     let isAdmin = false;
-    let realtimeChannel = null;
 
     function debugLog(...args) {
       const line = args.map(a => {
         if (typeof a === "string") return a;
-        try {
-          return JSON.stringify(a, null, 2);
-        } catch {
-          return String(a);
-        }
+        try { return JSON.stringify(a, null, 2); }
+        catch { return String(a); }
       }).join(" ");
       console.log(...args);
       debugBoxEl.textContent = line + "\n\n" + debugBoxEl.textContent;
@@ -587,32 +533,12 @@
       return `${yyyy}-${mm}-${dd}`;
     }
 
-    function nowTimeStr() {
-      const d = new Date();
-      const hh = String(d.getHours()).padStart(2, "0");
-      const mm = String(d.getMinutes()).padStart(2, "0");
-      const ss = String(d.getSeconds()).padStart(2, "0");
-      return `${hh}:${mm}:${ss}`;
-    }
-
-    function formatDateCZ(value) {
-      if (!value) return "—";
-      const parts = String(value).split("-");
-      if (parts.length !== 3) return value;
-      return `${parts[2]}. ${parts[1]}. ${parts[0]}`;
-    }
-
     function renderSimpleTable(columns, rows) {
-      if (!rows || !rows.length) {
-        return `<div class="empty-box">Žádná data.</div>`;
-      }
+      if (!rows || !rows.length) return `<div class="empty-box">Žádná data.</div>`;
 
       const thead = columns.map(c => `<th>${escapeHtml(c.label)}</th>`).join("");
       const tbody = rows.map(row => {
-        const tds = columns.map(c => {
-          const value = c.render ? c.render(row) : row[c.key];
-          return `<td>${value ?? ""}</td>`;
-        }).join("");
+        const tds = columns.map(c => `<td>${c.render ? c.render(row) : escapeHtml(row[c.key])}</td>`).join("");
         return `<tr>${tds}</tr>`;
       }).join("");
 
@@ -629,14 +555,12 @@
     function renderLoggedOut() {
       loginView.classList.remove("hidden");
       appView.classList.add("hidden");
-      currentSession = null;
       currentUser = null;
       currentEmployee = null;
       myAttendanceRows = [];
       myOpenShift = null;
       isAdmin = false;
       adminPanelEl.classList.add("hidden");
-      sessionTextEl.textContent = "Nikdo není přihlášen.";
       profileBoxEl.innerHTML = "Přihlas se.";
       rolePillEl.textContent = "bez role";
       rolePillEl.className = "pill pill-warn";
@@ -648,6 +572,7 @@
       adminActiveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminTodayWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       employeesWrapEl.innerHTML = `<div class="empty-box">Načítám zaměstnance…</div>`;
+      sessionTextEl.textContent = "Nikdo není přihlášen.";
       setMessage(appMessageEl, "Odhlášeno.", "warn");
       setMessage(attendanceMessageEl, "Přihlas se a načti docházku.", "warn");
       debugLog("renderLoggedOut");
@@ -663,7 +588,7 @@
       }
 
       setMessage(loginMessageEl, "Přihlašuji…", "warn");
-      debugLog("signIn start", { email });
+      debugLog("signIn", { email });
 
       const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
@@ -675,92 +600,31 @@
 
       passwordEl.value = "";
       setMessage(loginMessageEl, "Přihlášení proběhlo.", "ok");
-      debugLog("signIn ok");
     }
 
     async function signOut() {
-      debugLog("signOut start");
-
-      if (realtimeChannel) {
-        await supabaseClient.removeChannel(realtimeChannel);
-        realtimeChannel = null;
-      }
-
       const { error } = await supabaseClient.auth.signOut();
-
       if (error) {
-        debugLog("signOut error", error);
         setMessage(appMessageEl, "Logout chyba: " + error.message, "err");
         return;
       }
-
       renderLoggedOut();
     }
 
-    async function loadSession() {
-      debugLog("loadSession start");
-      const { data, error } = await supabaseClient.auth.getSession();
+    async function loadProfile() {
+      debugLog("loadProfile rpc start");
+      const { data, error } = await supabaseClient.rpc("get_my_employee_profile");
+      debugLog("loadProfile rpc result", { data, error });
 
-      if (error || !data?.session?.user) {
-        debugLog("loadSession no session", { error });
-        renderLoggedOut();
-        return;
-      }
+      if (error) throw error;
 
-      currentSession = data.session;
-      currentUser = data.session.user;
-
-      loginView.classList.add("hidden");
-      appView.classList.remove("hidden");
-      sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
-      debugLog("loadSession found session", { userId: currentUser.id, email: currentUser.email });
-
-      await loadAllData();
-      subscribeRealtime();
-    }
-
-    async function loadCurrentEmployee() {
-      if (!currentUser?.id) {
-        currentEmployee = null;
-        isAdmin = false;
-        debugLog("loadCurrentEmployee: missing currentUser.id");
-        return;
-      }
-
-      debugLog("loadCurrentEmployee query", { auth_user_id: currentUser.id });
-
-      const { data, error } = await supabaseClient
-        .from("employees")
-        .select("*")
-        .eq("auth_user_id", currentUser.id);
-
-      debugLog("loadCurrentEmployee result", { data, error });
-
-      if (error) {
-        currentEmployee = null;
-        isAdmin = false;
-        throw error;
-      }
-
-      if (!data || data.length === 0) {
-        currentEmployee = null;
-        isAdmin = false;
-        return;
-      }
-
-      currentEmployee = data[0];
-      isAdmin = !!(currentEmployee.role === "admin" || currentEmployee.is_admin === true);
+      currentEmployee = Array.isArray(data) && data.length ? data[0] : null;
+      isAdmin = !!(currentEmployee && (currentEmployee.role === "admin" || currentEmployee.is_admin === true));
     }
 
     function renderProfile() {
-      debugLog("renderProfile", currentEmployee);
-
       if (!currentEmployee) {
-        profileBoxEl.innerHTML = `
-          Přihlášený účet zatím není napárovaný na tabulku <span class="mono">employees</span>.<br><br>
-          <strong>auth_user_id:</strong><br>
-          <span class="mono">${escapeHtml(currentUser?.id || "")}</span>
-        `;
+        profileBoxEl.innerHTML = `Přihlášený účet není spárovaný s tabulkou <span class="mono">employees</span>.`;
         rolePillEl.textContent = "bez employee profilu";
         rolePillEl.className = "pill pill-warn";
         employeeOfficesInfoEl.value = "";
@@ -778,9 +642,6 @@
         active: <span class="mono">${escapeHtml(String(!!currentEmployee.active))}</span><br>
         employee id: <span class="mono">${escapeHtml(currentEmployee.id)}</span><br>
         auth_user_id: <span class="mono">${escapeHtml(currentEmployee.auth_user_id || "")}</span><br>
-        weekly: <span class="mono">${escapeHtml(currentEmployee.weekly || "—")}</span><br>
-        leave_days: <span class="mono">${escapeHtml(currentEmployee.leave_days ?? "—")}</span><br>
-        leave_hours: <span class="mono">${escapeHtml(currentEmployee.leave_hours ?? "—")}</span><br>
         offices: <span class="mono">${escapeHtml(currentEmployee.offices || "—")}</span>
       `;
 
@@ -795,22 +656,13 @@
         return;
       }
 
-      debugLog("loadMyAttendance start", { employee_id: currentEmployee.id });
-
-      const { data, error } = await supabaseClient
-        .from("attendance")
-        .select("*")
-        .eq("employee_id", currentEmployee.id)
-        .order("date", { ascending: false })
-        .order("id", { ascending: false })
-        .limit(30);
-
-      debugLog("loadMyAttendance result", { data, error });
+      const { data, error } = await supabaseClient.rpc("get_my_attendance_rows", { p_limit: 30 });
+      debugLog("loadMyAttendance rpc result", { data, error });
 
       if (error) throw error;
 
       myAttendanceRows = Array.isArray(data) ? data : [];
-      myOpenShift = myAttendanceRows.find(row => !row.time_to) || null;
+      myOpenShift = myAttendanceRows.find(r => !r.time_to) || null;
       renderMyAttendance();
     }
 
@@ -846,7 +698,7 @@
       myAttendanceWrapEl.innerHTML = renderSimpleTable(
         [
           { label: "ID", render: r => escapeHtml(r.id) },
-          { label: "Datum", render: r => escapeHtml(formatDateCZ(r.date)) },
+          { label: "Datum", render: r => escapeHtml(r.date) },
           { label: "Místo", render: r => escapeHtml(r.office || "") },
           { label: "Typ", render: r => escapeHtml(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") },
@@ -858,200 +710,88 @@
     }
 
     async function doCheckIn() {
-      if (!currentEmployee) {
-        setMessage(attendanceMessageEl, "Přihlášený účet nemá přiřazený řádek v employees.", "err");
-        return;
-      }
+      const { error } = await supabaseClient.rpc("rpc_check_in", {
+        p_office: officeEl.value,
+        p_type: attendanceTypeEl.value,
+        p_break_minutes: Number(breakMinutesEl.value || 0)
+      });
 
-      if (myOpenShift) {
-        setMessage(attendanceMessageEl, "Už máš otevřenou směnu. Nejdřív udělej odchod.", "err");
-        return;
-      }
-
-      const payload = {
-        employee_id: currentEmployee.id,
-        date: todayStr(),
-        office: officeEl.value,
-        type: attendanceTypeEl.value,
-        time_from: nowTimeStr(),
-        time_to: null,
-        break_minutes: Number(breakMinutesEl.value || 0)
-      };
-
-      debugLog("doCheckIn payload", payload);
-      setMessage(attendanceMessageEl, "Zapisuji příchod…", "warn");
-
-      const { error } = await supabaseClient
-        .from("attendance")
-        .insert([payload]);
-
-      debugLog("doCheckIn result", { error });
+      debugLog("rpc_check_in result", { error });
 
       if (error) {
         setMessage(attendanceMessageEl, "Chyba při zápisu příchodu: " + error.message, "err");
         return;
       }
 
-      await loadMyAttendance();
-
-      if (isAdmin) {
-        await Promise.all([loadAdminActiveEmployees(), loadAdminTodayAttendance()]);
-      }
-
+      await loadAllData();
       setMessage(attendanceMessageEl, "Příchod zapsán.", "ok");
     }
 
     async function doCheckOut() {
-      if (!currentEmployee) {
-        setMessage(attendanceMessageEl, "Přihlášený účet nemá přiřazený řádek v employees.", "err");
-        return;
-      }
+      const { error } = await supabaseClient.rpc("rpc_check_out", {
+        p_office: officeEl.value,
+        p_type: attendanceTypeEl.value,
+        p_break_minutes: Number(breakMinutesEl.value || 0)
+      });
 
-      if (!myOpenShift) {
-        setMessage(attendanceMessageEl, "Nemáš otevřenou směnu.", "err");
-        return;
-      }
-
-      const payload = {
-        time_to: nowTimeStr(),
-        office: officeEl.value,
-        type: attendanceTypeEl.value,
-        break_minutes: Number(breakMinutesEl.value || 0)
-      };
-
-      debugLog("doCheckOut payload", { id: myOpenShift.id, payload });
-      setMessage(attendanceMessageEl, "Zapisuji odchod…", "warn");
-
-      const { error } = await supabaseClient
-        .from("attendance")
-        .update(payload)
-        .eq("id", myOpenShift.id);
-
-      debugLog("doCheckOut result", { error });
+      debugLog("rpc_check_out result", { error });
 
       if (error) {
         setMessage(attendanceMessageEl, "Chyba při zápisu odchodu: " + error.message, "err");
         return;
       }
 
-      await loadMyAttendance();
-
-      if (isAdmin) {
-        await Promise.all([loadAdminActiveEmployees(), loadAdminTodayAttendance()]);
-      }
-
+      await loadAllData();
       setMessage(attendanceMessageEl, "Odchod zapsán.", "ok");
     }
 
-    async function loadAdminActiveEmployees() {
+    async function loadAdminData() {
       if (!isAdmin) {
-        adminActiveWrapEl.innerHTML = `<div class="empty-box">Jen pro admina.</div>`;
+        adminPanelEl.classList.add("hidden");
         return;
       }
 
-      const today = todayStr();
-      debugLog("loadAdminActiveEmployees start", { today });
+      adminPanelEl.classList.remove("hidden");
 
-      const { data, error } = await supabaseClient
-        .from("attendance")
-        .select(`
-          id,
-          employee_id,
-          date,
-          office,
-          type,
-          time_from,
-          time_to,
-          break_minutes,
-          employees (
-            id,
-            name,
-            email
-          )
-        `)
-        .eq("date", today)
-        .is("time_to", null)
-        .order("time_from", { ascending: true });
+      const [locationsRes, todayRes, employeesRes] = await Promise.all([
+        supabaseClient.rpc("get_admin_today_locations"),
+        supabaseClient.rpc("get_admin_today_attendance"),
+        supabaseClient.rpc("get_admin_employees")
+      ]);
 
-      debugLog("loadAdminActiveEmployees result", { data, error });
+      debugLog("admin rpc results", {
+        locationsError: locationsRes.error,
+        todayError: todayRes.error,
+        employeesError: employeesRes.error
+      });
 
-      if (error) throw error;
+      if (locationsRes.error) throw locationsRes.error;
+      if (todayRes.error) throw todayRes.error;
+      if (employeesRes.error) throw employeesRes.error;
 
       adminActiveWrapEl.innerHTML = renderSimpleTable(
         [
-          { label: "Zaměstnanec", render: r => escapeHtml(r.employees?.name || "") },
-          { label: "E-mail", render: r => escapeHtml(r.employees?.email || "") },
+          { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name || "") },
+          { label: "E-mail", render: r => escapeHtml(r.employee_email || "") },
           { label: "Místo", render: r => escapeHtml(r.office || "") },
           { label: "Typ", render: r => escapeHtml(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") }
         ],
-        data || []
+        locationsRes.data || []
       );
-    }
-
-    async function loadAdminTodayAttendance() {
-      if (!isAdmin) {
-        adminTodayWrapEl.innerHTML = `<div class="empty-box">Jen pro admina.</div>`;
-        return;
-      }
-
-      const today = todayStr();
-      debugLog("loadAdminTodayAttendance start", { today });
-
-      const { data, error } = await supabaseClient
-        .from("attendance")
-        .select(`
-          id,
-          employee_id,
-          date,
-          office,
-          type,
-          time_from,
-          time_to,
-          break_minutes,
-          employees (
-            id,
-            name,
-            email
-          )
-        `)
-        .eq("date", today)
-        .order("id", { ascending: false });
-
-      debugLog("loadAdminTodayAttendance result", { data, error });
-
-      if (error) throw error;
 
       adminTodayWrapEl.innerHTML = renderSimpleTable(
         [
           { label: "ID", render: r => escapeHtml(r.id) },
-          { label: "Zaměstnanec", render: r => escapeHtml(r.employees?.name || "") },
+          { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name || "") },
           { label: "Místo", render: r => escapeHtml(r.office || "") },
           { label: "Typ", render: r => escapeHtml(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") },
           { label: "Do", render: r => escapeHtml(r.time_to || "—") },
           { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") }
         ],
-        data || []
+        todayRes.data || []
       );
-    }
-
-    async function loadEmployeesPreview() {
-      if (!isAdmin) {
-        employeesWrapEl.innerHTML = `<div class="empty-box">Jen pro admina.</div>`;
-        return;
-      }
-
-      debugLog("loadEmployeesPreview start");
-
-      const { data, error } = await supabaseClient
-        .from("employees")
-        .select("id, name, email, role, is_admin, active, auth_user_id, offices")
-        .order("id", { ascending: true });
-
-      debugLog("loadEmployeesPreview result", { data, error });
-
-      if (error) throw error;
 
       employeesWrapEl.innerHTML = renderSimpleTable(
         [
@@ -1063,7 +803,7 @@
           { label: "Aktivní", render: r => escapeHtml(String(!!r.active)) },
           { label: "Offices", render: r => escapeHtml(r.offices || "—") }
         ],
-        data || []
+        employeesRes.data || []
       );
     }
 
@@ -1072,37 +812,13 @@
         debugLog("loadAllData START");
         setMessage(appMessageEl, "Načítám data…", "warn");
 
-        await loadCurrentEmployee();
-        debugLog("after loadCurrentEmployee", currentEmployee);
-
+        await loadProfile();
         renderProfile();
-        debugLog("after renderProfile");
-
         await loadMyAttendance();
-        debugLog("after loadMyAttendance", { rows: myAttendanceRows.length, openShift: myOpenShift });
-
-        if (isAdmin) {
-          adminPanelEl.classList.remove("hidden");
-          debugLog("user is admin");
-          await Promise.all([
-            loadAdminActiveEmployees(),
-            loadAdminTodayAttendance(),
-            loadEmployeesPreview()
-          ]);
-          debugLog("after admin loads");
-        } else {
-          adminPanelEl.classList.add("hidden");
-          debugLog("user is not admin");
-        }
+        await loadAdminData();
 
         setMessage(appMessageEl, "Data načtena.", "ok");
-
-        if (!currentEmployee) {
-          setMessage(attendanceMessageEl, "Přihlášený účet nemá přiřazený employees.auth_user_id.", "warn");
-        } else {
-          setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
-        }
-
+        setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
         debugLog("loadAllData DONE");
       } catch (error) {
         debugLog("loadAllData ERROR", error);
@@ -1110,24 +826,20 @@
       }
     }
 
-    function subscribeRealtime() {
-      if (realtimeChannel) return;
+    async function loadSession() {
+      const { data, error } = await supabaseClient.auth.getSession();
+      debugLog("loadSession", { hasSession: !!data?.session, error });
 
-      debugLog("subscribeRealtime");
+      if (error || !data?.session?.user) {
+        renderLoggedOut();
+        return;
+      }
 
-      realtimeChannel = supabaseClient
-        .channel("attendance-live")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "attendance" },
-          async () => {
-            debugLog("realtime attendance change");
-            if (currentUser) {
-              await loadAllData();
-            }
-          }
-        )
-        .subscribe();
+      currentUser = data.session.user;
+      loginView.classList.add("hidden");
+      appView.classList.remove("hidden");
+      sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
+      await loadAllData();
     }
 
     loginBtn.addEventListener("click", signIn);
@@ -1140,24 +852,21 @@
       if (e.key === "Enter") signIn();
     });
 
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      debugLog("onAuthStateChange", { event, hasSession: !!session, email: session?.user?.email || null });
+    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+      debugLog("onAuthStateChange", { event: _event, hasSession: !!session });
 
       if (session?.user) {
-        currentSession = session;
         currentUser = session.user;
         loginView.classList.add("hidden");
         appView.classList.remove("hidden");
         sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
         await loadAllData();
-        subscribeRealtime();
       } else {
         renderLoggedOut();
       }
     });
 
     (async function bootstrap() {
-      debugLog("bootstrap start");
       renderLoggedOut();
       await loadSession();
     })();
