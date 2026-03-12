@@ -1,119 +1,278 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Supabase Auth test</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 640px;
-      margin: 40px auto;
+      max-width: 760px;
+      margin: 30px auto;
       padding: 20px;
+      background: #f8fafc;
+      color: #0f172a;
     }
-
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 6px 0;
+    .card {
+      background: #fff;
+      border: 1px solid #dbe3ea;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    h1, h2 { margin: 0 0 12px; }
+    label {
+      display: block;
+      margin: 10px 0 6px;
       font-size: 14px;
+      font-weight: 700;
     }
-
-    pre {
-      background: #f4f4f4;
-      padding: 12px;
+    input, button, pre {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 14px;
       border-radius: 8px;
+    }
+    input {
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+    }
+    button {
+      padding: 10px 12px;
+      border: none;
+      background: #0f172a;
+      color: white;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button.secondary {
+      background: #475569;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    pre {
+      background: #f1f5f9;
+      padding: 12px;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
+      min-height: 120px;
+      border: 1px solid #e2e8f0;
+    }
+    .status {
+      font-size: 13px;
+      margin-top: 8px;
+      color: #475569;
     }
   </style>
 </head>
 <body>
   <h1>Supabase Auth test</h1>
 
-  <input id="email" type="email" placeholder="email">
-  <input id="password" type="password" placeholder="heslo">
+  <div class="card">
+    <h2>Přihlášení</h2>
 
-  <button onclick="login()">Přihlásit</button>
-  <button onclick="logout()">Odhlásit</button>
-  <button onclick="checkSession()">Zkontrolovat session</button>
+    <label for="email">E-mail</label>
+    <input id="email" type="email" placeholder="např. admin@firma.cz" value="novakova@osoblazskyech.cz" />
 
-  <h2>Výstup</h2>
-  <pre id="output">Načítám...</pre>
+    <label for="password">Heslo</label>
+    <input id="password" type="password" placeholder="heslo" />
+
+    <button id="loginBtn">Přihlásit</button>
+    <button id="logoutBtn" class="secondary">Odhlásit</button>
+    <button id="checkBtn" class="secondary">Zkontrolovat session</button>
+
+    <div class="status" id="statusLine">Inicializuji klienta…</div>
+  </div>
+
+  <div class="card">
+    <h2>Výstup</h2>
+    <pre id="output">Načítám…</pre>
+  </div>
 
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
     const SUPABASE_KEY = "sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-";
 
-    const supabaseClient = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true
-        }
-      }
-    );
-
     const output = document.getElementById("output");
+    const statusLine = document.getElementById("statusLine");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const checkBtn = document.getElementById("checkBtn");
+
+    let supabaseClient = null;
+
+    function setStatus(text) {
+      statusLine.textContent = text;
+      console.log("STATUS:", text);
+    }
 
     function print(title, data) {
       output.textContent = title + "\n\n" + JSON.stringify(data, null, 2);
       console.log(title, data);
     }
 
-    async function checkSession() {
-      const { data, error } = await supabaseClient.auth.getSession();
+    function printError(title, error) {
+      const safe = {
+        message: error?.message || String(error),
+        name: error?.name || null,
+        stack: error?.stack || null
+      };
+      output.textContent = title + "\n\n" + JSON.stringify(safe, null, 2);
+      console.error(title, error);
+    }
 
+    function collectStorage() {
       const storageKeys = Object.keys(localStorage).filter(
         key => key.includes("supabase") || key.includes("sb-") || key.includes("auth")
       );
-
       const storageDump = {};
       for (const key of storageKeys) {
         storageDump[key] = localStorage.getItem(key);
       }
+      return { storageKeys, storageDump };
+    }
 
-      print("SESSION CHECK", {
-        session: data?.session ?? null,
-        user: data?.session?.user ?? null,
-        error: error ?? null,
-        storageKeys,
-        storageDump
-      });
+    window.addEventListener("error", (event) => {
+      printError("WINDOW ERROR", event.error || event.message);
+    });
+
+    window.addEventListener("unhandledrejection", (event) => {
+      printError("PROMISE ERROR", event.reason);
+    });
+
+    async function initClient() {
+      try {
+        setStatus("Inicializuji Supabase klienta…");
+
+        if (!window.supabase || !window.supabase.createClient) {
+          throw new Error("Knihovna supabase-js se nenačetla.");
+        }
+
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          }
+        });
+
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+          print("AUTH EVENT " + event, {
+            session,
+            user: session?.user ?? null,
+            ...collectStorage()
+          });
+        });
+
+        const { data, error } = await supabaseClient.auth.getSession();
+
+        setStatus("Klient připraven.");
+        print("INIT OK", {
+          session: data?.session ?? null,
+          user: data?.session?.user ?? null,
+          error: error ?? null,
+          ...collectStorage()
+        });
+      } catch (error) {
+        setStatus("Inicializace selhala.");
+        printError("INIT ERROR", error);
+      }
     }
 
     async function login() {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
+      try {
+        if (!supabaseClient) {
+          throw new Error("Supabase klient není inicializovaný.");
+        }
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
 
-      print("LOGIN RESULT", { data, error });
-      await checkSession();
+        if (!email || !password) {
+          throw new Error("Vyplň e-mail i heslo.");
+        }
+
+        loginBtn.disabled = true;
+        setStatus("Probíhá přihlášení…");
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        print("LOGIN RESULT", {
+          data,
+          error,
+          ...collectStorage()
+        });
+
+        if (error) {
+          setStatus("Přihlášení selhalo.");
+        } else {
+          setStatus("Přihlášení dokončeno.");
+        }
+      } catch (error) {
+        setStatus("Přihlášení spadlo chybou.");
+        printError("LOGIN ERROR", error);
+      } finally {
+        loginBtn.disabled = false;
+      }
     }
 
     async function logout() {
-      const { error } = await supabaseClient.auth.signOut();
+      try {
+        if (!supabaseClient) {
+          throw new Error("Supabase klient není inicializovaný.");
+        }
 
-      print("LOGOUT", { error });
-      await checkSession();
+        setStatus("Probíhá odhlášení…");
+
+        const { error } = await supabaseClient.auth.signOut();
+
+        print("LOGOUT RESULT", {
+          error,
+          ...collectStorage()
+        });
+
+        setStatus(error ? "Odhlášení selhalo." : "Odhlášení dokončeno.");
+      } catch (error) {
+        setStatus("Odhlášení spadlo chybou.");
+        printError("LOGOUT ERROR", error);
+      }
     }
 
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      print("AUTH EVENT " + event, {
-        session,
-        user: session?.user ?? null
-      });
-    });
+    async function checkSession() {
+      try {
+        if (!supabaseClient) {
+          throw new Error("Supabase klient není inicializovaný.");
+        }
 
-    checkSession();
+        setStatus("Kontroluji session…");
+
+        const { data, error } = await supabaseClient.auth.getSession();
+
+        print("SESSION CHECK", {
+          session: data?.session ?? null,
+          user: data?.session?.user ?? null,
+          error: error ?? null,
+          ...collectStorage()
+        });
+
+        setStatus("Kontrola session dokončena.");
+      } catch (error) {
+        setStatus("Kontrola session spadla chybou.");
+        printError("SESSION CHECK ERROR", error);
+      }
+    }
+
+    loginBtn.addEventListener("click", login);
+    logoutBtn.addEventListener("click", logout);
+    checkBtn.addEventListener("click", checkSession);
+
+    initClient();
   </script>
 </body>
 </html>
