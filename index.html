@@ -121,11 +121,6 @@
       color: white;
     }
 
-    button.info {
-      background: var(--info);
-      color: white;
-    }
-
     .table-wrap {
       width: 100%;
       overflow-x: auto;
@@ -549,7 +544,7 @@
         </div>
 
         <div class="note">
-          Nový zaměstnanec se přidá do tabulky employees. Aby po loginu viděl svůj profil, musí mít v tabulce employees vyplněné auth_user_id nebo e-mail shodný s Auth účtem.
+          Nový zaměstnanec se přidá do tabulky employees. Aby po loginu viděl svůj profil, musí mít e-mail shodný s Auth účtem nebo vyplněné auth_user_id.
         </div>
       </div>
     </div>
@@ -656,12 +651,14 @@
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
     const SUPABASE_KEY = "sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-";
+    const AUTH_STORAGE_KEY = "dochazka2-auth";
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: true,
+        storageKey: AUTH_STORAGE_KEY
       }
     });
 
@@ -671,6 +668,7 @@
     let currentSession = null;
     let currentEmployeeProfile = null;
     let authReady = false;
+    let authSubscriptionBound = false;
 
     function today() {
       const d = new Date();
@@ -844,18 +842,25 @@
         return;
       }
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
+      const button = document.getElementById("loginButton");
+      button.disabled = true;
 
-      if (error) {
-        showError("Přihlášení se nezdařilo: " + error.message);
-        return;
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          showError("Přihlášení se nezdařilo: " + error.message);
+          return;
+        }
+
+        currentSession = data.session || null;
+        showSuccess("Přihlášení proběhlo úspěšně.");
+      } finally {
+        button.disabled = false;
       }
-
-      currentSession = data.session || null;
-      showSuccess("Přihlášení proběhlo úspěšně.");
     }
 
     async function logout() {
@@ -880,12 +885,13 @@
       const user = currentSession?.user;
       if (!user?.id && !user?.email) return;
 
-      let query = supabaseClient
-        .from("employees")
-        .select("*");
-
       if (user.id) {
-        const byId = await query.eq("auth_user_id", user.id).maybeSingle();
+        const byId = await supabaseClient
+          .from("employees")
+          .select("*")
+          .eq("auth_user_id", user.id)
+          .maybeSingle();
+
         if (!byId.error && byId.data) {
           currentEmployeeProfile = byId.data;
           return;
@@ -1606,6 +1612,8 @@
     }
 
     async function initAuth() {
+      updateAuthUI();
+
       try {
         const { data, error } = await supabaseClient.auth.getSession();
 
@@ -1619,15 +1627,20 @@
         authReady = true;
         await reloadAll();
 
-        supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-          currentSession = session || null;
-          authReady = true;
-          await reloadAll();
-        });
+        if (!authSubscriptionBound) {
+          authSubscriptionBound = true;
+
+          supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+            currentSession = session || null;
+            authReady = true;
+            await reloadAll();
+          });
+        }
       } catch (error) {
+        console.error(error);
         authReady = true;
         showError("Chyba inicializace auth.");
-        console.error(error);
+        updateAuthUI();
       }
     }
 
@@ -1671,11 +1684,10 @@
 
       resetEmployeeForm();
       bindEvents();
-      updateAuthUI();
       await initAuth();
     }
 
-    init();
+    window.addEventListener("load", init);
   </script>
 </body>
 </html>
