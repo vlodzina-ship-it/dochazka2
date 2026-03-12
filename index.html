@@ -13,17 +13,18 @@
 
 body{
 font-family:Arial;
-margin:40px;
 background:#f6f7fb;
+margin:0;
+padding:40px;
 }
 
-.container{
-max-width:600px;
+.box{
+max-width:420px;
 margin:auto;
 background:white;
 padding:30px;
 border-radius:10px;
-box-shadow:0 5px 20px rgba(0,0,0,0.05);
+box-shadow:0 5px 20px rgba(0,0,0,0.08);
 }
 
 input,button{
@@ -33,19 +34,14 @@ margin-top:8px;
 }
 
 button{
-cursor:pointer;
 background:#0f172a;
 color:white;
 border:none;
+cursor:pointer;
 }
 
 .logout{
 background:#64748b;
-}
-
-.status{
-margin-top:10px;
-font-size:14px;
 }
 
 </style>
@@ -54,29 +50,26 @@ font-size:14px;
 
 <body>
 
-<div class="container">
+<div class="box">
 
 <h2>Docházkový systém</h2>
 
 <div id="loginBox">
 
-<input id="email" type="email" placeholder="email">
-
+<input id="email" placeholder="email">
 <input id="password" type="password" placeholder="heslo">
 
-<button onclick="login()">Přihlásit</button>
+<button id="loginBtn">Přihlásit</button>
 
 </div>
 
 <div id="appBox" style="display:none">
 
-<p><b>Přihlášen:</b> <span id="userEmail"></span></p>
+<p>Přihlášen: <b id="userEmail"></b></p>
 
-<button class="logout" onclick="logout()">Odhlásit</button>
+<button class="logout" id="logoutBtn">Odhlásit</button>
 
 </div>
-
-<div class="status" id="status"></div>
 
 </div>
 
@@ -86,7 +79,7 @@ const SUPABASE_URL="https://avjkkdfzzudtmlqolbzk.supabase.co"
 
 const SUPABASE_KEY="sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-"
 
-const supabase=window.supabase.createClient(
+const supabaseClient = window.supabase.createClient(
 SUPABASE_URL,
 SUPABASE_KEY,
 {
@@ -98,67 +91,52 @@ detectSessionInUrl:true
 }
 )
 
-const status=document.getElementById("status")
+const loginBox=document.getElementById("loginBox")
+const appBox=document.getElementById("appBox")
+const userEmail=document.getElementById("userEmail")
 
-function setStatus(text){
+function showLogin(){
 
-status.innerText=text
+loginBox.style.display="block"
+appBox.style.display="none"
 
 }
 
-async function login(){
+function showApp(user){
+
+loginBox.style.display="none"
+appBox.style.display="block"
+userEmail.innerText=user.email
+
+}
+
+document.getElementById("loginBtn").onclick = async () => {
 
 const email=document.getElementById("email").value
 const password=document.getElementById("password").value
 
-setStatus("Přihlašuji...")
-
-const {data,error}=await supabase.auth.signInWithPassword({
+const {data,error}=await supabaseClient.auth.signInWithPassword({
 email,
 password
 })
 
 if(error){
 
-setStatus("Chyba: "+error.message)
+alert(error.message)
 
 return
 
 }
 
-setStatus("Přihlášeno")
+}
+
+document.getElementById("logoutBtn").onclick = async () => {
+
+await supabaseClient.auth.signOut()
 
 }
 
-async function logout(){
-
-await supabase.auth.signOut()
-
-setStatus("Odhlášeno")
-
-}
-
-function showApp(user){
-
-document.getElementById("loginBox").style.display="none"
-
-document.getElementById("appBox").style.display="block"
-
-document.getElementById("userEmail").innerText=user.email
-
-}
-
-function showLogin(){
-
-document.getElementById("loginBox").style.display="block"
-
-document.getElementById("appBox").style.display="none"
-
-}
-
-supabase.auth.onAuthStateChange((event,session)=>{
-
-console.log("AUTH EVENT",event)
+supabaseClient.auth.onAuthStateChange((event,session)=>{
 
 if(session){
 
@@ -174,7 +152,7 @@ showLogin()
 
 async function init(){
 
-const {data}=await supabase.auth.getSession()
+const {data}=await supabaseClient.auth.getSession()
 
 if(data.session){
 
