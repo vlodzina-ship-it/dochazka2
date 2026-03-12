@@ -1,113 +1,148 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Supabase Auth test</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-    }
-    input, button {
-      padding: 10px;
-      margin: 6px 0;
-      width: 100%;
-      max-width: 420px;
-      display: block;
-    }
-    pre {
-      background: #f4f4f4;
-      padding: 12px;
-      border-radius: 8px;
-      overflow: auto;
-      white-space: pre-wrap;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supabase Auth test</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body{
+font-family:Arial;
+max-width:600px;
+margin:auto;
+padding:40px;
+}
+
+input,button{
+width:100%;
+padding:10px;
+margin:6px 0;
+}
+
+pre{
+background:#f4f4f4;
+padding:12px;
+border-radius:8px;
+white-space:pre-wrap;
+}
+</style>
+
 </head>
 <body>
-  <h1>Supabase Auth test</h1>
 
-  <input id="email" type="email" placeholder="email" />
-  <input id="password" type="password" placeholder="heslo" />
+<h1>Supabase Auth test</h1>
 
-  <button id="loginBtn">Přihlásit</button>
-  <button id="logoutBtn">Odhlásit</button>
-  <button id="checkBtn">Zkontrolovat session</button>
+<input id="email" type="email" placeholder="email">
+<input id="password" type="password" placeholder="heslo">
 
-  <h2>Výstup</h2>
-  <pre id="out">Načítám…</pre>
+<button id="loginBtn">Přihlásit</button>
+<button id="logoutBtn">Odhlásit</button>
+<button id="checkBtn">Zkontrolovat session</button>
 
-  <script>
-    const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
-    const SUPABASE_KEY = "SEM_VLOZ_PRESNY_ANON_PUBLIC_KEY";
+<h2>Výstup</h2>
+<pre id="out">Načítám...</pre>
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-      }
-    });
+<script>
 
-    const out = document.getElementById("out");
+const SUPABASE_URL="https://avjkkdfzzudtmlqolbzk.supabase.co"
+const SUPABASE_KEY="SEM_VLOZ_TVUJ_ANON_PUBLIC_KEY"
 
-    function log(title, value) {
-      const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
-      out.textContent = `${title}\n${text}`;
-      console.log(title, value);
-    }
+const supabaseClient=window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY,
+{
+auth:{
+persistSession:true,
+autoRefreshToken:true,
+detectSessionInUrl:true
+}
+}
+)
 
-    async function showState(source = "manual") {
-      const { data, error } = await supabase.auth.getSession();
+const out=document.getElementById("out")
 
-      const storageKeys = Object.keys(localStorage).filter(k =>
-        k.includes("supabase") || k.includes("auth")
-      );
+function log(title,data){
 
-      const storageDump = {};
-      for (const key of storageKeys) {
-        storageDump[key] = localStorage.getItem(key);
-      }
+out.textContent=
+title+
+"\n\n"+
+JSON.stringify(data,null,2)
 
-      log(`Zdroj: ${source}`, {
-        href: location.href,
-        session: data?.session ?? null,
-        user: data?.session?.user ?? null,
-        error: error ?? null,
-        storageKeys,
-        storageDump
-      });
-    }
+console.log(title,data)
 
-    document.getElementById("loginBtn").addEventListener("click", async () => {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
+}
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      log("LOGIN", { data, error });
-      await showState("after login");
-    });
+async function showSession(source){
 
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      const { error } = await supabase.auth.signOut();
-      log("LOGOUT", { error });
-      await showState("after logout");
-    });
+const {data,error}=await supabaseClient.auth.getSession()
 
-    document.getElementById("checkBtn").addEventListener("click", async () => {
-      await showState("check button");
-    });
+const storageKeys=Object.keys(localStorage).filter(k=>
+k.includes("supabase")||k.includes("auth")
+)
 
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("AUTH EVENT:", event, session);
-      await showState(`onAuthStateChange: ${event}`);
-    });
+const storageDump={}
 
-    showState("page load");
-  </script>
+for(const k of storageKeys){
+
+storageDump[k]=localStorage.getItem(k)
+
+}
+
+log(source,{
+session:data?.session||null,
+user:data?.session?.user||null,
+error:error||null,
+storageKeys,
+storageDump
+})
+
+}
+
+document.getElementById("loginBtn").onclick=async()=>{
+
+const email=document.getElementById("email").value
+const password=document.getElementById("password").value
+
+const {data,error}=await supabaseClient.auth.signInWithPassword({
+email,
+password
+})
+
+log("LOGIN",{data,error})
+
+await showSession("after login")
+
+}
+
+document.getElementById("logoutBtn").onclick=async()=>{
+
+const {error}=await supabaseClient.auth.signOut()
+
+log("LOGOUT",{error})
+
+await showSession("after logout")
+
+}
+
+document.getElementById("checkBtn").onclick=async()=>{
+
+await showSession("manual check")
+
+}
+
+supabaseClient.auth.onAuthStateChange(async(event,session)=>{
+
+console.log("AUTH EVENT:",event)
+
+await showSession("onAuthStateChange "+event)
+
+})
+
+showSession("page load")
+
+</script>
+
 </body>
 </html>
