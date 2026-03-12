@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Docházka v3 - Zaměstnanci + Docházka</title>
+  <title>Docházka v4 - Role a oprávnění</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -33,7 +33,7 @@
     }
 
     .wrap {
-      max-width: 1320px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 24px;
     }
@@ -64,19 +64,24 @@
       }
     }
 
+    .attendance-layout,
     .employees-layout,
-    .attendance-layout {
+    .admin-attendance-layout {
       display: grid;
       grid-template-columns: 1fr;
       gap: 20px;
     }
 
     @media (min-width: 1100px) {
+      .attendance-layout {
+        grid-template-columns: 420px 1fr;
+      }
+
       .employees-layout {
         grid-template-columns: 380px 1fr;
       }
 
-      .attendance-layout {
+      .admin-attendance-layout {
         grid-template-columns: 420px 1fr;
       }
     }
@@ -242,6 +247,8 @@
     .pill.ok { background: rgba(34, 197, 94, 0.15); color: #86efac; }
     .pill.warn { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
 
+    .pill.admin { background: rgba(96, 165, 250, 0.15); color: #93c5fd; }
+
     .topline {
       display: flex;
       align-items: center;
@@ -254,16 +261,6 @@
       display: none;
     }
 
-    .employees-toolbar,
-    .attendance-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
-
     .table-wrap {
       overflow: auto;
       border: 1px solid var(--border);
@@ -273,7 +270,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 760px;
+      min-width: 860px;
       background: var(--panel-2);
     }
 
@@ -350,12 +347,15 @@
     <div class="grid-top">
       <section class="card">
         <div class="topline">
-          <h1>Docházka v3 - Docházka</h1>
-          <span id="sessionBadge" class="pill warn">bez session</span>
+          <h1>Docházka v4 - Role a oprávnění</h1>
+          <div>
+            <span id="sessionBadge" class="pill warn">bez session</span>
+            <span id="roleBadge" class="pill hidden">role</span>
+          </div>
         </div>
 
         <p class="small">
-          Auth bootstrap zůstává zachovaný. Docházka ve verzi 3 funguje stylem: přihlášený uživatel zapisuje docházku sám sobě podle <span class="mono">auth_user_id</span>.
+          Zaměstnanec vidí jen sebe. Admin vidí a může opravovat všechny.
         </p>
 
         <form id="loginForm">
@@ -411,7 +411,7 @@
       <section class="card">
         <div class="topline">
           <h2>Moje docházka</h2>
-          <span class="small">verze 3: přihlášený uživatel píše docházku sám sobě</span>
+          <span class="small">zaměstnanec i admin mají svou vlastní docházku</span>
         </div>
 
         <div class="attendance-layout">
@@ -454,7 +454,7 @@
           </div>
 
           <div class="card">
-            <div class="attendance-toolbar">
+            <div class="topline">
               <h3>Moje poslední docházka</h3>
             </div>
 
@@ -478,10 +478,10 @@
         </div>
       </section>
 
-      <section id="employeesSection" class="card">
+      <section id="adminEmployeesSection" class="card hidden">
         <div class="topline">
-          <h2>Zaměstnanci</h2>
-          <span class="small">verze 2 zůstává zachovaná</span>
+          <h2>Admin - Zaměstnanci</h2>
+          <span class="small">jen admin vidí a spravuje všechny zaměstnance</span>
         </div>
 
         <div class="employees-layout">
@@ -499,6 +499,11 @@
               <div class="row">
                 <label for="employeeEmail">Email</label>
                 <input id="employeeEmail" type="email" required />
+              </div>
+
+              <div class="row">
+                <label for="employeeAuthUserId">Auth user ID</label>
+                <input id="employeeAuthUserId" type="text" />
               </div>
 
               <div class="row-inline">
@@ -520,17 +525,32 @@
                 </div>
               </div>
 
+              <div class="row-inline">
+                <div class="row">
+                  <label for="employeeIsAdmin">Je admin</label>
+                  <select id="employeeIsAdmin" required>
+                    <option value="false">ne</option>
+                    <option value="true">ano</option>
+                  </select>
+                </div>
+
+                <div class="row">
+                  <label for="employeeOffices">Kancelář / offices</label>
+                  <input id="employeeOffices" type="text" />
+                </div>
+              </div>
+
               <div class="actions">
                 <button type="submit" id="employeeSubmitBtn">Uložit zaměstnance</button>
                 <button type="button" class="secondary" id="employeeCancelBtn">Zrušit editaci</button>
               </div>
             </form>
 
-            <div id="employeeMessage" class="status warn">Přihlas se a načti zaměstnance.</div>
+            <div id="employeeMessage" class="status warn">Přihlas se jako admin.</div>
           </div>
 
           <div class="card">
-            <div class="employees-toolbar">
+            <div class="topline">
               <h3>Seznam zaměstnanců</h3>
               <button type="button" class="secondary" id="reloadEmployeesBtn">Načíst znovu</button>
             </div>
@@ -544,12 +564,84 @@
                     <th>Jméno</th>
                     <th>Email</th>
                     <th>Role</th>
+                    <th>Admin</th>
                     <th>Aktivní</th>
-                    <th>Vytvořeno</th>
+                    <th>Auth user ID</th>
                     <th>Akce</th>
                   </tr>
                 </thead>
                 <tbody id="employeesTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="adminAttendanceSection" class="card hidden">
+        <div class="topline">
+          <h2>Admin - Docházka všech zaměstnanců</h2>
+          <span class="small">jen admin může opravovat všechny záznamy</span>
+        </div>
+
+        <div class="admin-attendance-layout">
+          <div class="card">
+            <h3 id="adminAttendanceFormTitle">Oprava docházky</h3>
+
+            <form id="adminAttendanceForm">
+              <input type="hidden" id="adminAttendanceId" />
+
+              <div class="row">
+                <label for="adminAttendanceEmployee">Zaměstnanec</label>
+                <select id="adminAttendanceEmployee"></select>
+              </div>
+
+              <div class="row-inline">
+                <div class="row">
+                  <label for="adminAttendanceCheckIn">Check-in</label>
+                  <input id="adminAttendanceCheckIn" type="datetime-local" />
+                </div>
+                <div class="row">
+                  <label for="adminAttendanceCheckOut">Check-out</label>
+                  <input id="adminAttendanceCheckOut" type="datetime-local" />
+                </div>
+              </div>
+
+              <div class="row">
+                <label for="adminAttendanceNote">Poznámka</label>
+                <textarea id="adminAttendanceNote" rows="3"></textarea>
+              </div>
+
+              <div class="actions">
+                <button type="submit" id="adminAttendanceSubmitBtn">Uložit opravu</button>
+                <button type="button" class="secondary" id="adminAttendanceCancelBtn">Zrušit editaci</button>
+              </div>
+            </form>
+
+            <div id="adminAttendanceMessage" class="status warn">Přihlas se jako admin.</div>
+          </div>
+
+          <div class="card">
+            <div class="topline">
+              <h3>Poslední docházka všech</h3>
+              <button type="button" class="secondary" id="reloadAdminAttendanceBtn">Načíst znovu</button>
+            </div>
+
+            <div id="adminAttendanceEmpty" class="muted-box">Zatím žádné záznamy.</div>
+
+            <div id="adminAttendanceTableWrap" class="table-wrap hidden">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Zaměstnanec</th>
+                    <th>Příchod</th>
+                    <th>Odchod</th>
+                    <th>Poznámka</th>
+                    <th>Vytvořeno</th>
+                    <th>Akce</th>
+                  </tr>
+                </thead>
+                <tbody id="adminAttendanceTbody"></tbody>
               </table>
             </div>
           </div>
@@ -581,24 +673,9 @@
     const authEventsEl = document.getElementById('authEvents');
     const storageDumpEl = document.getElementById('storageDump');
     const sessionBadgeEl = document.getElementById('sessionBadge');
+    const roleBadgeEl = document.getElementById('roleBadge');
 
     const appSectionEl = document.getElementById('appSection');
-    const employeesSectionEl = document.getElementById('employeesSection');
-    const employeeForm = document.getElementById('employeeForm');
-    const employeeFormTitleEl = document.getElementById('employeeFormTitle');
-    const employeeSubmitBtnEl = document.getElementById('employeeSubmitBtn');
-    const employeeCancelBtnEl = document.getElementById('employeeCancelBtn');
-    const employeeMessageEl = document.getElementById('employeeMessage');
-    const reloadEmployeesBtnEl = document.getElementById('reloadEmployeesBtn');
-    const employeesEmptyEl = document.getElementById('employeesEmpty');
-    const employeesTableWrapEl = document.getElementById('employeesTableWrap');
-    const employeesTbodyEl = document.getElementById('employeesTbody');
-
-    const employeeIdEl = document.getElementById('employeeId');
-    const employeeNameEl = document.getElementById('employeeName');
-    const employeeEmailEl = document.getElementById('employeeEmail');
-    const employeeRoleEl = document.getElementById('employeeRole');
-    const employeeActiveEl = document.getElementById('employeeActive');
 
     const attendanceProfileBoxEl = document.getElementById('attendanceProfileBox');
     const openShiftValueEl = document.getElementById('openShiftValue');
@@ -613,12 +690,51 @@
     const attendanceTableWrapEl = document.getElementById('attendanceTableWrap');
     const attendanceTbodyEl = document.getElementById('attendanceTbody');
 
+    const adminEmployeesSectionEl = document.getElementById('adminEmployeesSection');
+    const employeeForm = document.getElementById('employeeForm');
+    const employeeFormTitleEl = document.getElementById('employeeFormTitle');
+    const employeeSubmitBtnEl = document.getElementById('employeeSubmitBtn');
+    const employeeCancelBtnEl = document.getElementById('employeeCancelBtn');
+    const employeeMessageEl = document.getElementById('employeeMessage');
+    const reloadEmployeesBtnEl = document.getElementById('reloadEmployeesBtn');
+    const employeesEmptyEl = document.getElementById('employeesEmpty');
+    const employeesTableWrapEl = document.getElementById('employeesTableWrap');
+    const employeesTbodyEl = document.getElementById('employeesTbody');
+
+    const employeeIdEl = document.getElementById('employeeId');
+    const employeeNameEl = document.getElementById('employeeName');
+    const employeeEmailEl = document.getElementById('employeeEmail');
+    const employeeAuthUserIdEl = document.getElementById('employeeAuthUserId');
+    const employeeRoleEl = document.getElementById('employeeRole');
+    const employeeActiveEl = document.getElementById('employeeActive');
+    const employeeIsAdminEl = document.getElementById('employeeIsAdmin');
+    const employeeOfficesEl = document.getElementById('employeeOffices');
+
+    const adminAttendanceSectionEl = document.getElementById('adminAttendanceSection');
+    const adminAttendanceForm = document.getElementById('adminAttendanceForm');
+    const adminAttendanceFormTitleEl = document.getElementById('adminAttendanceFormTitle');
+    const adminAttendanceSubmitBtnEl = document.getElementById('adminAttendanceSubmitBtn');
+    const adminAttendanceCancelBtnEl = document.getElementById('adminAttendanceCancelBtn');
+    const adminAttendanceMessageEl = document.getElementById('adminAttendanceMessage');
+    const reloadAdminAttendanceBtnEl = document.getElementById('reloadAdminAttendanceBtn');
+    const adminAttendanceEmptyEl = document.getElementById('adminAttendanceEmpty');
+    const adminAttendanceTableWrapEl = document.getElementById('adminAttendanceTableWrap');
+    const adminAttendanceTbodyEl = document.getElementById('adminAttendanceTbody');
+
+    const adminAttendanceIdEl = document.getElementById('adminAttendanceId');
+    const adminAttendanceEmployeeEl = document.getElementById('adminAttendanceEmployee');
+    const adminAttendanceCheckInEl = document.getElementById('adminAttendanceCheckIn');
+    const adminAttendanceCheckOutEl = document.getElementById('adminAttendanceCheckOut');
+    const adminAttendanceNoteEl = document.getElementById('adminAttendanceNote');
+
     const authEventLog = [];
     let employees = [];
     let attendanceRows = [];
+    let adminAttendanceRows = [];
     let currentSession = null;
     let currentEmployee = null;
     let currentOpenAttendance = null;
+    let isAdmin = false;
 
     function nowIso() {
       return new Date().toISOString();
@@ -642,13 +758,26 @@
 
     function getOfficeForAttendance() {
       if (!currentEmployee) return '';
-      if (typeof currentEmployee.office === 'string' && currentEmployee.office.trim()) {
-        return currentEmployee.office.trim();
-      }
-      if (typeof currentEmployee.offices === 'string' && currentEmployee.offices.trim()) {
-        return currentEmployee.offices.trim();
-      }
+      if (typeof currentEmployee.office === 'string' && currentEmployee.office.trim()) return currentEmployee.office.trim();
+      if (typeof currentEmployee.offices === 'string' && currentEmployee.offices.trim()) return currentEmployee.offices.trim();
       return '';
+    }
+
+    function toDatetimeLocalValue(value) {
+      if (!value) return '';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return '';
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mi = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+    }
+
+    function fromDatetimeLocalValue(value) {
+      if (!value) return null;
+      return new Date(value).toISOString();
     }
 
     function setMessage(text, type) {
@@ -656,14 +785,19 @@
       messageEl.className = 'status ' + (type || 'warn');
     }
 
+    function setAttendanceMessage(text, type) {
+      attendanceMessageEl.textContent = text;
+      attendanceMessageEl.className = 'status ' + (type || 'warn');
+    }
+
     function setEmployeeMessage(text, type) {
       employeeMessageEl.textContent = text;
       employeeMessageEl.className = 'status ' + (type || 'warn');
     }
 
-    function setAttendanceMessage(text, type) {
-      attendanceMessageEl.textContent = text;
-      attendanceMessageEl.className = 'status ' + (type || 'warn');
+    function setAdminAttendanceMessage(text, type) {
+      adminAttendanceMessageEl.textContent = text;
+      adminAttendanceMessageEl.className = 'status ' + (type || 'warn');
     }
 
     function setSessionBadge(hasSession) {
@@ -673,6 +807,17 @@
       } else {
         sessionBadgeEl.textContent = 'bez session';
         sessionBadgeEl.className = 'pill warn';
+      }
+    }
+
+    function setRoleBadge(roleText, admin) {
+      roleBadgeEl.classList.remove('hidden', 'ok', 'warn', 'admin');
+      if (admin) {
+        roleBadgeEl.textContent = 'admin';
+        roleBadgeEl.classList.add('pill', 'admin');
+      } else {
+        roleBadgeEl.textContent = roleText || 'employee';
+        roleBadgeEl.classList.add('pill', 'ok');
       }
     }
 
@@ -689,10 +834,7 @@
         }
         data.push({ key, valuePreview: preview });
       }
-
-      storageDumpEl.textContent = data.length
-        ? safeJson(data)
-        : 'localStorage je prázdné';
+      storageDumpEl.textContent = data.length ? safeJson(data) : 'localStorage je prázdné';
     }
 
     function pushAuthEvent(eventName, session) {
@@ -706,11 +848,45 @@
         refreshTokenShort: session?.refresh_token ? session.refresh_token.slice(0, 20) + '...' : null
       });
 
-      if (authEventLog.length > 30) {
-        authEventLog.length = 30;
-      }
-
+      if (authEventLog.length > 30) authEventLog.length = 30;
       authEventsEl.textContent = safeJson(authEventLog);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '—';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString('cs-CZ');
+    }
+
+    function formatTimeOnly(value) {
+      if (!value) return '—';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleTimeString('cs-CZ', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
+    function isSameLocalDay(valueA, valueB) {
+      const a = new Date(valueA);
+      const b = new Date(valueB);
+      return (
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate()
+      );
     }
 
     function renderUser(session) {
@@ -719,9 +895,13 @@
       if (!session || !session.user) {
         userInfoEl.textContent = 'Nikdo není přihlášen.';
         setSessionBadge(false);
+        roleBadgeEl.classList.add('hidden');
         appSectionEl.classList.add('hidden');
+        adminEmployeesSectionEl.classList.add('hidden');
+        adminAttendanceSectionEl.classList.add('hidden');
         currentEmployee = null;
         currentOpenAttendance = null;
+        isAdmin = false;
         return;
       }
 
@@ -771,107 +951,7 @@
       }
 
       renderUser(data.session);
-
-      if (data.session) {
-        setMessage('Session nalezena. Auth bootstrap je v pořádku.', 'ok');
-      } else {
-        setMessage('Žádná session. Přihlas se.', 'warn');
-      }
-    }
-
-    function resetEmployeeForm() {
-      employeeIdEl.value = '';
-      employeeNameEl.value = '';
-      employeeEmailEl.value = '';
-      employeeRoleEl.value = 'employee';
-      employeeActiveEl.value = 'true';
-      employeeFormTitleEl.textContent = 'Přidat zaměstnance';
-      employeeSubmitBtnEl.textContent = 'Uložit zaměstnance';
-    }
-
-    function startEditEmployee(employee) {
-      employeeIdEl.value = employee.id;
-      employeeNameEl.value = employee.name || '';
-      employeeEmailEl.value = employee.email || '';
-      employeeRoleEl.value = employee.role || 'employee';
-      employeeActiveEl.value = String(employee.active);
-      employeeFormTitleEl.textContent = 'Upravit zaměstnance';
-      employeeSubmitBtnEl.textContent = 'Uložit změny';
-      window.scrollTo({ top: employeesSectionEl.offsetTop - 10, behavior: 'smooth' });
-    }
-
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    }
-
-    function formatDateTime(value) {
-      if (!value) return '—';
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return value;
-      return date.toLocaleString('cs-CZ');
-    }
-
-    function formatTimeOnly(value) {
-      if (!value) return '—';
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return value;
-      return date.toLocaleTimeString('cs-CZ', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
-    }
-
-    function isSameLocalDay(valueA, valueB) {
-      const a = new Date(valueA);
-      const b = new Date(valueB);
-      return (
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate()
-      );
-    }
-
-    function renderEmployees() {
-      employeesTbodyEl.innerHTML = '';
-
-      if (!employees.length) {
-        employeesEmptyEl.classList.remove('hidden');
-        employeesTableWrapEl.classList.add('hidden');
-        return;
-      }
-
-      employeesEmptyEl.classList.add('hidden');
-      employeesTableWrapEl.classList.remove('hidden');
-
-      for (const employee of employees) {
-        const tr = document.createElement('tr');
-
-        tr.innerHTML = `
-          <td>${escapeHtml(employee.name)}</td>
-          <td>${escapeHtml(employee.email)}</td>
-          <td>${escapeHtml(employee.role)}</td>
-          <td>
-            <span class="badge ${employee.active ? 'active' : 'inactive'}">
-              ${employee.active ? 'ano' : 'ne'}
-            </span>
-          </td>
-          <td>${escapeHtml(formatDateTime(employee.created_at))}</td>
-          <td>
-            <div class="actions">
-              <button type="button" class="small secondary" data-action="edit" data-id="${employee.id}">Editovat</button>
-              <button type="button" class="small danger" data-action="delete" data-id="${employee.id}">Smazat</button>
-            </div>
-          </td>
-        `;
-
-        employeesTbodyEl.appendChild(tr);
-      }
+      setMessage(data.session ? 'Session nalezena. Auth bootstrap je v pořádku.' : 'Žádná session. Přihlas se.', data.session ? 'ok' : 'warn');
     }
 
     function renderAttendanceProfile() {
@@ -903,6 +983,7 @@
         <strong>${escapeHtml(currentEmployee.name || '')}</strong><br>
         ${escapeHtml(currentEmployee.email || '')}<br>
         role: <span class="mono">${escapeHtml(currentEmployee.role || '')}</span><br>
+        is_admin: <span class="mono">${escapeHtml(String(!!currentEmployee.is_admin))}</span><br>
         employee id: <span class="mono">${escapeHtml(currentEmployee.id)}</span><br>
         auth_user_id: <span class="mono">${escapeHtml(currentEmployee.auth_user_id || '')}</span><br>
         office/offices: <span class="mono">${escapeHtml(getOfficeForAttendance()) || '—'}</span>
@@ -943,39 +1024,138 @@
       }
     }
 
-    async function loadEmployees() {
-      const { data: sessionData } = await supabaseClient.auth.getSession();
+    function resetEmployeeForm() {
+      employeeIdEl.value = '';
+      employeeNameEl.value = '';
+      employeeEmailEl.value = '';
+      employeeAuthUserIdEl.value = '';
+      employeeRoleEl.value = 'employee';
+      employeeActiveEl.value = 'true';
+      employeeIsAdminEl.value = 'false';
+      employeeOfficesEl.value = '';
+      employeeFormTitleEl.textContent = 'Přidat zaměstnance';
+      employeeSubmitBtnEl.textContent = 'Uložit zaměstnance';
+    }
 
-      if (!sessionData?.session) {
-        employees = [];
-        renderEmployees();
-        setEmployeeMessage('Nejprve se přihlas.', 'warn');
+    function startEditEmployee(employee) {
+      employeeIdEl.value = employee.id;
+      employeeNameEl.value = employee.name || '';
+      employeeEmailEl.value = employee.email || '';
+      employeeAuthUserIdEl.value = employee.auth_user_id || '';
+      employeeRoleEl.value = employee.role || 'employee';
+      employeeActiveEl.value = String(!!employee.active);
+      employeeIsAdminEl.value = String(!!employee.is_admin);
+      employeeOfficesEl.value = employee.offices || employee.office || '';
+      employeeFormTitleEl.textContent = 'Upravit zaměstnance';
+      employeeSubmitBtnEl.textContent = 'Uložit změny';
+      window.scrollTo({ top: adminEmployeesSectionEl.offsetTop - 10, behavior: 'smooth' });
+    }
+
+    function renderEmployees() {
+      employeesTbodyEl.innerHTML = '';
+
+      if (!employees.length) {
+        employeesEmptyEl.classList.remove('hidden');
+        employeesTableWrapEl.classList.add('hidden');
         return;
       }
 
-      setEmployeeMessage('Načítám zaměstnance...', 'warn');
+      employeesEmptyEl.classList.add('hidden');
+      employeesTableWrapEl.classList.remove('hidden');
 
-      const { data, error } = await supabaseClient
-        .from('employees')
-        .select('*')
-        .order('created_at', { ascending: true });
+      for (const employee of employees) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(employee.name)}</td>
+          <td>${escapeHtml(employee.email)}</td>
+          <td>${escapeHtml(employee.role)}</td>
+          <td>${employee.is_admin ? '<span class="badge active">ano</span>' : '<span class="badge inactive">ne</span>'}</td>
+          <td>${employee.active ? '<span class="badge active">ano</span>' : '<span class="badge inactive">ne</span>'}</td>
+          <td class="mono">${escapeHtml(employee.auth_user_id || '')}</td>
+          <td>
+            <div class="actions">
+              <button type="button" class="small secondary" data-action="edit" data-id="${employee.id}">Editovat</button>
+              <button type="button" class="small danger" data-action="delete" data-id="${employee.id}">Smazat</button>
+            </div>
+          </td>
+        `;
+        employeesTbodyEl.appendChild(tr);
+      }
+    }
 
-      if (error) {
-        employees = [];
-        renderEmployees();
-        setEmployeeMessage('Chyba při načítání zaměstnanců: ' + error.message, 'err');
+    function resetAdminAttendanceForm() {
+      adminAttendanceIdEl.value = '';
+      adminAttendanceEmployeeEl.value = '';
+      adminAttendanceCheckInEl.value = '';
+      adminAttendanceCheckOutEl.value = '';
+      adminAttendanceNoteEl.value = '';
+      adminAttendanceFormTitleEl.textContent = 'Oprava docházky';
+      adminAttendanceSubmitBtnEl.textContent = 'Uložit opravu';
+    }
+
+    function fillAdminAttendanceEmployeeOptions() {
+      adminAttendanceEmployeeEl.innerHTML = '';
+      for (const employee of employees) {
+        const option = document.createElement('option');
+        option.value = employee.id;
+        option.textContent = `${employee.name} (${employee.email})`;
+        adminAttendanceEmployeeEl.appendChild(option);
+      }
+    }
+
+    function startEditAdminAttendance(row) {
+      adminAttendanceIdEl.value = row.id;
+      adminAttendanceEmployeeEl.value = String(row.employee_id);
+      adminAttendanceCheckInEl.value = toDatetimeLocalValue(row.check_in);
+      adminAttendanceCheckOutEl.value = toDatetimeLocalValue(row.check_out);
+      adminAttendanceNoteEl.value = row.note || '';
+      adminAttendanceFormTitleEl.textContent = 'Upravit docházku';
+      adminAttendanceSubmitBtnEl.textContent = 'Uložit změny';
+      window.scrollTo({ top: adminAttendanceSectionEl.offsetTop - 10, behavior: 'smooth' });
+    }
+
+    function renderAdminAttendance() {
+      adminAttendanceTbodyEl.innerHTML = '';
+
+      if (!adminAttendanceRows.length) {
+        adminAttendanceEmptyEl.classList.remove('hidden');
+        adminAttendanceTableWrapEl.classList.add('hidden');
         return;
       }
 
-      employees = Array.isArray(data) ? data : [];
-      renderEmployees();
-      setEmployeeMessage('Načteno zaměstnanců: ' + employees.length, 'ok');
+      adminAttendanceEmptyEl.classList.add('hidden');
+      adminAttendanceTableWrapEl.classList.remove('hidden');
+
+      for (const row of adminAttendanceRows) {
+        const employee = employees.find(e => String(e.id) === String(row.employee_id));
+        const employeeLabel = employee ? `${employee.name} (${employee.email})` : `employee_id ${row.employee_id}`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(row.id)}</td>
+          <td>${escapeHtml(employeeLabel)}</td>
+          <td>${escapeHtml(formatDateTime(row.check_in))}</td>
+          <td>${escapeHtml(formatDateTime(row.check_out))}</td>
+          <td>${escapeHtml(row.note || '')}</td>
+          <td>${escapeHtml(formatDateTime(row.created_at))}</td>
+          <td>
+            <div class="actions">
+              <button type="button" class="small secondary" data-action="edit" data-id="${row.id}">Editovat</button>
+              <button type="button" class="small danger" data-action="delete" data-id="${row.id}">Smazat</button>
+            </div>
+          </td>
+        `;
+        adminAttendanceTbodyEl.appendChild(tr);
+      }
     }
 
     async function resolveCurrentEmployee() {
       if (!currentSession?.user?.id) {
         currentEmployee = null;
+        isAdmin = false;
         renderAttendanceProfile();
+        adminEmployeesSectionEl.classList.add('hidden');
+        adminAttendanceSectionEl.classList.add('hidden');
         return;
       }
 
@@ -988,13 +1168,24 @@
 
       if (error) {
         currentEmployee = null;
+        isAdmin = false;
         renderAttendanceProfile();
+        adminEmployeesSectionEl.classList.add('hidden');
+        adminAttendanceSectionEl.classList.add('hidden');
         setAttendanceMessage('Chyba při hledání employee profilu: ' + error.message, 'err');
         return;
       }
 
       currentEmployee = data || null;
+      isAdmin = !!(currentEmployee && (currentEmployee.is_admin || currentEmployee.role === 'admin'));
       renderAttendanceProfile();
+
+      if (currentEmployee) {
+        setRoleBadge(currentEmployee.role || 'employee', isAdmin);
+      }
+
+      adminEmployeesSectionEl.classList.toggle('hidden', !isAdmin);
+      adminAttendanceSectionEl.classList.toggle('hidden', !isAdmin);
 
       if (!currentEmployee) {
         setAttendanceMessage('Přihlášený uživatel nemá přiřazený employees.auth_user_id.', 'warn');
@@ -1003,7 +1194,7 @@
       }
     }
 
-    async function loadAttendance() {
+    async function loadMyAttendance() {
       if (!currentSession?.user) {
         attendanceRows = [];
         currentOpenAttendance = null;
@@ -1045,37 +1236,87 @@
 
       renderAttendanceProfile();
       renderAttendanceTable();
+      setAttendanceMessage(currentOpenAttendance ? 'Docházka načtena. Máš otevřenou směnu.' : 'Docházka načtena. Nemáš otevřenou směnu.', 'ok');
+    }
 
-      if (currentOpenAttendance) {
-        setAttendanceMessage('Docházka načtena. Máš otevřenou směnu.', 'ok');
-      } else {
-        setAttendanceMessage('Docházka načtena. Nemáš otevřenou směnu.', 'ok');
+    async function loadEmployees() {
+      if (!isAdmin) {
+        employees = [];
+        renderEmployees();
+        fillAdminAttendanceEmployeeOptions();
+        return;
       }
+
+      setEmployeeMessage('Načítám zaměstnance...', 'warn');
+
+      const { data, error } = await supabaseClient
+        .from('employees')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        employees = [];
+        renderEmployees();
+        fillAdminAttendanceEmployeeOptions();
+        setEmployeeMessage('Chyba při načítání zaměstnanců: ' + error.message, 'err');
+        return;
+      }
+
+      employees = Array.isArray(data) ? data : [];
+      renderEmployees();
+      fillAdminAttendanceEmployeeOptions();
+      setEmployeeMessage('Načteno zaměstnanců: ' + employees.length, 'ok');
+    }
+
+    async function loadAdminAttendance() {
+      if (!isAdmin) {
+        adminAttendanceRows = [];
+        renderAdminAttendance();
+        return;
+      }
+
+      setAdminAttendanceMessage('Načítám docházku všech...', 'warn');
+
+      const { data, error } = await supabaseClient
+        .from('attendance')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        adminAttendanceRows = [];
+        renderAdminAttendance();
+        setAdminAttendanceMessage('Chyba při načítání admin docházky: ' + error.message, 'err');
+        return;
+      }
+
+      adminAttendanceRows = Array.isArray(data) ? data : [];
+      renderAdminAttendance();
+      setAdminAttendanceMessage('Načteno záznamů: ' + adminAttendanceRows.length, 'ok');
     }
 
     async function createEmployee(payload) {
-      const { error } = await supabaseClient
-        .from('employees')
-        .insert([payload]);
-
+      const { error } = await supabaseClient.from('employees').insert([payload]);
       if (error) throw error;
     }
 
     async function updateEmployee(id, payload) {
-      const { error } = await supabaseClient
-        .from('employees')
-        .update(payload)
-        .eq('id', id);
-
+      const { error } = await supabaseClient.from('employees').update(payload).eq('id', id);
       if (error) throw error;
     }
 
     async function deleteEmployee(id) {
-      const { error } = await supabaseClient
-        .from('employees')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabaseClient.from('employees').delete().eq('id', id);
+      if (error) throw error;
+    }
 
+    async function updateAttendance(id, payload) {
+      const { error } = await supabaseClient.from('attendance').update(payload).eq('id', id);
+      if (error) throw error;
+    }
+
+    async function deleteAttendance(id) {
+      const { error } = await supabaseClient.from('attendance').delete().eq('id', id);
       if (error) throw error;
     }
 
@@ -1100,9 +1341,7 @@
 
       setAttendanceMessage('Zapisuji příchod...', 'warn');
 
-      const { error } = await supabaseClient
-        .from('attendance')
-        .insert([payload]);
+      const { error } = await supabaseClient.from('attendance').insert([payload]);
 
       if (error) {
         setAttendanceMessage('Chyba při zápisu příchodu: ' + error.message, 'err');
@@ -1110,7 +1349,8 @@
       }
 
       attendanceNoteEl.value = '';
-      await loadAttendance();
+      await loadMyAttendance();
+      if (isAdmin) await loadAdminAttendance();
       setAttendanceMessage('Příchod zapsán.', 'ok');
     }
 
@@ -1146,8 +1386,17 @@
       }
 
       attendanceNoteEl.value = '';
-      await loadAttendance();
+      await loadMyAttendance();
+      if (isAdmin) await loadAdminAttendance();
       setAttendanceMessage('Odchod zapsán.', 'ok');
+    }
+
+    async function loadAllData() {
+      await loadMyAttendance();
+      if (isAdmin) {
+        await loadEmployees();
+        await loadAdminAttendance();
+      }
     }
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -1157,33 +1406,39 @@
 
       if (event === 'SIGNED_IN') {
         setMessage('SIGNED_IN proběhl. Session je aktivní.', 'ok');
-        setTimeout(() => {
-          refreshDebug('after SIGNED_IN delayed');
-          loadEmployees();
-          loadAttendance();
+        setTimeout(async () => {
+          await refreshDebug('after SIGNED_IN delayed');
+          await loadAllData();
         }, 700);
       } else if (event === 'SIGNED_OUT') {
         setMessage('SIGNED_OUT proběhl.', 'warn');
         employees = [];
         attendanceRows = [];
+        adminAttendanceRows = [];
         currentEmployee = null;
         currentOpenAttendance = null;
-        renderEmployees();
+        isAdmin = false;
+        roleBadgeEl.classList.add('hidden');
         renderAttendanceProfile();
         renderAttendanceTable();
+        renderEmployees();
+        renderAdminAttendance();
         resetEmployeeForm();
-        setEmployeeMessage('Odhlášeno. Přihlas se a načti zaměstnance.', 'warn');
+        resetAdminAttendanceForm();
+        adminEmployeesSectionEl.classList.add('hidden');
+        adminAttendanceSectionEl.classList.add('hidden');
+        setEmployeeMessage('Odhlášeno. Přihlas se jako admin.', 'warn');
         setAttendanceMessage('Odhlášeno. Přihlas se a načti docházku.', 'warn');
+        setAdminAttendanceMessage('Odhlášeno. Přihlas se jako admin.', 'warn');
         setTimeout(() => {
           refreshDebug('after SIGNED_OUT delayed');
         }, 100);
       } else if (event === 'INITIAL_SESSION') {
         if (session) {
           setMessage('INITIAL_SESSION načetl existující session ze storage.', 'ok');
-          setTimeout(() => {
-            refreshDebug('after INITIAL_SESSION delayed');
-            loadEmployees();
-            loadAttendance();
+          setTimeout(async () => {
+            await refreshDebug('after INITIAL_SESSION delayed');
+            await loadAllData();
           }, 100);
         } else {
           setMessage('INITIAL_SESSION: ve storage není aktivní session.', 'warn');
@@ -1207,10 +1462,7 @@
 
       setMessage('Přihlašuji...', 'warn');
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
       if (error) {
         setMessage('Login chyba: ' + error.message, 'err');
@@ -1221,10 +1473,9 @@
       renderUser(data.session || null);
       setMessage('Login OK. Čekám na dopsání session do storage...', 'ok');
 
-      setTimeout(() => {
-        refreshDebug('after signIn success delayed');
-        loadEmployees();
-        loadAttendance();
+      setTimeout(async () => {
+        await refreshDebug('after signIn success delayed');
+        await loadAllData();
       }, 700);
     });
 
@@ -1250,17 +1501,8 @@
       await refreshDebug('manual refreshDebug button');
     });
 
-    employeeCancelBtnEl.addEventListener('click', () => {
-      resetEmployeeForm();
-      setEmployeeMessage('Editace zrušena.', 'warn');
-    });
-
-    reloadEmployeesBtnEl.addEventListener('click', async () => {
-      await loadEmployees();
-    });
-
     reloadAttendanceBtnEl.addEventListener('click', async () => {
-      await loadAttendance();
+      await loadMyAttendance();
     });
 
     checkInBtnEl.addEventListener('click', async () => {
@@ -1271,15 +1513,32 @@
       await doCheckOut();
     });
 
+    employeeCancelBtnEl.addEventListener('click', () => {
+      resetEmployeeForm();
+      setEmployeeMessage('Editace zrušena.', 'warn');
+    });
+
+    reloadEmployeesBtnEl.addEventListener('click', async () => {
+      await loadEmployees();
+    });
+
     employeeForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      if (!isAdmin) {
+        setEmployeeMessage('Tuto akci může dělat jen admin.', 'err');
+        return;
+      }
 
       const id = employeeIdEl.value.trim();
       const payload = {
         name: employeeNameEl.value.trim(),
         email: employeeEmailEl.value.trim().toLowerCase(),
+        auth_user_id: employeeAuthUserIdEl.value.trim() || null,
         role: employeeRoleEl.value,
-        active: employeeActiveEl.value === 'true'
+        active: employeeActiveEl.value === 'true',
+        is_admin: employeeIsAdminEl.value === 'true',
+        offices: employeeOfficesEl.value.trim() || ''
       };
 
       if (!payload.name || !payload.email || !payload.role) {
@@ -1307,14 +1566,14 @@
 
     employeesTbodyEl.addEventListener('click', async (e) => {
       const button = e.target.closest('button[data-action]');
-      if (!button) return;
+      if (!button || !isAdmin) return;
 
       const action = button.getAttribute('data-action');
       const id = button.getAttribute('data-id');
       const employee = employees.find(item => String(item.id) === String(id));
 
       if (!employee) {
-        setEmployeeMessage('Zaměstnanec nebyl nalezen v lokálním seznamu.', 'err');
+        setEmployeeMessage('Zaměstnanec nebyl nalezen.', 'err');
         return;
       }
 
@@ -1332,23 +1591,103 @@
           setEmployeeMessage('Mažu zaměstnance...', 'warn');
           await deleteEmployee(id);
           setEmployeeMessage('Zaměstnanec smazán.', 'ok');
-          if (employeeIdEl.value === String(id)) {
-            resetEmployeeForm();
-          }
+          if (employeeIdEl.value === String(id)) resetEmployeeForm();
           await loadEmployees();
-          await loadAttendance();
+          await loadAdminAttendance();
         } catch (error) {
           setEmployeeMessage('Chyba při mazání zaměstnance: ' + error.message, 'err');
         }
       }
     });
 
+    adminAttendanceCancelBtnEl.addEventListener('click', () => {
+      resetAdminAttendanceForm();
+      setAdminAttendanceMessage('Editace docházky zrušena.', 'warn');
+    });
+
+    reloadAdminAttendanceBtnEl.addEventListener('click', async () => {
+      await loadAdminAttendance();
+    });
+
+    adminAttendanceForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!isAdmin) {
+        setAdminAttendanceMessage('Tuto akci může dělat jen admin.', 'err');
+        return;
+      }
+
+      const id = adminAttendanceIdEl.value.trim();
+      if (!id) {
+        setAdminAttendanceMessage('Nejprve vyber záznam k editaci.', 'err');
+        return;
+      }
+
+      const payload = {
+        employee_id: Number(adminAttendanceEmployeeEl.value),
+        check_in: fromDatetimeLocalValue(adminAttendanceCheckInEl.value),
+        check_out: fromDatetimeLocalValue(adminAttendanceCheckOutEl.value),
+        note: adminAttendanceNoteEl.value.trim()
+      };
+
+      try {
+        setAdminAttendanceMessage('Ukládám opravu docházky...', 'warn');
+        await updateAttendance(id, payload);
+        setAdminAttendanceMessage('Docházka upravena.', 'ok');
+        resetAdminAttendanceForm();
+        await loadAdminAttendance();
+        await loadMyAttendance();
+      } catch (error) {
+        setAdminAttendanceMessage('Chyba při ukládání docházky: ' + error.message, 'err');
+      }
+    });
+
+    adminAttendanceTbodyEl.addEventListener('click', async (e) => {
+      const button = e.target.closest('button[data-action]');
+      if (!button || !isAdmin) return;
+
+      const action = button.getAttribute('data-action');
+      const id = button.getAttribute('data-id');
+      const row = adminAttendanceRows.find(item => String(item.id) === String(id));
+
+      if (!row) {
+        setAdminAttendanceMessage('Záznam docházky nebyl nalezen.', 'err');
+        return;
+      }
+
+      if (action === 'edit') {
+        startEditAdminAttendance(row);
+        setAdminAttendanceMessage('Upravuješ docházku ID ' + row.id, 'warn');
+        return;
+      }
+
+      if (action === 'delete') {
+        const ok = window.confirm('Opravdu smazat záznam docházky ID ' + row.id + '?');
+        if (!ok) return;
+
+        try {
+          setAdminAttendanceMessage('Mažu docházku...', 'warn');
+          await deleteAttendance(id);
+          setAdminAttendanceMessage('Docházka smazána.', 'ok');
+          if (adminAttendanceIdEl.value === String(id)) resetAdminAttendanceForm();
+          await loadAdminAttendance();
+          await loadMyAttendance();
+        } catch (error) {
+          setAdminAttendanceMessage('Chyba při mazání docházky: ' + error.message, 'err');
+        }
+      }
+    });
+
     (async function bootstrap() {
-      resetEmployeeForm();
       renderAttendanceProfile();
       renderAttendanceTable();
-      setEmployeeMessage('Přihlas se a načti zaměstnance.', 'warn');
+      renderEmployees();
+      renderAdminAttendance();
+      resetEmployeeForm();
+      resetAdminAttendanceForm();
       setAttendanceMessage('Přihlas se a načti docházku.', 'warn');
+      setEmployeeMessage('Přihlas se jako admin.', 'warn');
+      setAdminAttendanceMessage('Přihlas se jako admin.', 'warn');
       pushAuthEvent('BOOTSTRAP_START', null);
       await refreshDebug('initial page load');
     })();
