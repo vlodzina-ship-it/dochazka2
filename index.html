@@ -640,6 +640,17 @@
       return `${year}-${month}-${day}`;
     }
 
+    function getOfficeForAttendance() {
+      if (!currentEmployee) return '';
+      if (typeof currentEmployee.office === 'string' && currentEmployee.office.trim()) {
+        return currentEmployee.office.trim();
+      }
+      if (typeof currentEmployee.offices === 'string' && currentEmployee.offices.trim()) {
+        return currentEmployee.offices.trim();
+      }
+      return '';
+    }
+
     function setMessage(text, type) {
       messageEl.textContent = text;
       messageEl.className = 'status ' + (type || 'warn');
@@ -893,17 +904,14 @@
         ${escapeHtml(currentEmployee.email || '')}<br>
         role: <span class="mono">${escapeHtml(currentEmployee.role || '')}</span><br>
         employee id: <span class="mono">${escapeHtml(currentEmployee.id)}</span><br>
-        auth_user_id: <span class="mono">${escapeHtml(currentEmployee.auth_user_id || '')}</span>
+        auth_user_id: <span class="mono">${escapeHtml(currentEmployee.auth_user_id || '')}</span><br>
+        office/offices: <span class="mono">${escapeHtml(getOfficeForAttendance()) || '—'}</span>
       `;
 
       checkInBtnEl.disabled = !!currentOpenAttendance;
       checkOutBtnEl.disabled = !currentOpenAttendance;
 
-      if (currentOpenAttendance) {
-        openShiftValueEl.textContent = 'ano';
-      } else {
-        openShiftValueEl.textContent = 'ne';
-      }
+      openShiftValueEl.textContent = currentOpenAttendance ? 'ano' : 'ne';
 
       const todayRow = attendanceRows.find(row => isSameLocalDay(row.check_in, new Date()));
       todayCheckInValueEl.textContent = todayRow?.check_in ? formatTimeOnly(todayRow.check_in) : '—';
@@ -1050,9 +1058,7 @@
         .from('employees')
         .insert([payload]);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     }
 
     async function updateEmployee(id, payload) {
@@ -1061,9 +1067,7 @@
         .update(payload)
         .eq('id', id);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     }
 
     async function deleteEmployee(id) {
@@ -1072,9 +1076,7 @@
         .delete()
         .eq('id', id);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     }
 
     async function doCheckIn() {
@@ -1091,6 +1093,7 @@
       const payload = {
         employee_id: currentEmployee.id,
         date: getLocalDateForDb(),
+        office: getOfficeForAttendance(),
         note: attendanceNoteEl.value.trim()
       };
 
