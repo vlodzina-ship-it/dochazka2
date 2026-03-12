@@ -1,135 +1,119 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Auth test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 640px;
+      margin: 40px auto;
+      padding: 20px;
+    }
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      font-size: 14px;
+    }
 
-<title>Supabase Auth test</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-
-body{
-font-family:Arial;
-max-width:600px;
-margin:auto;
-padding:40px;
-}
-
-input,button{
-width:100%;
-padding:10px;
-margin:6px 0;
-}
-
-pre{
-background:#f4f4f4;
-padding:12px;
-border-radius:8px;
-white-space:pre-wrap;
-}
-
-</style>
-
+    pre {
+      background: #f4f4f4;
+      padding: 12px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  </style>
 </head>
 <body>
+  <h1>Supabase Auth test</h1>
 
-<h1>Supabase Auth test</h1>
+  <input id="email" type="email" placeholder="email">
+  <input id="password" type="password" placeholder="heslo">
 
-<input id="email" type="email" placeholder="email">
-<input id="password" type="password" placeholder="heslo">
+  <button onclick="login()">Přihlásit</button>
+  <button onclick="logout()">Odhlásit</button>
+  <button onclick="checkSession()">Zkontrolovat session</button>
 
-<button onclick="login()">Přihlásit</button>
-<button onclick="logout()">Odhlásit</button>
-<button onclick="checkSession()">Zkontrolovat session</button>
+  <h2>Výstup</h2>
+  <pre id="output">Načítám...</pre>
 
-<h2>Výstup</h2>
+  <script>
+    const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-";
 
-<pre id="output">Načítám...</pre>
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      }
+    );
 
-<script>
+    const output = document.getElementById("output");
 
-const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co"
+    function print(title, data) {
+      output.textContent = title + "\n\n" + JSON.stringify(data, null, 2);
+      console.log(title, data);
+    }
 
-const SUPABASE_KEY = "sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-"
+    async function checkSession() {
+      const { data, error } = await supabaseClient.auth.getSession();
 
-const supabase = window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY,
-{
-auth:{
-persistSession:true,
-autoRefreshToken:true,
-detectSessionInUrl:true
-}
-}
-)
+      const storageKeys = Object.keys(localStorage).filter(
+        key => key.includes("supabase") || key.includes("sb-") || key.includes("auth")
+      );
 
-const output = document.getElementById("output")
+      const storageDump = {};
+      for (const key of storageKeys) {
+        storageDump[key] = localStorage.getItem(key);
+      }
 
-function print(title,data){
+      print("SESSION CHECK", {
+        session: data?.session ?? null,
+        user: data?.session?.user ?? null,
+        error: error ?? null,
+        storageKeys,
+        storageDump
+      });
+    }
 
-output.textContent =
-title +
-"\n\n" +
-JSON.stringify(data,null,2)
+    async function login() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
 
-console.log(title,data)
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
 
-}
+      print("LOGIN RESULT", { data, error });
+      await checkSession();
+    }
 
-async function checkSession(){
+    async function logout() {
+      const { error } = await supabaseClient.auth.signOut();
 
-const {data,error} = await supabase.auth.getSession()
+      print("LOGOUT", { error });
+      await checkSession();
+    }
 
-print("SESSION CHECK",{
-session:data.session,
-user:data.session?.user || null,
-error:error
-})
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      print("AUTH EVENT " + event, {
+        session,
+        user: session?.user ?? null
+      });
+    });
 
-}
-
-async function login(){
-
-const email = document.getElementById("email").value
-const password = document.getElementById("password").value
-
-const {data,error} = await supabase.auth.signInWithPassword({
-email,
-password
-})
-
-print("LOGIN RESULT",{data,error})
-
-await checkSession()
-
-}
-
-async function logout(){
-
-const {error} = await supabase.auth.signOut()
-
-print("LOGOUT",{error})
-
-await checkSession()
-
-}
-
-supabase.auth.onAuthStateChange((event,session)=>{
-
-print("AUTH EVENT "+event,{
-session,
-user:session?.user || null
-})
-
-})
-
-checkSession()
-
-</script>
-
+    checkSession();
+  </script>
 </body>
 </html>
