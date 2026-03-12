@@ -913,7 +913,7 @@
 
       openShiftValueEl.textContent = currentOpenAttendance ? 'ano' : 'ne';
 
-      const todayRow = attendanceRows.find(row => isSameLocalDay(row.check_in, new Date()));
+      const todayRow = attendanceRows.find(row => row.check_in && isSameLocalDay(row.check_in, new Date()));
       todayCheckInValueEl.textContent = todayRow?.check_in ? formatTimeOnly(todayRow.check_in) : '—';
       todayCheckOutValueEl.textContent = todayRow?.check_out ? formatTimeOnly(todayRow.check_out) : '—';
     }
@@ -1028,7 +1028,7 @@
         .from('attendance')
         .select('*')
         .eq('employee_id', currentEmployee.id)
-        .order('check_in', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(20);
 
       if (error) {
@@ -1094,6 +1094,7 @@
         employee_id: currentEmployee.id,
         date: getLocalDateForDb(),
         office: getOfficeForAttendance(),
+        check_in: new Date().toISOString(),
         note: attendanceNoteEl.value.trim()
       };
 
