@@ -656,13 +656,40 @@
 
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2amtrZGZ6enVkdG1scW9sYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNDE1MzgsImV4cCI6MjA4ODcxNzUzOH0.ff7uzeH5iq8nHRPl2SzL-BvxLLIj4RvaA4zSskZBYTE";
+    const SUPABASE_KEY = "TVŮJ_ANON_KEY_SEM";
+
+    const customStorage = {
+      getItem(key) {
+        try {
+          return window.localStorage.getItem(key);
+        } catch (e) {
+          console.error("localStorage getItem error:", e);
+          return null;
+        }
+      },
+      setItem(key, value) {
+        try {
+          window.localStorage.setItem(key, value);
+        } catch (e) {
+          console.error("localStorage setItem error:", e);
+        }
+      },
+      removeItem(key) {
+        try {
+          window.localStorage.removeItem(key);
+        } catch (e) {
+          console.error("localStorage removeItem error:", e);
+        }
+      }
+    };
 
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: {
+        storage: customStorage,
+        storageKey: "dochazka-auth",
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: false
       }
     });
 
@@ -674,7 +701,9 @@
     let authReady = false;
 
     function today() {
-      return new Date().toISOString().slice(0, 10);
+      const d = new Date();
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 10);
     }
 
     function currentTimeValue() {
@@ -702,7 +731,7 @@
       box.textContent = message;
       setTimeout(() => {
         if (box.textContent === message) clearError();
-      }, 5000);
+      }, 7000);
     }
 
     function clearError() {
@@ -847,11 +876,14 @@
 
       if (error) {
         console.error(error);
-        showError("Přihlášení se nezdařilo.");
+        showError(`Přihlášení se nezdařilo: ${error.message}`);
         return;
       }
 
       currentSession = data.session || null;
+      console.log("Po loginu session:", currentSession);
+      console.log("Storage po loginu:", localStorage.getItem("dochazka-auth"));
+
       await reloadAll();
       showSuccess("Přihlášení proběhlo úspěšně.");
     }
@@ -872,7 +904,7 @@
 
       if (error) {
         console.error(error);
-        showError("Nepodařilo se vytvořit účet.");
+        showError(`Nepodařilo se vytvořit účet: ${error.message}`);
         return;
       }
 
@@ -887,7 +919,7 @@
 
       if (error) {
         console.error(error);
-        showError("Nepodařilo se odhlásit.");
+        showError(`Nepodařilo se odhlásit: ${error.message}`);
         return;
       }
 
@@ -911,7 +943,7 @@
 
       if (error) {
         console.error(error);
-        showError("Nepodařilo se načíst profil přihlášeného uživatele.");
+        showError(`Nepodařilo se načíst profil přihlášeného uživatele: ${error.message}`);
         return;
       }
 
@@ -1184,7 +1216,7 @@
       const { data, error } = await db.from("employees").select("*").order("id");
       if (error) {
         console.error(error);
-        showError("Nepodařilo se načíst zaměstnance.");
+        showError(`Nepodařilo se načíst zaměstnance: ${error.message}`);
         return;
       }
       employees = data || [];
@@ -1194,7 +1226,7 @@
       const { data, error } = await db.from("attendance").select("*").order("id");
       if (error) {
         console.error(error);
-        showError("Nepodařilo se načíst docházku.");
+        showError(`Nepodařilo se načíst docházku: ${error.message}`);
         return;
       }
       attendance = data || [];
@@ -1204,7 +1236,7 @@
       const { data, error } = await db.from("leaves").select("*").order("id");
       if (error) {
         console.error(error);
-        showError("Nepodařilo se načíst dovolené.");
+        showError(`Nepodařilo se načíst dovolené: ${error.message}`);
         return;
       }
       leaves = data || [];
@@ -1240,7 +1272,7 @@
       const { error } = await db.from("attendance").insert(payload);
       if (error) {
         console.error(error);
-        showError("Nepodařilo se uložit docházku.");
+        showError(`Nepodařilo se uložit docházku: ${error.message}`);
         return;
       }
 
@@ -1285,7 +1317,7 @@
       const { error } = await db.from("leaves").insert(payload);
       if (error) {
         console.error(error);
-        showError("Nepodařilo se uložit žádost o dovolenou.");
+        showError(`Nepodařilo se uložit žádost o dovolenou: ${error.message}`);
         return;
       }
 
@@ -1305,7 +1337,7 @@
       const { error } = await db.from("leaves").update({ status: "schváleno" }).eq("id", id);
       if (error) {
         console.error(error);
-        showError("Nepodařilo se schválit dovolenou.");
+        showError(`Nepodařilo se schválit dovolenou: ${error.message}`);
         return;
       }
 
@@ -1341,7 +1373,7 @@
 
       if (error) {
         console.error(error);
-        showError("Nepodařilo se uložit příchod.");
+        showError(`Nepodařilo se uložit příchod: ${error.message}`);
         return;
       }
 
@@ -1363,11 +1395,7 @@
       }
 
       const openRecord = attendance
-        .filter(a =>
-          Number(a.employee_id) === employee_id &&
-          a.date === today() &&
-          !a.time_to
-        )
+        .filter(a => Number(a.employee_id) === employee_id && a.date === today() && !a.time_to)
         .sort((a, b) => Number(b.id || 0) - Number(a.id || 0))[0];
 
       if (!openRecord) {
@@ -1382,7 +1410,7 @@
 
       if (error) {
         console.error(error);
-        showError("Nepodařilo se uložit odchod.");
+        showError(`Nepodařilo se uložit odchod: ${error.message}`);
         return;
       }
 
@@ -1453,29 +1481,19 @@
         return;
       }
 
-      const payload = {
-        name,
-        email,
-        weekly,
-        leave_days,
-        leave_hours,
-        offices
-      };
+      const payload = { name, email, weekly, leave_days, leave_hours, offices };
 
       let error;
 
       if (id) {
         ({ error } = await db.from("employees").update(payload).eq("id", Number(id)));
       } else {
-        ({ error } = await db.from("employees").insert({
-          ...payload,
-          is_admin: false
-        }));
+        ({ error } = await db.from("employees").insert({ ...payload, is_admin: false }));
       }
 
       if (error) {
         console.error(error);
-        showError(id ? "Nepodařilo se upravit zaměstnance." : "Nepodařilo se vytvořit zaměstnance.");
+        showError(id ? `Nepodařilo se upravit zaměstnance: ${error.message}` : `Nepodařilo se vytvořit zaměstnance: ${error.message}`);
         return;
       }
 
@@ -1508,7 +1526,7 @@
 
       if (error) {
         console.error(error);
-        showError("Nepodařilo se smazat zaměstnance. Možná má navázanou docházku nebo dovolenou.");
+        showError(`Nepodařilo se smazat zaměstnance: ${error.message}`);
         return;
       }
 
@@ -1615,21 +1633,42 @@
       updateAuthUI();
     }
 
+    async function restoreSession() {
+      const raw = localStorage.getItem("dochazka-auth");
+      console.log("Raw storage dochazka-auth:", raw);
+
+      const { data, error } = await db.auth.getSession();
+      if (error) {
+        console.error("getSession error:", error);
+      }
+
+      let session = data?.session || null;
+
+      if (session) {
+        const { data: refreshed, error: refreshError } = await db.auth.refreshSession();
+        if (refreshError) {
+          console.warn("refreshSession warning:", refreshError);
+        } else if (refreshed?.session) {
+          session = refreshed.session;
+        }
+      }
+
+      currentSession = session;
+      console.log("Obnovená session:", currentSession);
+    }
+
     async function initAuth() {
       updateAuthUI();
 
-      const { data, error } = await db.auth.getSession();
-
-      if (error) {
-        console.error("getSession error:", error);
-        showError("Nepodařilo se načíst přihlašovací session.");
+      try {
+        await restoreSession();
+      } catch (e) {
+        console.error("restoreSession crash:", e);
+        showError("Nepodařilo se obnovit session.");
         currentSession = null;
-      } else {
-        currentSession = data.session || null;
       }
 
       authReady = true;
-      console.log("Session při startu:", currentSession);
       await reloadAll();
 
       db.auth.onAuthStateChange(async (event, session) => {
@@ -1651,7 +1690,7 @@
       await initAuth();
     }
 
-    init();
+    window.addEventListener("load", init);
   </script>
 </body>
 </html>
