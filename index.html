@@ -220,6 +220,7 @@
       font-size: 22px;
       font-weight: 700;
       margin-top: 6px;
+      word-break: break-word;
     }
 
     .quick-buttons {
@@ -271,7 +272,7 @@
           </p>
         </div>
         <div class="row">
-          <span class="pill" id="authStateBadge">Nepřihlášen</span>
+          <span class="pill" id="authStateBadge">Načítání session…</span>
           <span class="pill ok" id="profileBadge">Režim: admin</span>
         </div>
       </div>
@@ -656,13 +657,21 @@
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2amtrZGZ6enVkdG1scW9sYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNDE1MzgsImV4cCI6MjA4ODcxNzUzOH0.ff7uzeH5iq8nHRPl2SzL-BvxLLIj4RvaA4zSskZBYTE";
-    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
 
     let employees = [];
     let attendance = [];
     let leaves = [];
     let currentSession = null;
     let currentEmployeeProfile = null;
+    let authReady = false;
 
     function today() {
       return new Date().toISOString().slice(0, 10);
@@ -752,6 +761,14 @@
       const sessionEmployeeName = document.getElementById("sessionEmployeeName");
       const sessionInfoBox = document.getElementById("sessionInfoBox");
 
+      if (!authReady) {
+        badge.textContent = "Načítání session…";
+        badge.className = "pill";
+        loginCard.classList.add("hidden");
+        sessionCard.classList.add("hidden");
+        return;
+      }
+
       if (currentSession?.user) {
         badge.textContent = "Přihlášen";
         badge.className = "pill ok";
@@ -778,6 +795,9 @@
         profileBadge.textContent = "Režim: admin";
         loginCard.classList.remove("hidden");
         sessionCard.classList.add("hidden");
+        sessionEmail.textContent = "—";
+        sessionEmployeeName.textContent = "—";
+        sessionInfoBox.textContent = "Session není aktivní.";
       }
 
       applyProfileToForms();
@@ -791,6 +811,8 @@
       const leaveEmployee = document.getElementById("leaveEmployee");
       const attendanceFilterEmployee = document.getElementById("attendanceFilterEmployee");
       const quickEmployee = document.getElementById("quickEmployee");
+
+      if (!attendanceEmployee || !leaveEmployee || !attendanceFilterEmployee || !quickEmployee) return;
 
       if (employeeId && !isAdmin()) {
         attendanceEmployee.value = String(employeeId);
@@ -950,6 +972,7 @@
       const allOptions = employees.map(e =>
         `<option value="${e.id}">${escapeHtml(e.name)}</option>`
       ).join("");
+
       const visibleOptions = visibleEmployees.map(e =>
         `<option value="${e.id}">${escapeHtml(e.name)}</option>`
       ).join("");
@@ -1579,11 +1602,8 @@
     }
 
     async function reloadAll() {
-      clearError();
-      clearSuccess();
-
-      await resolveCurrentEmployeeProfile();
       await loadEmployees();
+      await resolveCurrentEmployeeProfile();
       populateSelects();
       await loadAttendance();
       await loadLeaves();
@@ -1596,16 +1616,26 @@
     }
 
     async function initAuth() {
+      updateAuthUI();
+
       const { data, error } = await db.auth.getSession();
+
       if (error) {
-        console.error(error);
-        return;
+        console.error("getSession error:", error);
+        showError("Nepodařilo se načíst přihlašovací session.");
+        currentSession = null;
+      } else {
+        currentSession = data.session || null;
       }
 
-      currentSession = data.session || null;
+      authReady = true;
+      console.log("Session při startu:", currentSession);
+      await reloadAll();
 
-      db.auth.onAuthStateChange(async (_event, session) => {
+      db.auth.onAuthStateChange(async (event, session) => {
+        console.log("Auth event:", event, session);
         currentSession = session || null;
+        authReady = true;
         await reloadAll();
       });
     }
@@ -1617,8 +1647,8 @@
       document.getElementById("attendanceFilterMonth").value = currentMonthValue();
       resetEmployeeForm();
 
+      updateAuthUI();
       await initAuth();
-      await reloadAll();
     }
 
     init();
