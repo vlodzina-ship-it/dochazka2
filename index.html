@@ -852,19 +852,22 @@
       if (e.key === "Enter") signIn();
     });
 
-    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-      debugLog("onAuthStateChange", { event: _event, hasSession: !!session });
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+  debugLog("onAuthStateChange", { event: _event, hasSession: !!session });
 
-      if (session?.user) {
-        currentUser = session.user;
-        loginView.classList.add("hidden");
-        appView.classList.remove("hidden");
-        sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
-        await loadAllData();
-      } else {
-        renderLoggedOut();
-      }
-    });
+  if (session?.user) {
+    currentUser = session.user;
+    loginView.classList.add("hidden");
+    appView.classList.remove("hidden");
+    sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
+
+    setTimeout(() => {
+      loadAllData();
+    }, 0);
+  } else {
+    renderLoggedOut();
+  }
+});
 
     (async function bootstrap() {
       renderLoggedOut();
