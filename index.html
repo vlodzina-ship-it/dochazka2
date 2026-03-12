@@ -3,23 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Docházka v4 - Role a oprávnění</title>
+  <title>Docházka Osoblažský Cech</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: #0f172a;
-      --panel: #111827;
-      --panel-2: #1f2937;
-      --border: #334155;
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-      --ok: #22c55e;
-      --warn: #f59e0b;
-      --err: #ef4444;
-      --btn: #2563eb;
-      --btn-hover: #1d4ed8;
-      --input: #0b1220;
-      --danger: #b91c1c;
-      --danger-hover: #991b1b;
+      --bg: #0b132b;
+      --panel: #111b3a;
+      --panel-2: #16244b;
+      --border: #2c3d72;
+      --text: #edf2ff;
+      --muted: #a8b4d6;
+      --primary: #4f7cff;
+      --primary-hover: #3e68e6;
+      --secondary: #33446f;
+      --secondary-hover: #415484;
+      --success: #1f9d69;
+      --success-hover: #187b52;
+      --danger: #c73c3c;
+      --danger-hover: #a72f2f;
+      --warning: #e0a100;
+      --input: #0a1228;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      --radius: 14px;
     }
 
     * { box-sizing: border-box; }
@@ -32,174 +37,165 @@
       line-height: 1.45;
     }
 
-    .wrap {
-      max-width: 1400px;
+    .container {
+      max-width: 1380px;
       margin: 0 auto;
       padding: 24px;
     }
 
     h1, h2, h3 {
-      margin-top: 0;
+      margin: 0 0 14px 0;
     }
 
-    .note {
-      background: #1e293b;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 16px;
-      margin-bottom: 20px;
-      color: #dbeafe;
+    .hidden {
+      display: none !important;
     }
 
-    .grid-top {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-
-    @media (min-width: 1000px) {
-      .grid-top {
-        grid-template-columns: 380px 1fr;
-      }
-    }
-
-    .attendance-layout,
-    .employees-layout,
-    .admin-attendance-layout {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
-    }
-
-    @media (min-width: 1100px) {
-      .attendance-layout {
-        grid-template-columns: 420px 1fr;
-      }
-
-      .employees-layout {
-        grid-template-columns: 380px 1fr;
-      }
-
-      .admin-attendance-layout {
-        grid-template-columns: 420px 1fr;
-      }
-    }
-
-    .section-stack {
+    .topbar {
       display: flex;
-      flex-direction: column;
-      gap: 20px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      font-size: 30px;
+      font-weight: 700;
+    }
+
+    .muted {
+      color: var(--muted);
     }
 
     .card {
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       padding: 18px;
+      box-shadow: var(--shadow);
     }
 
-    .row {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 14px;
-    }
-
-    .row-inline {
+    .grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 18px;
     }
 
-    @media (max-width: 700px) {
-      .row-inline {
-        grid-template-columns: 1fr;
-      }
+    .grid-main {
+      grid-template-columns: 390px 1fr;
+    }
+
+    .grid-stats {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid-admin-top {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
     }
 
     label {
-      font-size: 14px;
+      display: block;
+      margin-bottom: 8px;
       color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    input, select, textarea, button {
+      font: inherit;
     }
 
     input, select, textarea {
       width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
       background: var(--input);
       color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
       outline: none;
-      resize: vertical;
     }
 
     input:focus, select:focus, textarea:focus {
-      border-color: #60a5fa;
+      border-color: #6e93ff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 92px;
     }
 
     button {
-      appearance: none;
       border: 0;
-      border-radius: 8px;
-      padding: 12px 14px;
+      border-radius: 10px;
+      padding: 12px 15px;
       cursor: pointer;
       font-weight: 700;
-      background: var(--btn);
-      color: white;
+      color: #fff;
     }
 
-    button:hover {
-      background: var(--btn-hover);
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
     }
 
-    button.secondary {
-      background: #374151;
-    }
+    .btn-primary { background: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); }
 
-    button.secondary:hover {
-      background: #4b5563;
-    }
+    .btn-secondary { background: var(--secondary); }
+    .btn-secondary:hover { background: var(--secondary-hover); }
 
-    button.danger {
-      background: var(--danger);
-    }
+    .btn-success { background: var(--success); }
+    .btn-success:hover { background: var(--success-hover); }
 
-    button.danger:hover {
-      background: var(--danger-hover);
-    }
-
-    button.small {
-      padding: 8px 10px;
-      font-size: 13px;
-    }
+    .btn-danger { background: var(--danger); }
+    .btn-danger:hover { background: var(--danger-hover); }
 
     .actions {
       display: flex;
-      flex-wrap: wrap;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
-    .status {
-      margin-top: 14px;
-      padding: 10px 12px;
-      border-radius: 8px;
+    .message {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
       border: 1px solid var(--border);
-      background: var(--panel-2);
       white-space: pre-wrap;
       word-break: break-word;
     }
 
-    .status.ok { border-color: rgba(34, 197, 94, 0.45); }
-    .status.err { border-color: rgba(239, 68, 68, 0.45); }
-    .status.warn { border-color: rgba(245, 158, 11, 0.45); }
+    .message.ok {
+      border-color: rgba(31, 157, 105, 0.5);
+      background: rgba(31, 157, 105, 0.12);
+      color: #aef0cf;
+    }
 
-    .user-box {
-      padding: 12px;
-      border-radius: 10px;
+    .message.warn {
+      border-color: rgba(224, 161, 0, 0.5);
+      background: rgba(224, 161, 0, 0.12);
+      color: #ffe39a;
+    }
+
+    .message.err {
+      border-color: rgba(199, 60, 60, 0.5);
+      background: rgba(199, 60, 60, 0.12);
+      color: #ffc3c3;
+    }
+
+    .profile-box {
       background: var(--panel-2);
-      border: 1px solid var(--border);
-      margin-top: 12px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      line-height: 1.7;
+      word-break: break-word;
     }
 
     .mono {
@@ -207,453 +203,282 @@
       font-size: 13px;
     }
 
-    .debug-section {
-      margin-bottom: 18px;
+    .stat {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
     }
 
-    .debug-title {
+    .stat-label {
+      color: var(--muted);
       font-size: 14px;
-      font-weight: 700;
-      color: #cbd5e1;
       margin-bottom: 8px;
     }
 
-    pre {
-      margin: 0;
-      padding: 12px;
-      background: #020617;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: auto;
-      color: #cbd5e1;
-      min-height: 80px;
-    }
-
-    .small {
-      color: var(--muted);
-      font-size: 13px;
+    .stat-value {
+      font-size: 30px;
+      font-weight: 700;
     }
 
     .pill {
       display: inline-block;
-      padding: 4px 8px;
+      padding: 6px 10px;
       border-radius: 999px;
       font-size: 12px;
       font-weight: 700;
-      margin-left: 8px;
-      vertical-align: middle;
     }
 
-    .pill.ok { background: rgba(34, 197, 94, 0.15); color: #86efac; }
-    .pill.warn { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
-
-    .pill.admin { background: rgba(96, 165, 250, 0.15); color: #93c5fd; }
-
-    .topline {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
+    .pill-admin {
+      background: rgba(79, 124, 255, 0.18);
+      color: #b8c9ff;
+      border: 1px solid rgba(79, 124, 255, 0.35);
     }
 
-    .hidden {
-      display: none;
+    .pill-employee {
+      background: rgba(31, 157, 105, 0.18);
+      color: #aef0cf;
+      border: 1px solid rgba(31, 157, 105, 0.35);
+    }
+
+    .pill-warn {
+      background: rgba(224, 161, 0, 0.18);
+      color: #ffe39a;
+      border: 1px solid rgba(224, 161, 0, 0.35);
     }
 
     .table-wrap {
       overflow: auto;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
+      background: var(--panel-2);
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 860px;
-      background: var(--panel-2);
+      min-width: 760px;
     }
 
     th, td {
-      padding: 12px;
+      padding: 12px 10px;
       border-bottom: 1px solid var(--border);
       text-align: left;
       vertical-align: top;
+      font-size: 14px;
     }
 
     th {
-      color: #cbd5e1;
-      background: #182234;
-      font-size: 14px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.03);
     }
 
-    td {
-      font-size: 14px;
+    tr:last-child td {
+      border-bottom: 0;
     }
 
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
+    .login-wrap {
+      max-width: 460px;
+      margin: 50px auto;
     }
 
-    .badge.active {
-      background: rgba(34, 197, 94, 0.15);
-      color: #86efac;
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
     }
 
-    .badge.inactive {
-      background: rgba(239, 68, 68, 0.15);
-      color: #fca5a5;
-    }
-
-    .muted-box {
-      padding: 12px;
+    .empty-box {
+      padding: 14px;
       border: 1px dashed var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       color: var(--muted);
       background: rgba(255,255,255,0.02);
     }
 
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-      margin-top: 12px;
+    .small {
+      font-size: 13px;
+      color: var(--muted);
     }
 
-    .info-item {
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--panel-2);
-    }
+    @media (max-width: 1050px) {
+      .grid-main,
+      .grid-stats,
+      .grid-admin-top {
+        grid-template-columns: 1fr;
+      }
 
-    .big-number {
-      font-size: 24px;
-      font-weight: 700;
-      margin-top: 6px;
+      .container {
+        padding: 16px;
+      }
+
+      .brand {
+        font-size: 24px;
+      }
+
+      .stat-value {
+        font-size: 26px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="note">
-      <strong>V minulém chatu jsme si několikrát mylně mysleli, že persistence už funguje. Tentokrát chci postupovat přísně: nejdřív prokázat funkční refresh loginu, až potom stavět zbytek systému.</strong>
+  <div class="container">
+    <div id="loginView" class="login-wrap">
+      <div class="card">
+        <h1>Přihlášení do docházky</h1>
+        <p class="muted">Použij přihlašovací údaje ze Supabase Auth.</p>
+
+        <div>
+          <label for="email">E-mail</label>
+          <input id="email" type="email" autocomplete="username" />
+        </div>
+
+        <div style="margin-top:14px;">
+          <label for="password">Heslo</label>
+          <input id="password" type="password" autocomplete="current-password" />
+        </div>
+
+        <div class="actions" style="margin-top:16px;">
+          <button id="loginBtn" class="btn-primary" type="button">Přihlásit</button>
+        </div>
+
+        <div id="loginMessage" class="message warn" style="margin-top:16px;">Čekám na přihlášení.</div>
+      </div>
     </div>
 
-    <div class="grid-top">
-      <section class="card">
-        <div class="topline">
-          <h1>Docházka v4 - Role a oprávnění</h1>
-          <div>
-            <span id="sessionBadge" class="pill warn">bez session</span>
-            <span id="roleBadge" class="pill hidden">role</span>
-          </div>
+    <div id="appView" class="hidden">
+      <div class="topbar">
+        <div>
+          <div class="brand">Docházka Osoblažský Cech</div>
+          <div id="sessionText" class="muted">Načítám session…</div>
         </div>
-
-        <p class="small">
-          Zaměstnanec vidí jen sebe. Admin vidí a může opravovat všechny.
-        </p>
-
-        <form id="loginForm">
-          <div class="row">
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" autocomplete="email" required />
-          </div>
-
-          <div class="row">
-            <label for="password">Heslo</label>
-            <input id="password" name="password" type="password" autocomplete="current-password" required />
-          </div>
-
-          <div class="actions">
-            <button type="submit">Přihlásit</button>
-            <button type="button" class="secondary" id="logoutBtn">Odhlásit</button>
-            <button type="button" class="secondary" id="refreshDebugBtn">Obnovit debug</button>
-          </div>
-        </form>
-
-        <div id="message" class="status warn">Čekám na inicializaci...</div>
-
-        <div class="user-box">
-          <h3>Aktuální uživatel</h3>
-          <pre id="userInfo" class="mono">Načítám...</pre>
+        <div class="actions">
+          <button id="refreshBtn" class="btn-secondary" type="button">Načíst znovu</button>
+          <button id="logoutBtn" class="btn-danger" type="button">Odhlásit</button>
         </div>
-      </section>
+      </div>
 
-      <section class="card">
-        <div class="topline">
-          <h2>Debug panel</h2>
-          <span class="small">auth bootstrap necháváme stabilní</span>
-        </div>
+      <div id="appMessage" class="message warn">Načítám aplikaci…</div>
 
-        <div class="debug-section">
-          <div class="debug-title">1) Poslední výsledek getSession()</div>
-          <pre id="sessionDump" class="mono"></pre>
-        </div>
-
-        <div class="debug-section">
-          <div class="debug-title">2) onAuthStateChange eventy</div>
-          <pre id="authEvents" class="mono"></pre>
-        </div>
-
-        <div class="debug-section">
-          <div class="debug-title">3) localStorage klíče</div>
-          <pre id="storageDump" class="mono"></pre>
-        </div>
-      </section>
-    </div>
-
-    <div id="appSection" class="section-stack hidden">
-      <section class="card">
-        <div class="topline">
-          <h2>Moje docházka</h2>
-          <span class="small">zaměstnanec i admin mají svou vlastní docházku</span>
-        </div>
-
-        <div class="attendance-layout">
+      <div class="grid grid-main">
+        <div class="stack">
           <div class="card">
-            <h3>Můj zaměstnanecký profil</h3>
-
-            <div id="attendanceProfileBox" class="muted-box">
-              Načítám vazbu mezi přihlášeným uživatelem a zaměstnancem...
+            <div class="section-title">
+              <h2>Můj profil</h2>
+              <span id="rolePill" class="pill pill-warn">bez role</span>
             </div>
-
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="small">Otevřená směna</div>
-                <div id="openShiftValue" class="big-number">—</div>
-              </div>
-
-              <div class="info-item">
-                <div class="small">Dnešní příchod</div>
-                <div id="todayCheckInValue" class="big-number">—</div>
-              </div>
-
-              <div class="info-item">
-                <div class="small">Dnešní odchod</div>
-                <div id="todayCheckOutValue" class="big-number">—</div>
-              </div>
-            </div>
-
-            <div class="row" style="margin-top: 16px;">
-              <label for="attendanceNote">Poznámka</label>
-              <textarea id="attendanceNote" rows="3" placeholder="Volitelná poznámka k příchodu nebo odchodu"></textarea>
-            </div>
-
-            <div class="actions">
-              <button type="button" id="checkInBtn">Příchod</button>
-              <button type="button" class="secondary" id="checkOutBtn">Odchod</button>
-              <button type="button" class="secondary" id="reloadAttendanceBtn">Načíst znovu</button>
-            </div>
-
-            <div id="attendanceMessage" class="status warn">Přihlas se a načti docházku.</div>
+            <div id="profileBox" class="profile-box">Načítám profil…</div>
           </div>
 
           <div class="card">
-            <div class="topline">
-              <h3>Moje poslední docházka</h3>
+            <h2>Moje dnešní docházka</h2>
+            <div class="grid grid-stats">
+              <div class="stat">
+                <div class="stat-label">Otevřená směna</div>
+                <div id="openShiftValue" class="stat-value">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Dnešní příchod</div>
+                <div id="todayArrivalValue" class="stat-value">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Dnešní odchod</div>
+                <div id="todayDepartureValue" class="stat-value">—</div>
+              </div>
             </div>
-
-            <div id="attendanceEmpty" class="muted-box">Zatím žádné záznamy docházky.</div>
-
-            <div id="attendanceTableWrap" class="table-wrap hidden">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Příchod</th>
-                    <th>Odchod</th>
-                    <th>Poznámka</th>
-                    <th>Vytvořeno</th>
-                  </tr>
-                </thead>
-                <tbody id="attendanceTbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="adminEmployeesSection" class="card hidden">
-        <div class="topline">
-          <h2>Admin - Zaměstnanci</h2>
-          <span class="small">jen admin vidí a spravuje všechny zaměstnance</span>
-        </div>
-
-        <div class="employees-layout">
-          <div class="card">
-            <h3 id="employeeFormTitle">Přidat zaměstnance</h3>
-
-            <form id="employeeForm">
-              <input type="hidden" id="employeeId" />
-
-              <div class="row">
-                <label for="employeeName">Jméno</label>
-                <input id="employeeName" type="text" required />
-              </div>
-
-              <div class="row">
-                <label for="employeeEmail">Email</label>
-                <input id="employeeEmail" type="email" required />
-              </div>
-
-              <div class="row">
-                <label for="employeeAuthUserId">Auth user ID</label>
-                <input id="employeeAuthUserId" type="text" />
-              </div>
-
-              <div class="row-inline">
-                <div class="row">
-                  <label for="employeeRole">Role</label>
-                  <select id="employeeRole" required>
-                    <option value="employee">employee</option>
-                    <option value="manager">manager</option>
-                    <option value="admin">admin</option>
-                  </select>
-                </div>
-
-                <div class="row">
-                  <label for="employeeActive">Aktivní</label>
-                  <select id="employeeActive" required>
-                    <option value="true">ano</option>
-                    <option value="false">ne</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="row-inline">
-                <div class="row">
-                  <label for="employeeIsAdmin">Je admin</label>
-                  <select id="employeeIsAdmin" required>
-                    <option value="false">ne</option>
-                    <option value="true">ano</option>
-                  </select>
-                </div>
-
-                <div class="row">
-                  <label for="employeeOffices">Kancelář / offices</label>
-                  <input id="employeeOffices" type="text" />
-                </div>
-              </div>
-
-              <div class="actions">
-                <button type="submit" id="employeeSubmitBtn">Uložit zaměstnance</button>
-                <button type="button" class="secondary" id="employeeCancelBtn">Zrušit editaci</button>
-              </div>
-            </form>
-
-            <div id="employeeMessage" class="status warn">Přihlas se jako admin.</div>
           </div>
 
           <div class="card">
-            <div class="topline">
-              <h3>Seznam zaměstnanců</h3>
-              <button type="button" class="secondary" id="reloadEmployeesBtn">Načíst znovu</button>
+            <h2>Příchod / Odchod</h2>
+
+            <div>
+              <label for="office">Místo práce</label>
+              <select id="office">
+                <option value="Osoblaha">Osoblaha</option>
+                <option value="Hlinka">Hlinka</option>
+                <option value="Slezské Pavlovice">Slezské Pavlovice</option>
+                <option value="Hlavní kancelář">Hlavní kancelář</option>
+                <option value="home office">home office</option>
+                <option value="kancelář dle potřeby">kancelář dle potřeby</option>
+              </select>
             </div>
 
-            <div id="employeesEmpty" class="muted-box">Zatím žádní zaměstnanci.</div>
-
-            <div id="employeesTableWrap" class="table-wrap hidden">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Jméno</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Admin</th>
-                    <th>Aktivní</th>
-                    <th>Auth user ID</th>
-                    <th>Akce</th>
-                  </tr>
-                </thead>
-                <tbody id="employeesTbody"></tbody>
-              </table>
+            <div style="margin-top:14px;">
+              <label for="attendanceType">Typ</label>
+              <select id="attendanceType">
+                <option value="práce">práce</option>
+                <option value="home office">home office</option>
+                <option value="služební cesta">služební cesta</option>
+              </select>
             </div>
+
+            <div style="margin-top:14px;">
+              <label for="breakMinutes">Přestávka (minuty)</label>
+              <input id="breakMinutes" type="number" min="0" step="1" value="30" />
+            </div>
+
+            <div style="margin-top:14px;">
+              <label for="employeeOfficesInfo">Moje přidělená kancelář / offices</label>
+              <input id="employeeOfficesInfo" type="text" disabled />
+            </div>
+
+            <div class="actions" style="margin-top:16px;">
+              <button id="checkInBtn" class="btn-success" type="button">Příchod</button>
+              <button id="checkOutBtn" class="btn-primary" type="button">Odchod</button>
+            </div>
+
+            <div id="attendanceMessage" class="message warn">Přihlas se a načti docházku.</div>
           </div>
         </div>
-      </section>
 
-      <section id="adminAttendanceSection" class="card hidden">
-        <div class="topline">
-          <h2>Admin - Docházka všech zaměstnanců</h2>
-          <span class="small">jen admin může opravovat všechny záznamy</span>
-        </div>
-
-        <div class="admin-attendance-layout">
+        <div class="stack">
           <div class="card">
-            <h3 id="adminAttendanceFormTitle">Oprava docházky</h3>
-
-            <form id="adminAttendanceForm">
-              <input type="hidden" id="adminAttendanceId" />
-
-              <div class="row">
-                <label for="adminAttendanceEmployee">Zaměstnanec</label>
-                <select id="adminAttendanceEmployee"></select>
-              </div>
-
-              <div class="row-inline">
-                <div class="row">
-                  <label for="adminAttendanceCheckIn">Check-in</label>
-                  <input id="adminAttendanceCheckIn" type="datetime-local" />
-                </div>
-                <div class="row">
-                  <label for="adminAttendanceCheckOut">Check-out</label>
-                  <input id="adminAttendanceCheckOut" type="datetime-local" />
-                </div>
-              </div>
-
-              <div class="row">
-                <label for="adminAttendanceNote">Poznámka</label>
-                <textarea id="adminAttendanceNote" rows="3"></textarea>
-              </div>
-
-              <div class="actions">
-                <button type="submit" id="adminAttendanceSubmitBtn">Uložit opravu</button>
-                <button type="button" class="secondary" id="adminAttendanceCancelBtn">Zrušit editaci</button>
-              </div>
-            </form>
-
-            <div id="adminAttendanceMessage" class="status warn">Přihlas se jako admin.</div>
+            <div class="section-title">
+              <h2>Moje poslední docházka</h2>
+              <span class="small">zaměstnanec vidí jen sebe, admin všechny</span>
+            </div>
+            <div id="myAttendanceWrap" class="empty-box">Zatím žádné záznamy.</div>
           </div>
 
-          <div class="card">
-            <div class="topline">
-              <h3>Poslední docházka všech</h3>
-              <button type="button" class="secondary" id="reloadAdminAttendanceBtn">Načíst znovu</button>
+          <div id="adminPanel" class="hidden stack">
+            <div class="grid grid-admin-top">
+              <div class="card">
+                <div class="section-title">
+                  <h2>Kdo je dnes v práci a kde</h2>
+                  <span class="pill pill-admin">admin</span>
+                </div>
+                <div id="adminActiveWrap" class="empty-box">Načítám…</div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">
+                  <h2>Dnešní docházka všech</h2>
+                  <span class="pill pill-admin">live přehled</span>
+                </div>
+                <div id="adminTodayWrap" class="empty-box">Načítám…</div>
+              </div>
             </div>
 
-            <div id="adminAttendanceEmpty" class="muted-box">Zatím žádné záznamy.</div>
-
-            <div id="adminAttendanceTableWrap" class="table-wrap hidden">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Zaměstnanec</th>
-                    <th>Příchod</th>
-                    <th>Odchod</th>
-                    <th>Poznámka</th>
-                    <th>Vytvořeno</th>
-                    <th>Akce</th>
-                  </tr>
-                </thead>
-                <tbody id="adminAttendanceTbody"></tbody>
-              </table>
+            <div class="card">
+              <div class="section-title">
+                <h2>Zaměstnanci</h2>
+                <span class="small">jen náhled, editaci můžeme doplnit potom</span>
+              </div>
+              <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const SUPABASE_URL = 'https://avjkkdfzzudtmlqolbzk.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-';
+    const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-";
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: {
@@ -663,1033 +488,574 @@
       }
     });
 
-    const loginForm = document.getElementById('loginForm');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const refreshDebugBtn = document.getElementById('refreshDebugBtn');
+    const loginView = document.getElementById("loginView");
+    const appView = document.getElementById("appView");
 
-    const messageEl = document.getElementById('message');
-    const userInfoEl = document.getElementById('userInfo');
-    const sessionDumpEl = document.getElementById('sessionDump');
-    const authEventsEl = document.getElementById('authEvents');
-    const storageDumpEl = document.getElementById('storageDump');
-    const sessionBadgeEl = document.getElementById('sessionBadge');
-    const roleBadgeEl = document.getElementById('roleBadge');
+    const emailEl = document.getElementById("email");
+    const passwordEl = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
 
-    const appSectionEl = document.getElementById('appSection');
+    const loginMessageEl = document.getElementById("loginMessage");
+    const appMessageEl = document.getElementById("appMessage");
+    const attendanceMessageEl = document.getElementById("attendanceMessage");
 
-    const attendanceProfileBoxEl = document.getElementById('attendanceProfileBox');
-    const openShiftValueEl = document.getElementById('openShiftValue');
-    const todayCheckInValueEl = document.getElementById('todayCheckInValue');
-    const todayCheckOutValueEl = document.getElementById('todayCheckOutValue');
-    const attendanceNoteEl = document.getElementById('attendanceNote');
-    const checkInBtnEl = document.getElementById('checkInBtn');
-    const checkOutBtnEl = document.getElementById('checkOutBtn');
-    const reloadAttendanceBtnEl = document.getElementById('reloadAttendanceBtn');
-    const attendanceMessageEl = document.getElementById('attendanceMessage');
-    const attendanceEmptyEl = document.getElementById('attendanceEmpty');
-    const attendanceTableWrapEl = document.getElementById('attendanceTableWrap');
-    const attendanceTbodyEl = document.getElementById('attendanceTbody');
+    const sessionTextEl = document.getElementById("sessionText");
+    const rolePillEl = document.getElementById("rolePill");
+    const profileBoxEl = document.getElementById("profileBox");
 
-    const adminEmployeesSectionEl = document.getElementById('adminEmployeesSection');
-    const employeeForm = document.getElementById('employeeForm');
-    const employeeFormTitleEl = document.getElementById('employeeFormTitle');
-    const employeeSubmitBtnEl = document.getElementById('employeeSubmitBtn');
-    const employeeCancelBtnEl = document.getElementById('employeeCancelBtn');
-    const employeeMessageEl = document.getElementById('employeeMessage');
-    const reloadEmployeesBtnEl = document.getElementById('reloadEmployeesBtn');
-    const employeesEmptyEl = document.getElementById('employeesEmpty');
-    const employeesTableWrapEl = document.getElementById('employeesTableWrap');
-    const employeesTbodyEl = document.getElementById('employeesTbody');
+    const openShiftValueEl = document.getElementById("openShiftValue");
+    const todayArrivalValueEl = document.getElementById("todayArrivalValue");
+    const todayDepartureValueEl = document.getElementById("todayDepartureValue");
 
-    const employeeIdEl = document.getElementById('employeeId');
-    const employeeNameEl = document.getElementById('employeeName');
-    const employeeEmailEl = document.getElementById('employeeEmail');
-    const employeeAuthUserIdEl = document.getElementById('employeeAuthUserId');
-    const employeeRoleEl = document.getElementById('employeeRole');
-    const employeeActiveEl = document.getElementById('employeeActive');
-    const employeeIsAdminEl = document.getElementById('employeeIsAdmin');
-    const employeeOfficesEl = document.getElementById('employeeOffices');
+    const officeEl = document.getElementById("office");
+    const attendanceTypeEl = document.getElementById("attendanceType");
+    const breakMinutesEl = document.getElementById("breakMinutes");
+    const employeeOfficesInfoEl = document.getElementById("employeeOfficesInfo");
+    const checkInBtn = document.getElementById("checkInBtn");
+    const checkOutBtn = document.getElementById("checkOutBtn");
 
-    const adminAttendanceSectionEl = document.getElementById('adminAttendanceSection');
-    const adminAttendanceForm = document.getElementById('adminAttendanceForm');
-    const adminAttendanceFormTitleEl = document.getElementById('adminAttendanceFormTitle');
-    const adminAttendanceSubmitBtnEl = document.getElementById('adminAttendanceSubmitBtn');
-    const adminAttendanceCancelBtnEl = document.getElementById('adminAttendanceCancelBtn');
-    const adminAttendanceMessageEl = document.getElementById('adminAttendanceMessage');
-    const reloadAdminAttendanceBtnEl = document.getElementById('reloadAdminAttendanceBtn');
-    const adminAttendanceEmptyEl = document.getElementById('adminAttendanceEmpty');
-    const adminAttendanceTableWrapEl = document.getElementById('adminAttendanceTableWrap');
-    const adminAttendanceTbodyEl = document.getElementById('adminAttendanceTbody');
+    const myAttendanceWrapEl = document.getElementById("myAttendanceWrap");
+    const adminPanelEl = document.getElementById("adminPanel");
+    const adminActiveWrapEl = document.getElementById("adminActiveWrap");
+    const adminTodayWrapEl = document.getElementById("adminTodayWrap");
+    const employeesWrapEl = document.getElementById("employeesWrap");
 
-    const adminAttendanceIdEl = document.getElementById('adminAttendanceId');
-    const adminAttendanceEmployeeEl = document.getElementById('adminAttendanceEmployee');
-    const adminAttendanceCheckInEl = document.getElementById('adminAttendanceCheckIn');
-    const adminAttendanceCheckOutEl = document.getElementById('adminAttendanceCheckOut');
-    const adminAttendanceNoteEl = document.getElementById('adminAttendanceNote');
-
-    const authEventLog = [];
-    let employees = [];
-    let attendanceRows = [];
-    let adminAttendanceRows = [];
     let currentSession = null;
+    let currentUser = null;
     let currentEmployee = null;
-    let currentOpenAttendance = null;
+    let myAttendanceRows = [];
+    let myOpenShift = null;
     let isAdmin = false;
-
-    function nowIso() {
-      return new Date().toISOString();
-    }
-
-    function safeJson(value) {
-      try {
-        return JSON.stringify(value, null, 2);
-      } catch (e) {
-        return String(value);
-      }
-    }
-
-    function getLocalDateForDb() {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-
-    function getOfficeForAttendance() {
-      if (!currentEmployee) return '';
-      if (typeof currentEmployee.office === 'string' && currentEmployee.office.trim()) return currentEmployee.office.trim();
-      if (typeof currentEmployee.offices === 'string' && currentEmployee.offices.trim()) return currentEmployee.offices.trim();
-      return '';
-    }
-
-    function toDatetimeLocalValue(value) {
-      if (!value) return '';
-      const d = new Date(value);
-      if (Number.isNaN(d.getTime())) return '';
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      const hh = String(d.getHours()).padStart(2, '0');
-      const mi = String(d.getMinutes()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-    }
-
-    function fromDatetimeLocalValue(value) {
-      if (!value) return null;
-      return new Date(value).toISOString();
-    }
-
-    function setMessage(text, type) {
-      messageEl.textContent = text;
-      messageEl.className = 'status ' + (type || 'warn');
-    }
-
-    function setAttendanceMessage(text, type) {
-      attendanceMessageEl.textContent = text;
-      attendanceMessageEl.className = 'status ' + (type || 'warn');
-    }
-
-    function setEmployeeMessage(text, type) {
-      employeeMessageEl.textContent = text;
-      employeeMessageEl.className = 'status ' + (type || 'warn');
-    }
-
-    function setAdminAttendanceMessage(text, type) {
-      adminAttendanceMessageEl.textContent = text;
-      adminAttendanceMessageEl.className = 'status ' + (type || 'warn');
-    }
-
-    function setSessionBadge(hasSession) {
-      if (hasSession) {
-        sessionBadgeEl.textContent = 'session aktivní';
-        sessionBadgeEl.className = 'pill ok';
-      } else {
-        sessionBadgeEl.textContent = 'bez session';
-        sessionBadgeEl.className = 'pill warn';
-      }
-    }
-
-    function setRoleBadge(roleText, admin) {
-      roleBadgeEl.classList.remove('hidden', 'ok', 'warn', 'admin');
-      if (admin) {
-        roleBadgeEl.textContent = 'admin';
-        roleBadgeEl.classList.add('pill', 'admin');
-      } else {
-        roleBadgeEl.textContent = roleText || 'employee';
-        roleBadgeEl.classList.add('pill', 'ok');
-      }
-    }
-
-    function dumpLocalStorage() {
-      const data = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        let preview = '';
-        try {
-          const raw = localStorage.getItem(key);
-          preview = raw && raw.length > 300 ? raw.slice(0, 300) + ' ...' : raw;
-        } catch (e) {
-          preview = '[nešlo načíst]';
-        }
-        data.push({ key, valuePreview: preview });
-      }
-      storageDumpEl.textContent = data.length ? safeJson(data) : 'localStorage je prázdné';
-    }
-
-    function pushAuthEvent(eventName, session) {
-      authEventLog.unshift({
-        time: nowIso(),
-        event: eventName,
-        hasSession: !!session,
-        userId: session?.user?.id || null,
-        email: session?.user?.email || null,
-        accessTokenShort: session?.access_token ? session.access_token.slice(0, 20) + '...' : null,
-        refreshTokenShort: session?.refresh_token ? session.refresh_token.slice(0, 20) + '...' : null
-      });
-
-      if (authEventLog.length > 30) authEventLog.length = 30;
-      authEventsEl.textContent = safeJson(authEventLog);
-    }
+    let realtimeChannel = null;
 
     function escapeHtml(value) {
-      return String(value ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
-    function formatDateTime(value) {
-      if (!value) return '—';
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return value;
-      return date.toLocaleString('cs-CZ');
+    function setMessage(el, text, type = "warn") {
+      el.textContent = text;
+      el.className = "message " + type;
     }
 
-    function formatTimeOnly(value) {
-      if (!value) return '—';
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return value;
-      return date.toLocaleTimeString('cs-CZ', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
+    function todayStr() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
     }
 
-    function isSameLocalDay(valueA, valueB) {
-      const a = new Date(valueA);
-      const b = new Date(valueB);
-      return (
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate()
-      );
+    function nowTimeStr() {
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mm = String(d.getMinutes()).padStart(2, "0");
+      const ss = String(d.getSeconds()).padStart(2, "0");
+      return `${hh}:${mm}:${ss}`;
     }
 
-    function renderUser(session) {
-      currentSession = session || null;
+    function formatDateCZ(value) {
+      if (!value) return "—";
+      const parts = String(value).split("-");
+      if (parts.length !== 3) return value;
+      return `${parts[2]}. ${parts[1]}. ${parts[0]}`;
+    }
 
-      if (!session || !session.user) {
-        userInfoEl.textContent = 'Nikdo není přihlášen.';
-        setSessionBadge(false);
-        roleBadgeEl.classList.add('hidden');
-        appSectionEl.classList.add('hidden');
-        adminEmployeesSectionEl.classList.add('hidden');
-        adminAttendanceSectionEl.classList.add('hidden');
-        currentEmployee = null;
-        currentOpenAttendance = null;
-        isAdmin = false;
+    function renderSimpleTable(columns, rows) {
+      if (!rows || !rows.length) {
+        return `<div class="empty-box">Žádná data.</div>`;
+      }
+
+      const thead = columns.map(c => `<th>${escapeHtml(c.label)}</th>`).join("");
+      const tbody = rows.map(row => {
+        const tds = columns.map(c => {
+          const value = c.render ? c.render(row) : row[c.key];
+          return `<td>${value ?? ""}</td>`;
+        }).join("");
+        return `<tr>${tds}</tr>`;
+      }).join("");
+
+      return `
+        <div class="table-wrap">
+          <table>
+            <thead><tr>${thead}</tr></thead>
+            <tbody>${tbody}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderLoggedOut() {
+      loginView.classList.remove("hidden");
+      appView.classList.add("hidden");
+      currentSession = null;
+      currentUser = null;
+      currentEmployee = null;
+      myAttendanceRows = [];
+      myOpenShift = null;
+      isAdmin = false;
+      adminPanelEl.classList.add("hidden");
+      sessionTextEl.textContent = "Nikdo není přihlášen.";
+      profileBoxEl.innerHTML = "Přihlas se.";
+      rolePillEl.textContent = "bez role";
+      rolePillEl.className = "pill pill-warn";
+      openShiftValueEl.textContent = "—";
+      todayArrivalValueEl.textContent = "—";
+      todayDepartureValueEl.textContent = "—";
+      employeeOfficesInfoEl.value = "";
+      myAttendanceWrapEl.innerHTML = `<div class="empty-box">Zatím žádné záznamy.</div>`;
+      adminActiveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
+      adminTodayWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
+      employeesWrapEl.innerHTML = `<div class="empty-box">Načítám zaměstnance…</div>`;
+      setMessage(appMessageEl, "Odhlášeno.", "warn");
+      setMessage(attendanceMessageEl, "Přihlas se a načti docházku.", "warn");
+    }
+
+    async function signIn() {
+      const email = emailEl.value.trim();
+      const password = passwordEl.value;
+
+      if (!email || !password) {
+        setMessage(loginMessageEl, "Vyplň e-mail i heslo.", "err");
         return;
       }
 
-      const user = session.user;
-      userInfoEl.textContent = safeJson({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        last_sign_in_at: user.last_sign_in_at,
-        created_at: user.created_at
-      });
+      setMessage(loginMessageEl, "Přihlašuji…", "warn");
 
-      setSessionBadge(true);
-      appSectionEl.classList.remove('hidden');
-    }
-
-    async function refreshDebug(reason) {
-      dumpLocalStorage();
-
-      const { data, error } = await supabaseClient.auth.getSession();
-
-      sessionDumpEl.textContent = safeJson({
-        reason,
-        checkedAt: nowIso(),
-        error: error ? {
-          message: error.message,
-          status: error.status || null,
-          name: error.name || null
-        } : null,
-        session: data?.session ? {
-          user: {
-            id: data.session.user?.id || null,
-            email: data.session.user?.email || null,
-            role: data.session.user?.role || null,
-            last_sign_in_at: data.session.user?.last_sign_in_at || null
-          },
-          expires_at: data.session.expires_at || null,
-          access_token_short: data.session.access_token ? data.session.access_token.slice(0, 20) + '...' : null,
-          refresh_token_short: data.session.refresh_token ? data.session.refresh_token.slice(0, 20) + '...' : null
-        } : null
-      });
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
       if (error) {
-        renderUser(null);
-        setMessage('getSession() chyba: ' + error.message, 'err');
+        setMessage(loginMessageEl, "Login chyba: " + error.message, "err");
         return;
       }
 
-      renderUser(data.session);
-      setMessage(data.session ? 'Session nalezena. Auth bootstrap je v pořádku.' : 'Žádná session. Přihlas se.', data.session ? 'ok' : 'warn');
+      passwordEl.value = "";
+      setMessage(loginMessageEl, "Přihlášení proběhlo.", "ok");
     }
 
-    function renderAttendanceProfile() {
-      if (!currentSession?.user) {
-        attendanceProfileBoxEl.textContent = 'Nejprve se přihlas.';
-        openShiftValueEl.textContent = '—';
-        todayCheckInValueEl.textContent = '—';
-        todayCheckOutValueEl.textContent = '—';
-        checkInBtnEl.disabled = true;
-        checkOutBtnEl.disabled = true;
+    async function signOut() {
+      if (realtimeChannel) {
+        await supabaseClient.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+      }
+
+      const { error } = await supabaseClient.auth.signOut();
+
+      if (error) {
+        setMessage(appMessageEl, "Logout chyba: " + error.message, "err");
         return;
       }
 
-      if (!currentEmployee) {
-        attendanceProfileBoxEl.innerHTML = `
-          Přihlášený uživatel zatím není spojený s žádným záznamem v <span class="mono">employees.auth_user_id</span>.<br><br>
-          Přihlášený user id:<br>
-          <span class="mono">${escapeHtml(currentSession.user.id)}</span>
-        `;
-        openShiftValueEl.textContent = 'ne';
-        todayCheckInValueEl.textContent = '—';
-        todayCheckOutValueEl.textContent = '—';
-        checkInBtnEl.disabled = true;
-        checkOutBtnEl.disabled = true;
+      renderLoggedOut();
+    }
+
+    async function loadSession() {
+      const { data, error } = await supabaseClient.auth.getSession();
+
+      if (error || !data?.session?.user) {
+        renderLoggedOut();
         return;
       }
 
-      attendanceProfileBoxEl.innerHTML = `
-        <strong>${escapeHtml(currentEmployee.name || '')}</strong><br>
-        ${escapeHtml(currentEmployee.email || '')}<br>
-        role: <span class="mono">${escapeHtml(currentEmployee.role || '')}</span><br>
-        is_admin: <span class="mono">${escapeHtml(String(!!currentEmployee.is_admin))}</span><br>
-        employee id: <span class="mono">${escapeHtml(currentEmployee.id)}</span><br>
-        auth_user_id: <span class="mono">${escapeHtml(currentEmployee.auth_user_id || '')}</span><br>
-        office/offices: <span class="mono">${escapeHtml(getOfficeForAttendance()) || '—'}</span>
-      `;
-
-      checkInBtnEl.disabled = !!currentOpenAttendance;
-      checkOutBtnEl.disabled = !currentOpenAttendance;
-
-      openShiftValueEl.textContent = currentOpenAttendance ? 'ano' : 'ne';
-
-      const todayRow = attendanceRows.find(row => row.check_in && isSameLocalDay(row.check_in, new Date()));
-      todayCheckInValueEl.textContent = todayRow?.check_in ? formatTimeOnly(todayRow.check_in) : '—';
-      todayCheckOutValueEl.textContent = todayRow?.check_out ? formatTimeOnly(todayRow.check_out) : '—';
+      currentSession = data.session;
+      currentUser = data.session.user;
+      loginView.classList.add("hidden");
+      appView.classList.remove("hidden");
+      sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
+      await loadAllData();
+      subscribeRealtime();
     }
 
-    function renderAttendanceTable() {
-      attendanceTbodyEl.innerHTML = '';
-
-      if (!attendanceRows.length) {
-        attendanceEmptyEl.classList.remove('hidden');
-        attendanceTableWrapEl.classList.add('hidden');
-        return;
-      }
-
-      attendanceEmptyEl.classList.add('hidden');
-      attendanceTableWrapEl.classList.remove('hidden');
-
-      for (const row of attendanceRows) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(row.id)}</td>
-          <td>${escapeHtml(formatDateTime(row.check_in))}</td>
-          <td>${escapeHtml(formatDateTime(row.check_out))}</td>
-          <td>${escapeHtml(row.note || '')}</td>
-          <td>${escapeHtml(formatDateTime(row.created_at))}</td>
-        `;
-        attendanceTbodyEl.appendChild(tr);
-      }
-    }
-
-    function resetEmployeeForm() {
-      employeeIdEl.value = '';
-      employeeNameEl.value = '';
-      employeeEmailEl.value = '';
-      employeeAuthUserIdEl.value = '';
-      employeeRoleEl.value = 'employee';
-      employeeActiveEl.value = 'true';
-      employeeIsAdminEl.value = 'false';
-      employeeOfficesEl.value = '';
-      employeeFormTitleEl.textContent = 'Přidat zaměstnance';
-      employeeSubmitBtnEl.textContent = 'Uložit zaměstnance';
-    }
-
-    function startEditEmployee(employee) {
-      employeeIdEl.value = employee.id;
-      employeeNameEl.value = employee.name || '';
-      employeeEmailEl.value = employee.email || '';
-      employeeAuthUserIdEl.value = employee.auth_user_id || '';
-      employeeRoleEl.value = employee.role || 'employee';
-      employeeActiveEl.value = String(!!employee.active);
-      employeeIsAdminEl.value = String(!!employee.is_admin);
-      employeeOfficesEl.value = employee.offices || employee.office || '';
-      employeeFormTitleEl.textContent = 'Upravit zaměstnance';
-      employeeSubmitBtnEl.textContent = 'Uložit změny';
-      window.scrollTo({ top: adminEmployeesSectionEl.offsetTop - 10, behavior: 'smooth' });
-    }
-
-    function renderEmployees() {
-      employeesTbodyEl.innerHTML = '';
-
-      if (!employees.length) {
-        employeesEmptyEl.classList.remove('hidden');
-        employeesTableWrapEl.classList.add('hidden');
-        return;
-      }
-
-      employeesEmptyEl.classList.add('hidden');
-      employeesTableWrapEl.classList.remove('hidden');
-
-      for (const employee of employees) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(employee.name)}</td>
-          <td>${escapeHtml(employee.email)}</td>
-          <td>${escapeHtml(employee.role)}</td>
-          <td>${employee.is_admin ? '<span class="badge active">ano</span>' : '<span class="badge inactive">ne</span>'}</td>
-          <td>${employee.active ? '<span class="badge active">ano</span>' : '<span class="badge inactive">ne</span>'}</td>
-          <td class="mono">${escapeHtml(employee.auth_user_id || '')}</td>
-          <td>
-            <div class="actions">
-              <button type="button" class="small secondary" data-action="edit" data-id="${employee.id}">Editovat</button>
-              <button type="button" class="small danger" data-action="delete" data-id="${employee.id}">Smazat</button>
-            </div>
-          </td>
-        `;
-        employeesTbodyEl.appendChild(tr);
-      }
-    }
-
-    function resetAdminAttendanceForm() {
-      adminAttendanceIdEl.value = '';
-      adminAttendanceEmployeeEl.value = '';
-      adminAttendanceCheckInEl.value = '';
-      adminAttendanceCheckOutEl.value = '';
-      adminAttendanceNoteEl.value = '';
-      adminAttendanceFormTitleEl.textContent = 'Oprava docházky';
-      adminAttendanceSubmitBtnEl.textContent = 'Uložit opravu';
-    }
-
-    function fillAdminAttendanceEmployeeOptions() {
-      adminAttendanceEmployeeEl.innerHTML = '';
-      for (const employee of employees) {
-        const option = document.createElement('option');
-        option.value = employee.id;
-        option.textContent = `${employee.name} (${employee.email})`;
-        adminAttendanceEmployeeEl.appendChild(option);
-      }
-    }
-
-    function startEditAdminAttendance(row) {
-      adminAttendanceIdEl.value = row.id;
-      adminAttendanceEmployeeEl.value = String(row.employee_id);
-      adminAttendanceCheckInEl.value = toDatetimeLocalValue(row.check_in);
-      adminAttendanceCheckOutEl.value = toDatetimeLocalValue(row.check_out);
-      adminAttendanceNoteEl.value = row.note || '';
-      adminAttendanceFormTitleEl.textContent = 'Upravit docházku';
-      adminAttendanceSubmitBtnEl.textContent = 'Uložit změny';
-      window.scrollTo({ top: adminAttendanceSectionEl.offsetTop - 10, behavior: 'smooth' });
-    }
-
-    function renderAdminAttendance() {
-      adminAttendanceTbodyEl.innerHTML = '';
-
-      if (!adminAttendanceRows.length) {
-        adminAttendanceEmptyEl.classList.remove('hidden');
-        adminAttendanceTableWrapEl.classList.add('hidden');
-        return;
-      }
-
-      adminAttendanceEmptyEl.classList.add('hidden');
-      adminAttendanceTableWrapEl.classList.remove('hidden');
-
-      for (const row of adminAttendanceRows) {
-        const employee = employees.find(e => String(e.id) === String(row.employee_id));
-        const employeeLabel = employee ? `${employee.name} (${employee.email})` : `employee_id ${row.employee_id}`;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(row.id)}</td>
-          <td>${escapeHtml(employeeLabel)}</td>
-          <td>${escapeHtml(formatDateTime(row.check_in))}</td>
-          <td>${escapeHtml(formatDateTime(row.check_out))}</td>
-          <td>${escapeHtml(row.note || '')}</td>
-          <td>${escapeHtml(formatDateTime(row.created_at))}</td>
-          <td>
-            <div class="actions">
-              <button type="button" class="small secondary" data-action="edit" data-id="${row.id}">Editovat</button>
-              <button type="button" class="small danger" data-action="delete" data-id="${row.id}">Smazat</button>
-            </div>
-          </td>
-        `;
-        adminAttendanceTbodyEl.appendChild(tr);
-      }
-    }
-
-    async function resolveCurrentEmployee() {
-      if (!currentSession?.user?.id) {
+    async function loadCurrentEmployee() {
+      if (!currentUser?.id) {
         currentEmployee = null;
         isAdmin = false;
-        renderAttendanceProfile();
-        adminEmployeesSectionEl.classList.add('hidden');
-        adminAttendanceSectionEl.classList.add('hidden');
         return;
       }
 
       const { data, error } = await supabaseClient
-        .from('employees')
-        .select('*')
-        .eq('auth_user_id', currentSession.user.id)
-        .limit(1)
+        .from("employees")
+        .select("*")
+        .eq("auth_user_id", currentUser.id)
         .maybeSingle();
 
       if (error) {
         currentEmployee = null;
         isAdmin = false;
-        renderAttendanceProfile();
-        adminEmployeesSectionEl.classList.add('hidden');
-        adminAttendanceSectionEl.classList.add('hidden');
-        setAttendanceMessage('Chyba při hledání employee profilu: ' + error.message, 'err');
-        return;
+        throw error;
       }
 
       currentEmployee = data || null;
-      isAdmin = !!(currentEmployee && (currentEmployee.is_admin || currentEmployee.role === 'admin'));
-      renderAttendanceProfile();
+      isAdmin = !!(currentEmployee && currentEmployee.role === "admin");
+    }
 
-      if (currentEmployee) {
-        setRoleBadge(currentEmployee.role || 'employee', isAdmin);
-      }
-
-      adminEmployeesSectionEl.classList.toggle('hidden', !isAdmin);
-      adminAttendanceSectionEl.classList.toggle('hidden', !isAdmin);
-
+    function renderProfile() {
       if (!currentEmployee) {
-        setAttendanceMessage('Přihlášený uživatel nemá přiřazený employees.auth_user_id.', 'warn');
-      } else {
-        setAttendanceMessage('Načten zaměstnanec pro docházku: ' + currentEmployee.name, 'ok');
+        profileBoxEl.innerHTML = `
+          Přihlášený účet zatím není napárovaný na tabulku <span class="mono">employees</span>.<br><br>
+          <strong>auth_user_id:</strong><br>
+          <span class="mono">${escapeHtml(currentUser?.id || "")}</span>
+        `;
+        rolePillEl.textContent = "bez employee profilu";
+        rolePillEl.className = "pill pill-warn";
+        employeeOfficesInfoEl.value = "";
+        return;
       }
+
+      rolePillEl.textContent = isAdmin ? "admin" : (currentEmployee.role || "employee");
+      rolePillEl.className = "pill " + (isAdmin ? "pill-admin" : "pill-employee");
+
+      profileBoxEl.innerHTML = `
+        <strong>${escapeHtml(currentEmployee.name || "")}</strong><br>
+        ${escapeHtml(currentEmployee.email || "")}<br>
+        role: <span class="mono">${escapeHtml(currentEmployee.role || "employee")}</span><br>
+        employee id: <span class="mono">${escapeHtml(currentEmployee.id)}</span><br>
+        auth_user_id: <span class="mono">${escapeHtml(currentEmployee.auth_user_id || "")}</span><br>
+        weekly: <span class="mono">${escapeHtml(currentEmployee.weekly || "—")}</span><br>
+        leave_days: <span class="mono">${escapeHtml(currentEmployee.leave_days ?? "—")}</span><br>
+        leave_hours: <span class="mono">${escapeHtml(currentEmployee.leave_hours ?? "—")}</span><br>
+        offices: <span class="mono">${escapeHtml(currentEmployee.offices || "—")}</span>
+      `;
+
+      employeeOfficesInfoEl.value = currentEmployee.offices || "";
     }
 
     async function loadMyAttendance() {
-      if (!currentSession?.user) {
-        attendanceRows = [];
-        currentOpenAttendance = null;
-        renderAttendanceProfile();
-        renderAttendanceTable();
-        setAttendanceMessage('Nejprve se přihlas.', 'warn');
-        return;
-      }
-
-      await resolveCurrentEmployee();
-
       if (!currentEmployee) {
-        attendanceRows = [];
-        currentOpenAttendance = null;
-        renderAttendanceTable();
+        myAttendanceRows = [];
+        myOpenShift = null;
+        renderMyAttendance();
         return;
       }
-
-      setAttendanceMessage('Načítám docházku...', 'warn');
 
       const { data, error } = await supabaseClient
-        .from('attendance')
-        .select('*')
-        .eq('employee_id', currentEmployee.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
+        .from("attendance")
+        .select("*")
+        .eq("employee_id", currentEmployee.id)
+        .order("date", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(30);
 
-      if (error) {
-        attendanceRows = [];
-        currentOpenAttendance = null;
-        renderAttendanceProfile();
-        renderAttendanceTable();
-        setAttendanceMessage('Chyba při načítání docházky: ' + error.message, 'err');
+      if (error) throw error;
+
+      myAttendanceRows = Array.isArray(data) ? data : [];
+      myOpenShift = myAttendanceRows.find(row => !row.time_to) || null;
+      renderMyAttendance();
+    }
+
+    function renderMyAttendance() {
+      if (!currentEmployee) {
+        openShiftValueEl.textContent = "—";
+        todayArrivalValueEl.textContent = "—";
+        todayDepartureValueEl.textContent = "—";
+        myAttendanceWrapEl.innerHTML = `<div class="empty-box">Bez employee profilu nelze načíst docházku.</div>`;
+        checkInBtn.disabled = true;
+        checkOutBtn.disabled = true;
         return;
       }
 
-      attendanceRows = Array.isArray(data) ? data : [];
-      currentOpenAttendance = attendanceRows.find(row => !row.check_out) || null;
+      const today = todayStr();
+      const todayRows = myAttendanceRows.filter(r => r.date === today).sort((a, b) => b.id - a.id);
+      const firstToday = todayRows.length ? todayRows[todayRows.length - 1] : null;
+      const latestToday = todayRows.length ? todayRows[0] : null;
 
-      renderAttendanceProfile();
-      renderAttendanceTable();
-      setAttendanceMessage(currentOpenAttendance ? 'Docházka načtena. Máš otevřenou směnu.' : 'Docházka načtena. Nemáš otevřenou směnu.', 'ok');
-    }
+      openShiftValueEl.textContent = myOpenShift ? "ano" : "ne";
+      todayArrivalValueEl.textContent = firstToday?.time_from || "—";
+      todayDepartureValueEl.textContent = latestToday?.time_to || "—";
 
-    async function loadEmployees() {
-      if (!isAdmin) {
-        employees = [];
-        renderEmployees();
-        fillAdminAttendanceEmployeeOptions();
-        return;
+      if (latestToday?.office) officeEl.value = latestToday.office;
+      if (latestToday?.type) attendanceTypeEl.value = latestToday.type;
+      if (latestToday?.break_minutes !== null && latestToday?.break_minutes !== undefined) {
+        breakMinutesEl.value = latestToday.break_minutes;
       }
 
-      setEmployeeMessage('Načítám zaměstnance...', 'warn');
+      checkInBtn.disabled = !!myOpenShift;
+      checkOutBtn.disabled = !myOpenShift;
 
-      const { data, error } = await supabaseClient
-        .from('employees')
-        .select('*')
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        employees = [];
-        renderEmployees();
-        fillAdminAttendanceEmployeeOptions();
-        setEmployeeMessage('Chyba při načítání zaměstnanců: ' + error.message, 'err');
-        return;
-      }
-
-      employees = Array.isArray(data) ? data : [];
-      renderEmployees();
-      fillAdminAttendanceEmployeeOptions();
-      setEmployeeMessage('Načteno zaměstnanců: ' + employees.length, 'ok');
-    }
-
-    async function loadAdminAttendance() {
-      if (!isAdmin) {
-        adminAttendanceRows = [];
-        renderAdminAttendance();
-        return;
-      }
-
-      setAdminAttendanceMessage('Načítám docházku všech...', 'warn');
-
-      const { data, error } = await supabaseClient
-        .from('attendance')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) {
-        adminAttendanceRows = [];
-        renderAdminAttendance();
-        setAdminAttendanceMessage('Chyba při načítání admin docházky: ' + error.message, 'err');
-        return;
-      }
-
-      adminAttendanceRows = Array.isArray(data) ? data : [];
-      renderAdminAttendance();
-      setAdminAttendanceMessage('Načteno záznamů: ' + adminAttendanceRows.length, 'ok');
-    }
-
-    async function createEmployee(payload) {
-      const { error } = await supabaseClient.from('employees').insert([payload]);
-      if (error) throw error;
-    }
-
-    async function updateEmployee(id, payload) {
-      const { error } = await supabaseClient.from('employees').update(payload).eq('id', id);
-      if (error) throw error;
-    }
-
-    async function deleteEmployee(id) {
-      const { error } = await supabaseClient.from('employees').delete().eq('id', id);
-      if (error) throw error;
-    }
-
-    async function updateAttendance(id, payload) {
-      const { error } = await supabaseClient.from('attendance').update(payload).eq('id', id);
-      if (error) throw error;
-    }
-
-    async function deleteAttendance(id) {
-      const { error } = await supabaseClient.from('attendance').delete().eq('id', id);
-      if (error) throw error;
+      myAttendanceWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "ID", key: "id", render: r => escapeHtml(r.id) },
+          { label: "Datum", key: "date", render: r => escapeHtml(formatDateCZ(r.date)) },
+          { label: "Místo", key: "office", render: r => escapeHtml(r.office || "") },
+          { label: "Typ", key: "type", render: r => escapeHtml(r.type || "") },
+          { label: "Od", key: "time_from", render: r => escapeHtml(r.time_from || "—") },
+          { label: "Do", key: "time_to", render: r => escapeHtml(r.time_to || "—") },
+          { label: "Přestávka", key: "break_minutes", render: r => escapeHtml((r.break_minutes ?? 0) + " min") }
+        ],
+        myAttendanceRows
+      );
     }
 
     async function doCheckIn() {
       if (!currentEmployee) {
-        setAttendanceMessage('Pro příchod chybí propojení na employees.auth_user_id.', 'err');
+        setMessage(attendanceMessageEl, "Přihlášený účet nemá přiřazený řádek v employees.", "err");
         return;
       }
 
-      if (currentOpenAttendance) {
-        setAttendanceMessage('Nelze udělat nový příchod, dokud není ukončená otevřená směna.', 'err');
+      if (myOpenShift) {
+        setMessage(attendanceMessageEl, "Už máš otevřenou směnu. Nejprve udělej odchod.", "err");
         return;
       }
 
       const payload = {
         employee_id: currentEmployee.id,
-        date: getLocalDateForDb(),
-        office: getOfficeForAttendance(),
-        check_in: new Date().toISOString(),
-        note: attendanceNoteEl.value.trim()
+        date: todayStr(),
+        office: officeEl.value,
+        type: attendanceTypeEl.value,
+        time_from: nowTimeStr(),
+        time_to: null,
+        break_minutes: Number(breakMinutesEl.value || 0)
       };
 
-      setAttendanceMessage('Zapisuji příchod...', 'warn');
+      setMessage(attendanceMessageEl, "Zapisuji příchod…", "warn");
 
-      const { error } = await supabaseClient.from('attendance').insert([payload]);
+      const { error } = await supabaseClient
+        .from("attendance")
+        .insert([payload]);
 
       if (error) {
-        setAttendanceMessage('Chyba při zápisu příchodu: ' + error.message, 'err');
+        setMessage(attendanceMessageEl, "Chyba při zápisu příchodu: " + error.message, "err");
         return;
       }
 
-      attendanceNoteEl.value = '';
       await loadMyAttendance();
-      if (isAdmin) await loadAdminAttendance();
-      setAttendanceMessage('Příchod zapsán.', 'ok');
+      if (isAdmin) {
+        await Promise.all([loadAdminActiveEmployees(), loadAdminTodayAttendance()]);
+      }
+
+      setMessage(attendanceMessageEl, "Příchod zapsán.", "ok");
     }
 
     async function doCheckOut() {
       if (!currentEmployee) {
-        setAttendanceMessage('Pro odchod chybí propojení na employees.auth_user_id.', 'err');
+        setMessage(attendanceMessageEl, "Přihlášený účet nemá přiřazený řádek v employees.", "err");
         return;
       }
 
-      if (!currentOpenAttendance) {
-        setAttendanceMessage('Nemáš otevřenou směnu, takže nelze zapsat odchod.', 'err');
+      if (!myOpenShift) {
+        setMessage(attendanceMessageEl, "Nemáš otevřenou směnu.", "err");
         return;
       }
 
-      const currentNote = attendanceNoteEl.value.trim();
-      const newNote = currentNote
-        ? [currentOpenAttendance.note || '', currentNote].filter(Boolean).join(' | ')
-        : currentOpenAttendance.note || '';
-
-      setAttendanceMessage('Zapisuji odchod...', 'warn');
+      setMessage(attendanceMessageEl, "Zapisuji odchod…", "warn");
 
       const { error } = await supabaseClient
-        .from('attendance')
+        .from("attendance")
         .update({
-          check_out: new Date().toISOString(),
-          note: newNote
+          time_to: nowTimeStr(),
+          office: officeEl.value,
+          type: attendanceTypeEl.value,
+          break_minutes: Number(breakMinutesEl.value || 0)
         })
-        .eq('id', currentOpenAttendance.id);
+        .eq("id", myOpenShift.id);
 
       if (error) {
-        setAttendanceMessage('Chyba při zápisu odchodu: ' + error.message, 'err');
+        setMessage(attendanceMessageEl, "Chyba při zápisu odchodu: " + error.message, "err");
         return;
       }
 
-      attendanceNoteEl.value = '';
       await loadMyAttendance();
-      if (isAdmin) await loadAdminAttendance();
-      setAttendanceMessage('Odchod zapsán.', 'ok');
+      if (isAdmin) {
+        await Promise.all([loadAdminActiveEmployees(), loadAdminTodayAttendance()]);
+      }
+
+      setMessage(attendanceMessageEl, "Odchod zapsán.", "ok");
+    }
+
+    async function loadAdminActiveEmployees() {
+      if (!isAdmin) {
+        adminActiveWrapEl.innerHTML = `<div class="empty-box">Jen pro admina.</div>`;
+        return;
+      }
+
+      const today = todayStr();
+
+      const { data, error } = await supabaseClient
+        .from("attendance")
+        .select(`
+          id,
+          employee_id,
+          date,
+          office,
+          type,
+          time_from,
+          time_to,
+          break_minutes,
+          employees!attendance_employee_id_fkey (
+            id,
+            name,
+            email
+          )
+        `)
+        .eq("date", today)
+        .is("time_to", null)
+        .order("time_from", { ascending: true });
+
+      if (error) throw error;
+
+      adminActiveWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "Zaměstnanec", render: r => escapeHtml(r.employees?.name || "") },
+          { label: "E-mail", render: r => escapeHtml(r.employees?.email || "") },
+          { label: "Místo", render: r => escapeHtml(r.office || "") },
+          { label: "Typ", render: r => escapeHtml(r.type || "") },
+          { label: "Od", render: r => escapeHtml(r.time_from || "—") }
+        ],
+        data || []
+      );
+    }
+
+    async function loadAdminTodayAttendance() {
+      if (!isAdmin) {
+        adminTodayWrapEl.innerHTML = `<div class="empty-box">Jen pro admina.</div>`;
+        return;
+      }
+
+      const today = todayStr();
+
+      const { data, error } = await supabaseClient
+        .from("attendance")
+        .select(`
+          id,
+          employee_id,
+          date,
+          office,
+          type,
+          time_from,
+          time_to,
+          break_minutes,
+          employees!attendance_employee_id_fkey (
+            id,
+            name,
+            email
+          )
+        `)
+        .eq("date", today)
+        .order("id", { ascending: false });
+
+      if (error) throw error;
+
+      adminTodayWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "ID", render: r => escapeHtml(r.id) },
+          { label: "Zaměstnanec", render: r => escapeHtml(r.employees?.name || "") },
+          { label: "Místo", render: r => escapeHtml(r.office || "") },
+          { label: "Typ", render: r => escapeHtml(r.type || "") },
+          { label: "Od", render: r => escapeHtml(r.time_from || "—") },
+          { label: "Do", render: r => escapeHtml(r.time_to || "—") },
+          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") }
+        ],
+        data || []
+      );
+    }
+
+    async function loadEmployeesPreview() {
+      if (!isAdmin) {
+        employeesWrapEl.innerHTML = `<div class="empty-box">Jen pro admina.</div>`;
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from("employees")
+        .select("id, name, email, role, auth_user_id, weekly, leave_days, leave_hours, offices")
+        .order("id", { ascending: true });
+
+      if (error) throw error;
+
+      employeesWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "ID", render: r => escapeHtml(r.id) },
+          { label: "Jméno", render: r => escapeHtml(r.name || "") },
+          { label: "E-mail", render: r => escapeHtml(r.email || "") },
+          { label: "Role", render: r => escapeHtml(r.role || "") },
+          { label: "Offices", render: r => escapeHtml(r.offices || "—") },
+          { label: "Auth user ID", render: r => `<span class="mono">${escapeHtml(r.auth_user_id || "")}</span>` }
+        ],
+        data || []
+      );
     }
 
     async function loadAllData() {
-      await loadMyAttendance();
-      if (isAdmin) {
-        await loadEmployees();
-        await loadAdminAttendance();
+      try {
+        setMessage(appMessageEl, "Načítám data…", "warn");
+
+        await loadCurrentEmployee();
+        renderProfile();
+        await loadMyAttendance();
+
+        if (isAdmin) {
+          adminPanelEl.classList.remove("hidden");
+          await Promise.all([
+            loadAdminActiveEmployees(),
+            loadAdminTodayAttendance(),
+            loadEmployeesPreview()
+          ]);
+        } else {
+          adminPanelEl.classList.add("hidden");
+        }
+
+        setMessage(appMessageEl, "Data načtena.", "ok");
+
+        if (!currentEmployee) {
+          setMessage(attendanceMessageEl, "Přihlášený účet nemá přiřazený employees.auth_user_id.", "warn");
+        } else {
+          setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
+        }
+      } catch (error) {
+        setMessage(appMessageEl, "Chyba načítání: " + error.message, "err");
       }
     }
 
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      pushAuthEvent(event, session);
-      renderUser(session);
-      dumpLocalStorage();
+    function subscribeRealtime() {
+      if (realtimeChannel) return;
 
-      if (event === 'SIGNED_IN') {
-        setMessage('SIGNED_IN proběhl. Session je aktivní.', 'ok');
-        setTimeout(async () => {
-          await refreshDebug('after SIGNED_IN delayed');
-          await loadAllData();
-        }, 700);
-      } else if (event === 'SIGNED_OUT') {
-        setMessage('SIGNED_OUT proběhl.', 'warn');
-        employees = [];
-        attendanceRows = [];
-        adminAttendanceRows = [];
-        currentEmployee = null;
-        currentOpenAttendance = null;
-        isAdmin = false;
-        roleBadgeEl.classList.add('hidden');
-        renderAttendanceProfile();
-        renderAttendanceTable();
-        renderEmployees();
-        renderAdminAttendance();
-        resetEmployeeForm();
-        resetAdminAttendanceForm();
-        adminEmployeesSectionEl.classList.add('hidden');
-        adminAttendanceSectionEl.classList.add('hidden');
-        setEmployeeMessage('Odhlášeno. Přihlas se jako admin.', 'warn');
-        setAttendanceMessage('Odhlášeno. Přihlas se a načti docházku.', 'warn');
-        setAdminAttendanceMessage('Odhlášeno. Přihlas se jako admin.', 'warn');
-        setTimeout(() => {
-          refreshDebug('after SIGNED_OUT delayed');
-        }, 100);
-      } else if (event === 'INITIAL_SESSION') {
-        if (session) {
-          setMessage('INITIAL_SESSION načetl existující session ze storage.', 'ok');
-          setTimeout(async () => {
-            await refreshDebug('after INITIAL_SESSION delayed');
-            await loadAllData();
-          }, 100);
-        } else {
-          setMessage('INITIAL_SESSION: ve storage není aktivní session.', 'warn');
-          setTimeout(() => {
-            refreshDebug('after INITIAL_SESSION delayed');
-          }, 100);
-        }
-      } else if (event === 'TOKEN_REFRESHED') {
-        setMessage('TOKEN_REFRESHED proběhl.', 'ok');
-        setTimeout(() => {
-          refreshDebug('after TOKEN_REFRESHED delayed');
-        }, 100);
-      }
+      realtimeChannel = supabaseClient
+        .channel("attendance-live")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "attendance" },
+          async () => {
+            if (currentUser) {
+              await loadAllData();
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    loginBtn.addEventListener("click", signIn);
+    logoutBtn.addEventListener("click", signOut);
+    refreshBtn.addEventListener("click", loadAllData);
+    checkInBtn.addEventListener("click", doCheckIn);
+    checkOutBtn.addEventListener("click", doCheckOut);
+
+    passwordEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") signIn();
     });
 
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-
-      setMessage('Přihlašuji...', 'warn');
-
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-      if (error) {
-        setMessage('Login chyba: ' + error.message, 'err');
-        await refreshDebug('after signIn error');
-        return;
-      }
-
-      renderUser(data.session || null);
-      setMessage('Login OK. Čekám na dopsání session do storage...', 'ok');
-
-      setTimeout(async () => {
-        await refreshDebug('after signIn success delayed');
+    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        currentSession = session;
+        currentUser = session.user;
+        loginView.classList.add("hidden");
+        appView.classList.remove("hidden");
+        sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
         await loadAllData();
-      }, 700);
-    });
-
-    logoutBtn.addEventListener('click', async () => {
-      setMessage('Odhlašuji...', 'warn');
-
-      const { error } = await supabaseClient.auth.signOut();
-
-      if (error) {
-        setMessage('Logout chyba: ' + error.message, 'err');
-        await refreshDebug('after signOut error');
-        return;
-      }
-
-      setMessage('Odhlášeno.', 'warn');
-
-      setTimeout(() => {
-        refreshDebug('after signOut success delayed');
-      }, 100);
-    });
-
-    refreshDebugBtn.addEventListener('click', async () => {
-      await refreshDebug('manual refreshDebug button');
-    });
-
-    reloadAttendanceBtnEl.addEventListener('click', async () => {
-      await loadMyAttendance();
-    });
-
-    checkInBtnEl.addEventListener('click', async () => {
-      await doCheckIn();
-    });
-
-    checkOutBtnEl.addEventListener('click', async () => {
-      await doCheckOut();
-    });
-
-    employeeCancelBtnEl.addEventListener('click', () => {
-      resetEmployeeForm();
-      setEmployeeMessage('Editace zrušena.', 'warn');
-    });
-
-    reloadEmployeesBtnEl.addEventListener('click', async () => {
-      await loadEmployees();
-    });
-
-    employeeForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      if (!isAdmin) {
-        setEmployeeMessage('Tuto akci může dělat jen admin.', 'err');
-        return;
-      }
-
-      const id = employeeIdEl.value.trim();
-      const payload = {
-        name: employeeNameEl.value.trim(),
-        email: employeeEmailEl.value.trim().toLowerCase(),
-        auth_user_id: employeeAuthUserIdEl.value.trim() || null,
-        role: employeeRoleEl.value,
-        active: employeeActiveEl.value === 'true',
-        is_admin: employeeIsAdminEl.value === 'true',
-        offices: employeeOfficesEl.value.trim() || ''
-      };
-
-      if (!payload.name || !payload.email || !payload.role) {
-        setEmployeeMessage('Vyplň jméno, email a roli.', 'err');
-        return;
-      }
-
-      try {
-        if (id) {
-          setEmployeeMessage('Ukládám změny zaměstnance...', 'warn');
-          await updateEmployee(id, payload);
-          setEmployeeMessage('Zaměstnanec upraven.', 'ok');
-        } else {
-          setEmployeeMessage('Přidávám zaměstnance...', 'warn');
-          await createEmployee(payload);
-          setEmployeeMessage('Zaměstnanec přidán.', 'ok');
-        }
-
-        resetEmployeeForm();
-        await loadEmployees();
-      } catch (error) {
-        setEmployeeMessage('Chyba při ukládání zaměstnance: ' + error.message, 'err');
-      }
-    });
-
-    employeesTbodyEl.addEventListener('click', async (e) => {
-      const button = e.target.closest('button[data-action]');
-      if (!button || !isAdmin) return;
-
-      const action = button.getAttribute('data-action');
-      const id = button.getAttribute('data-id');
-      const employee = employees.find(item => String(item.id) === String(id));
-
-      if (!employee) {
-        setEmployeeMessage('Zaměstnanec nebyl nalezen.', 'err');
-        return;
-      }
-
-      if (action === 'edit') {
-        startEditEmployee(employee);
-        setEmployeeMessage('Upravuješ zaměstnance: ' + employee.name, 'warn');
-        return;
-      }
-
-      if (action === 'delete') {
-        const ok = window.confirm('Opravdu smazat zaměstnance "' + employee.name + '"?');
-        if (!ok) return;
-
-        try {
-          setEmployeeMessage('Mažu zaměstnance...', 'warn');
-          await deleteEmployee(id);
-          setEmployeeMessage('Zaměstnanec smazán.', 'ok');
-          if (employeeIdEl.value === String(id)) resetEmployeeForm();
-          await loadEmployees();
-          await loadAdminAttendance();
-        } catch (error) {
-          setEmployeeMessage('Chyba při mazání zaměstnance: ' + error.message, 'err');
-        }
-      }
-    });
-
-    adminAttendanceCancelBtnEl.addEventListener('click', () => {
-      resetAdminAttendanceForm();
-      setAdminAttendanceMessage('Editace docházky zrušena.', 'warn');
-    });
-
-    reloadAdminAttendanceBtnEl.addEventListener('click', async () => {
-      await loadAdminAttendance();
-    });
-
-    adminAttendanceForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      if (!isAdmin) {
-        setAdminAttendanceMessage('Tuto akci může dělat jen admin.', 'err');
-        return;
-      }
-
-      const id = adminAttendanceIdEl.value.trim();
-      if (!id) {
-        setAdminAttendanceMessage('Nejprve vyber záznam k editaci.', 'err');
-        return;
-      }
-
-      const payload = {
-        employee_id: Number(adminAttendanceEmployeeEl.value),
-        check_in: fromDatetimeLocalValue(adminAttendanceCheckInEl.value),
-        check_out: fromDatetimeLocalValue(adminAttendanceCheckOutEl.value),
-        note: adminAttendanceNoteEl.value.trim()
-      };
-
-      try {
-        setAdminAttendanceMessage('Ukládám opravu docházky...', 'warn');
-        await updateAttendance(id, payload);
-        setAdminAttendanceMessage('Docházka upravena.', 'ok');
-        resetAdminAttendanceForm();
-        await loadAdminAttendance();
-        await loadMyAttendance();
-      } catch (error) {
-        setAdminAttendanceMessage('Chyba při ukládání docházky: ' + error.message, 'err');
-      }
-    });
-
-    adminAttendanceTbodyEl.addEventListener('click', async (e) => {
-      const button = e.target.closest('button[data-action]');
-      if (!button || !isAdmin) return;
-
-      const action = button.getAttribute('data-action');
-      const id = button.getAttribute('data-id');
-      const row = adminAttendanceRows.find(item => String(item.id) === String(id));
-
-      if (!row) {
-        setAdminAttendanceMessage('Záznam docházky nebyl nalezen.', 'err');
-        return;
-      }
-
-      if (action === 'edit') {
-        startEditAdminAttendance(row);
-        setAdminAttendanceMessage('Upravuješ docházku ID ' + row.id, 'warn');
-        return;
-      }
-
-      if (action === 'delete') {
-        const ok = window.confirm('Opravdu smazat záznam docházky ID ' + row.id + '?');
-        if (!ok) return;
-
-        try {
-          setAdminAttendanceMessage('Mažu docházku...', 'warn');
-          await deleteAttendance(id);
-          setAdminAttendanceMessage('Docházka smazána.', 'ok');
-          if (adminAttendanceIdEl.value === String(id)) resetAdminAttendanceForm();
-          await loadAdminAttendance();
-          await loadMyAttendance();
-        } catch (error) {
-          setAdminAttendanceMessage('Chyba při mazání docházky: ' + error.message, 'err');
-        }
+        subscribeRealtime();
+      } else {
+        renderLoggedOut();
       }
     });
 
     (async function bootstrap() {
-      renderAttendanceProfile();
-      renderAttendanceTable();
-      renderEmployees();
-      renderAdminAttendance();
-      resetEmployeeForm();
-      resetAdminAttendanceForm();
-      setAttendanceMessage('Přihlas se a načti docházku.', 'warn');
-      setEmployeeMessage('Přihlas se jako admin.', 'warn');
-      setAdminAttendanceMessage('Přihlas se jako admin.', 'warn');
-      pushAuthEvent('BOOTSTRAP_START', null);
-      await refreshDebug('initial page load');
+      renderLoggedOut();
+      await loadSession();
     })();
   </script>
 </body>
