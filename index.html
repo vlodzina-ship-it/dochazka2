@@ -632,6 +632,14 @@
       }
     }
 
+    function getLocalDateForDb() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     function setMessage(text, type) {
       messageEl.textContent = text;
       messageEl.className = 'status ' + (type || 'warn');
@@ -1082,6 +1090,7 @@
 
       const payload = {
         employee_id: currentEmployee.id,
+        date: getLocalDateForDb(),
         note: attendanceNoteEl.value.trim()
       };
 
