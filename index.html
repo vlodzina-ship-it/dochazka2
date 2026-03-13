@@ -36,7 +36,7 @@
     }
 
     .container {
-      max-width: 1400px;
+      max-width: 1480px;
       margin: 0 auto;
       padding: 24px;
     }
@@ -247,7 +247,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 900px;
+      min-width: 980px;
     }
 
     th, td {
@@ -444,6 +444,66 @@
             <div class="grid grid-admin">
               <div class="card">
                 <div class="section-title">
+                  <h2 id="attendanceFormTitle">Upravit docházku</h2>
+                  <span class="small">jen admin</span>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                  <label for="editAttendanceEmployee">Zaměstnanec</label>
+                  <input id="editAttendanceEmployee" type="text" disabled />
+                </div>
+
+                <div>
+                  <label for="editAttendanceDate">Datum</label>
+                  <input id="editAttendanceDate" type="date" />
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="editAttendanceOffice">Místo</label>
+                  <select id="editAttendanceOffice">
+                    <option value="Osoblaha">Osoblaha</option>
+                    <option value="Hlinka">Hlinka</option>
+                    <option value="Slezské Pavlovice">Slezské Pavlovice</option>
+                    <option value="Hlavní kancelář">Hlavní kancelář</option>
+                    <option value="home office">home office</option>
+                    <option value="kancelář dle potřeby">kancelář dle potřeby</option>
+                  </select>
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="editAttendanceType">Typ</label>
+                  <select id="editAttendanceType">
+                    <option value="práce">práce</option>
+                    <option value="home office">home office</option>
+                    <option value="služební cesta">služební cesta</option>
+                  </select>
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="editAttendanceTimeFrom">Od</label>
+                  <input id="editAttendanceTimeFrom" type="time" step="1" />
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="editAttendanceTimeTo">Do</label>
+                  <input id="editAttendanceTimeTo" type="time" step="1" />
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="editAttendanceBreakMinutes">Přestávka (minuty)</label>
+                  <input id="editAttendanceBreakMinutes" type="number" min="0" step="1" />
+                </div>
+
+                <div class="actions" style="margin-top:16px;">
+                  <button id="saveAttendanceEditBtn" class="btn-primary" type="button">Uložit opravu</button>
+                  <button id="cancelAttendanceEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
+                </div>
+
+                <div id="attendanceEditMessage" class="message warn" style="margin-top:16px;">Klikni v tabulce docházky na Upravit.</div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">
                   <h2 id="employeeFormTitle">Nový zaměstnanec</h2>
                   <span class="small">jen admin</span>
                 </div>
@@ -501,19 +561,20 @@
 
                 <div id="createEmployeeMessage" class="message warn" style="margin-top:16px;">Vyplň údaje a ulož.</div>
               </div>
+            </div>
 
-              <div class="card">
-                <div class="section-title">
-                  <h2>Zaměstnanci</h2>
-                  <span class="small">přehled zaměstnanců</span>
-                </div>
-                <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
+            <div class="card">
+              <div class="section-title">
+                <h2>Zaměstnanci</h2>
+                <span class="small">přehled zaměstnanců</span>
               </div>
+              <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
@@ -538,6 +599,7 @@
     const appMessageEl = document.getElementById("appMessage");
     const attendanceMessageEl = document.getElementById("attendanceMessage");
     const createEmployeeMessageEl = document.getElementById("createEmployeeMessage");
+    const attendanceEditMessageEl = document.getElementById("attendanceEditMessage");
     const debugBoxEl = document.getElementById("debugBox");
     const sessionTextEl = document.getElementById("sessionText");
     const rolePillEl = document.getElementById("rolePill");
@@ -557,6 +619,17 @@
     const adminTodayWrapEl = document.getElementById("adminTodayWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
 
+    const attendanceFormTitleEl = document.getElementById("attendanceFormTitle");
+    const editAttendanceEmployeeEl = document.getElementById("editAttendanceEmployee");
+    const editAttendanceDateEl = document.getElementById("editAttendanceDate");
+    const editAttendanceOfficeEl = document.getElementById("editAttendanceOffice");
+    const editAttendanceTypeEl = document.getElementById("editAttendanceType");
+    const editAttendanceTimeFromEl = document.getElementById("editAttendanceTimeFrom");
+    const editAttendanceTimeToEl = document.getElementById("editAttendanceTimeTo");
+    const editAttendanceBreakMinutesEl = document.getElementById("editAttendanceBreakMinutes");
+    const saveAttendanceEditBtn = document.getElementById("saveAttendanceEditBtn");
+    const cancelAttendanceEditBtn = document.getElementById("cancelAttendanceEditBtn");
+
     const employeeFormTitleEl = document.getElementById("employeeFormTitle");
     const newEmployeeNameEl = document.getElementById("newEmployeeName");
     const newEmployeeEmailEl = document.getElementById("newEmployeeEmail");
@@ -574,8 +647,11 @@
     let myAttendanceRows = [];
     let myOpenShift = null;
     let isAdmin = false;
+
     let adminEmployeesData = [];
+    let adminTodayAttendanceData = [];
     let editEmployeeId = null;
+    let editAttendanceId = null;
 
     function debugLog(...args) {
       const line = args.map(a => {
@@ -607,6 +683,25 @@
       const mm = String(d.getMonth() + 1).padStart(2, "0");
       const dd = String(d.getDate()).padStart(2, "0");
       return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function renderSimpleTable(columns, rows) {
+      if (!rows || !rows.length) return `<div class="empty-box">Žádná data.</div>`;
+
+      const thead = columns.map(c => `<th>${escapeHtml(c.label)}</th>`).join("");
+      const tbody = rows.map(row => {
+        const tds = columns.map(c => `<td>${c.render ? c.render(row) : escapeHtml(row[c.key])}</td>`).join("");
+        return `<tr>${tds}</tr>`;
+      }).join("");
+
+      return `
+        <div class="table-wrap">
+          <table>
+            <thead><tr>${thead}</tr></thead>
+            <tbody>${tbody}</tbody>
+          </table>
+        </div>
+      `;
     }
 
     function resetEmployeeForm() {
@@ -648,23 +743,33 @@
       window.scrollTo({ top: adminPanelEl.offsetTop, behavior: "smooth" });
     }
 
-    function renderSimpleTable(columns, rows) {
-      if (!rows || !rows.length) return `<div class="empty-box">Žádná data.</div>`;
+    function resetAttendanceEditForm() {
+      editAttendanceId = null;
+      attendanceFormTitleEl.textContent = "Upravit docházku";
+      editAttendanceEmployeeEl.value = "";
+      editAttendanceDateEl.value = "";
+      editAttendanceOfficeEl.value = "Osoblaha";
+      editAttendanceTypeEl.value = "práce";
+      editAttendanceTimeFromEl.value = "";
+      editAttendanceTimeToEl.value = "";
+      editAttendanceBreakMinutesEl.value = "30";
+      cancelAttendanceEditBtn.classList.add("hidden");
+      setMessage(attendanceEditMessageEl, "Klikni v tabulce docházky na Upravit.", "warn");
+    }
 
-      const thead = columns.map(c => `<th>${escapeHtml(c.label)}</th>`).join("");
-      const tbody = rows.map(row => {
-        const tds = columns.map(c => `<td>${c.render ? c.render(row) : escapeHtml(row[c.key])}</td>`).join("");
-        return `<tr>${tds}</tr>`;
-      }).join("");
-
-      return `
-        <div class="table-wrap">
-          <table>
-            <thead><tr>${thead}</tr></thead>
-            <tbody>${tbody}</tbody>
-          </table>
-        </div>
-      `;
+    function fillAttendanceFormForEdit(row) {
+      editAttendanceId = row.id;
+      attendanceFormTitleEl.textContent = `Upravit docházku ID ${row.id}`;
+      editAttendanceEmployeeEl.value = `${row.employee_name || ""} (${row.employee_email || ""})`;
+      editAttendanceDateEl.value = row.date || "";
+      editAttendanceOfficeEl.value = row.office || "Osoblaha";
+      editAttendanceTypeEl.value = row.type || "práce";
+      editAttendanceTimeFromEl.value = row.time_from || "";
+      editAttendanceTimeToEl.value = row.time_to || "";
+      editAttendanceBreakMinutesEl.value = row.break_minutes ?? 30;
+      cancelAttendanceEditBtn.classList.remove("hidden");
+      setMessage(attendanceEditMessageEl, `Upravuješ docházku ID ${row.id}`, "warn");
+      window.scrollTo({ top: adminPanelEl.offsetTop, behavior: "smooth" });
     }
 
     function renderLoggedOut() {
@@ -676,7 +781,9 @@
       myOpenShift = null;
       isAdmin = false;
       adminEmployeesData = [];
+      adminTodayAttendanceData = [];
       resetEmployeeForm();
+      resetAttendanceEditForm();
       adminPanelEl.classList.add("hidden");
       profileBoxEl.innerHTML = "Přihlas se.";
       rolePillEl.textContent = "bez role";
@@ -727,7 +834,6 @@
     }
 
     async function loadProfile() {
-      debugLog("loadProfile rpc start");
       const { data, error } = await supabaseClient.rpc("get_my_employee_profile");
       debugLog("loadProfile rpc result", { data, error });
 
@@ -893,9 +999,9 @@
           return;
         }
 
-        setMessage(createEmployeeMessageEl, "Zaměstnanec byl upraven.", "ok");
         resetEmployeeForm();
         await loadAllData();
+        setMessage(createEmployeeMessageEl, "Zaměstnanec byl upraven.", "ok");
         return;
       }
 
@@ -918,9 +1024,51 @@
         return;
       }
 
-      setMessage(createEmployeeMessageEl, "Zaměstnanec byl vytvořen.", "ok");
       resetEmployeeForm();
       await loadAllData();
+      setMessage(createEmployeeMessageEl, "Zaměstnanec byl vytvořen.", "ok");
+    }
+
+    async function saveAttendanceEdit() {
+      if (!editAttendanceId) {
+        setMessage(attendanceEditMessageEl, "Nejdřív vyber řádek docházky tlačítkem Upravit.", "err");
+        return;
+      }
+
+      const p_date = editAttendanceDateEl.value;
+      const p_office = editAttendanceOfficeEl.value;
+      const p_type = editAttendanceTypeEl.value;
+      const p_time_from = editAttendanceTimeFromEl.value;
+      const p_time_to = editAttendanceTimeToEl.value;
+      const p_break_minutes = Number(editAttendanceBreakMinutesEl.value || 0);
+
+      if (!p_date || !p_office || !p_type || !p_time_from) {
+        setMessage(attendanceEditMessageEl, "Vyplň datum, místo, typ a čas od.", "err");
+        return;
+      }
+
+      setMessage(attendanceEditMessageEl, "Ukládám opravu docházky…", "warn");
+
+      const { error } = await supabaseClient.rpc("admin_update_attendance", {
+        p_id: editAttendanceId,
+        p_date,
+        p_office,
+        p_type,
+        p_time_from,
+        p_time_to,
+        p_break_minutes
+      });
+
+      debugLog("admin_update_attendance result", { error });
+
+      if (error) {
+        setMessage(attendanceEditMessageEl, "Chyba při opravě docházky: " + error.message, "err");
+        return;
+      }
+
+      resetAttendanceEditForm();
+      await loadAllData();
+      setMessage(attendanceEditMessageEl, "Docházka byla upravena.", "ok");
     }
 
     async function loadAdminData() {
@@ -941,6 +1089,9 @@
       if (todayRes.error) throw todayRes.error;
       if (employeesRes.error) throw employeesRes.error;
 
+      adminTodayAttendanceData = todayRes.data || [];
+      adminEmployeesData = employeesRes.data || [];
+
       adminActiveWrapEl.innerHTML = renderSimpleTable(
         [
           { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name || "") },
@@ -960,12 +1111,14 @@
           { label: "Typ", render: r => escapeHtml(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") },
           { label: "Do", render: r => escapeHtml(r.time_to || "—") },
-          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") }
+          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") },
+          {
+            label: "Akce",
+            render: r => `<button type="button" class="btn-secondary edit-attendance-btn" data-id="${r.id}">Upravit</button>`
+          }
         ],
-        todayRes.data || []
+        adminTodayAttendanceData
       );
-
-      adminEmployeesData = employeesRes.data || [];
 
       employeesWrapEl.innerHTML = renderSimpleTable(
         [
@@ -1027,6 +1180,8 @@
     checkOutBtn.addEventListener("click", doCheckOut);
     createEmployeeBtn.addEventListener("click", createOrUpdateEmployee);
     cancelEditEmployeeBtn.addEventListener("click", resetEmployeeForm);
+    saveAttendanceEditBtn.addEventListener("click", saveAttendanceEdit);
+    cancelAttendanceEditBtn.addEventListener("click", resetAttendanceEditForm);
 
     employeesWrapEl.addEventListener("click", (e) => {
       const btn = e.target.closest(".edit-employee-btn");
@@ -1037,6 +1192,17 @@
       if (!employee) return;
 
       fillEmployeeFormForEdit(employee);
+    });
+
+    adminTodayWrapEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".edit-attendance-btn");
+      if (!btn) return;
+
+      const id = Number(btn.dataset.id);
+      const row = adminTodayAttendanceData.find(x => Number(x.id) === id);
+      if (!row) return;
+
+      fillAttendanceFormForEdit(row);
     });
 
     passwordEl.addEventListener("keydown", (e) => {
