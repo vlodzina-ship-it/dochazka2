@@ -340,7 +340,7 @@
       </div>
 
       <div id="appMessage" class="message warn">Načítám data…</div>
-      <pre id="debugBox" class="message warn" style="margin-top:12px; overflow:auto; white-space:pre-wrap; max-height:260px;">debug start</pre>
+      <pre id="debugBox" class="message warn" style="margin-top:12px; overflow:auto; white-space:pre-wrap; max-height:220px;">debug start</pre>
 
       <div class="grid grid-main" style="margin-top:18px;">
         <div class="stack">
@@ -441,18 +441,70 @@
               </div>
             </div>
 
-            <div class="card">
-              <div class="section-title">
-                <h2>Zaměstnanci</h2>
-                <span class="small">přehled zaměstnanců</span>
+            <div class="grid grid-admin">
+              <div class="card">
+                <div class="section-title">
+                  <h2>Nový zaměstnanec</h2>
+                  <span class="small">jen admin</span>
+                </div>
+
+                <div>
+                  <label for="newEmployeeName">Jméno</label>
+                  <input id="newEmployeeName" type="text" />
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="newEmployeeEmail">E-mail</label>
+                  <input id="newEmployeeEmail" type="email" />
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="newEmployeeRole">Role</label>
+                  <select id="newEmployeeRole">
+                    <option value="employee">employee</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="newEmployeeOffices">Offices</label>
+                  <input id="newEmployeeOffices" type="text" />
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="newEmployeeWeekly">Úvazek / weekly</label>
+                  <input id="newEmployeeWeekly" type="text" placeholder="např. plný úvazek" />
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="newEmployeeLeaveDays">Dovolená dny</label>
+                  <input id="newEmployeeLeaveDays" type="number" min="0" step="1" value="20" />
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="newEmployeeLeaveHours">Dovolená hodiny</label>
+                  <input id="newEmployeeLeaveHours" type="number" min="0" step="1" value="160" />
+                </div>
+
+                <div class="actions" style="margin-top:16px;">
+                  <button id="createEmployeeBtn" class="btn-success" type="button">Přidat zaměstnance</button>
+                </div>
+
+                <div id="createEmployeeMessage" class="message warn" style="margin-top:16px;">Vyplň údaje a ulož.</div>
               </div>
-              <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
+
+              <div class="card">
+                <div class="section-title">
+                  <h2>Zaměstnanci</h2>
+                  <span class="small">přehled zaměstnanců</span>
+                </div>
+                <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
@@ -476,6 +528,7 @@
     const loginMessageEl = document.getElementById("loginMessage");
     const appMessageEl = document.getElementById("appMessage");
     const attendanceMessageEl = document.getElementById("attendanceMessage");
+    const createEmployeeMessageEl = document.getElementById("createEmployeeMessage");
     const debugBoxEl = document.getElementById("debugBox");
     const sessionTextEl = document.getElementById("sessionText");
     const rolePillEl = document.getElementById("rolePill");
@@ -494,6 +547,14 @@
     const adminActiveWrapEl = document.getElementById("adminActiveWrap");
     const adminTodayWrapEl = document.getElementById("adminTodayWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
+    const newEmployeeNameEl = document.getElementById("newEmployeeName");
+    const newEmployeeEmailEl = document.getElementById("newEmployeeEmail");
+    const newEmployeeRoleEl = document.getElementById("newEmployeeRole");
+    const newEmployeeOfficesEl = document.getElementById("newEmployeeOffices");
+    const newEmployeeWeeklyEl = document.getElementById("newEmployeeWeekly");
+    const newEmployeeLeaveDaysEl = document.getElementById("newEmployeeLeaveDays");
+    const newEmployeeLeaveHoursEl = document.getElementById("newEmployeeLeaveHours");
+    const createEmployeeBtn = document.getElementById("createEmployeeBtn");
 
     let currentUser = null;
     let currentEmployee = null;
@@ -575,6 +636,7 @@
       sessionTextEl.textContent = "Nikdo není přihlášen.";
       setMessage(appMessageEl, "Odhlášeno.", "warn");
       setMessage(attendanceMessageEl, "Přihlas se a načti docházku.", "warn");
+      setMessage(createEmployeeMessageEl, "Vyplň údaje a ulož.", "warn");
       debugLog("renderLoggedOut");
     }
 
@@ -588,12 +650,10 @@
       }
 
       setMessage(loginMessageEl, "Přihlašuji…", "warn");
-      debugLog("signIn", { email });
 
       const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
       if (error) {
-        debugLog("signIn error", error);
         setMessage(loginMessageEl, "Login chyba: " + error.message, "err");
         return;
       }
@@ -716,8 +776,6 @@
         p_break_minutes: Number(breakMinutesEl.value || 0)
       });
 
-      debugLog("rpc_check_in result", { error });
-
       if (error) {
         setMessage(attendanceMessageEl, "Chyba při zápisu příchodu: " + error.message, "err");
         return;
@@ -734,8 +792,6 @@
         p_break_minutes: Number(breakMinutesEl.value || 0)
       });
 
-      debugLog("rpc_check_out result", { error });
-
       if (error) {
         setMessage(attendanceMessageEl, "Chyba při zápisu odchodu: " + error.message, "err");
         return;
@@ -743,6 +799,51 @@
 
       await loadAllData();
       setMessage(attendanceMessageEl, "Odchod zapsán.", "ok");
+    }
+
+    async function createEmployee() {
+      const p_name = newEmployeeNameEl.value.trim();
+      const p_email = newEmployeeEmailEl.value.trim().toLowerCase();
+      const p_role = newEmployeeRoleEl.value;
+      const p_offices = newEmployeeOfficesEl.value.trim();
+      const p_weekly = newEmployeeWeeklyEl.value.trim();
+      const p_leave_days = Number(newEmployeeLeaveDaysEl.value || 0);
+      const p_leave_hours = Number(newEmployeeLeaveHoursEl.value || 0);
+
+      if (!p_name || !p_email || !p_role) {
+        setMessage(createEmployeeMessageEl, "Vyplň jméno, e-mail a roli.", "err");
+        return;
+      }
+
+      setMessage(createEmployeeMessageEl, "Vytvářím zaměstnance…", "warn");
+
+      const { error } = await supabaseClient.rpc("admin_create_employee", {
+        p_name,
+        p_email,
+        p_role,
+        p_offices,
+        p_weekly,
+        p_leave_days,
+        p_leave_hours
+      });
+
+      debugLog("admin_create_employee result", { error });
+
+      if (error) {
+        setMessage(createEmployeeMessageEl, "Chyba při vytváření zaměstnance: " + error.message, "err");
+        return;
+      }
+
+      newEmployeeNameEl.value = "";
+      newEmployeeEmailEl.value = "";
+      newEmployeeRoleEl.value = "employee";
+      newEmployeeOfficesEl.value = "";
+      newEmployeeWeeklyEl.value = "";
+      newEmployeeLeaveDaysEl.value = "20";
+      newEmployeeLeaveHoursEl.value = "160";
+
+      setMessage(createEmployeeMessageEl, "Zaměstnanec byl vytvořen.", "ok");
+      await loadAllData();
     }
 
     async function loadAdminData() {
@@ -758,12 +859,6 @@
         supabaseClient.rpc("get_admin_today_attendance"),
         supabaseClient.rpc("get_admin_employees")
       ]);
-
-      debugLog("admin rpc results", {
-        locationsError: locationsRes.error,
-        todayError: todayRes.error,
-        employeesError: employeesRes.error
-      });
 
       if (locationsRes.error) throw locationsRes.error;
       if (todayRes.error) throw todayRes.error;
@@ -809,7 +904,6 @@
 
     async function loadAllData() {
       try {
-        debugLog("loadAllData START");
         setMessage(appMessageEl, "Načítám data…", "warn");
 
         await loadProfile();
@@ -819,7 +913,6 @@
 
         setMessage(appMessageEl, "Data načtena.", "ok");
         setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
-        debugLog("loadAllData DONE");
       } catch (error) {
         debugLog("loadAllData ERROR", error);
         setMessage(appMessageEl, "Chyba načítání: " + (error?.message || String(error)), "err");
@@ -828,7 +921,6 @@
 
     async function loadSession() {
       const { data, error } = await supabaseClient.auth.getSession();
-      debugLog("loadSession", { hasSession: !!data?.session, error });
 
       if (error || !data?.session?.user) {
         renderLoggedOut();
@@ -847,27 +939,26 @@
     refreshBtn.addEventListener("click", loadAllData);
     checkInBtn.addEventListener("click", doCheckIn);
     checkOutBtn.addEventListener("click", doCheckOut);
+    createEmployeeBtn.addEventListener("click", createEmployee);
 
     passwordEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter") signIn();
     });
 
     supabaseClient.auth.onAuthStateChange((_event, session) => {
-  debugLog("onAuthStateChange", { event: _event, hasSession: !!session });
+      if (session?.user) {
+        currentUser = session.user;
+        loginView.classList.add("hidden");
+        appView.classList.remove("hidden");
+        sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
 
-  if (session?.user) {
-    currentUser = session.user;
-    loginView.classList.add("hidden");
-    appView.classList.remove("hidden");
-    sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
-
-    setTimeout(() => {
-      loadAllData();
-    }, 0);
-  } else {
-    renderLoggedOut();
-  }
-});
+        setTimeout(() => {
+          loadAllData();
+        }, 0);
+      } else {
+        renderLoggedOut();
+      }
+    });
 
     (async function bootstrap() {
       renderLoggedOut();
