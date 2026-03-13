@@ -498,23 +498,39 @@
           </div>
 
           <div id="adminPanel" class="hidden stack">
-            <div class="grid grid-admin">
-              <div class="card">
-                <div class="section-title">
-                  <h2>Kdo je dnes v práci a kde</h2>
-                  <span class="pill pill-admin">admin</span>
-                </div>
-                <div id="adminActiveWrap" class="empty-box">Načítám…</div>
-              </div>
+            <div class="card">
+  <div class="section-title">
+    <h2>Dnešní přehled firmy</h2>
+    <span class="pill pill-admin">dashboard</span>
+  </div>
 
-              <div class="card">
-                <div class="section-title">
-                  <h2>Dnešní docházka všech</h2>
-                  <span class="pill pill-admin">live přehled</span>
-                </div>
-                <div id="adminTodayWrap" class="empty-box">Načítám…</div>
-              </div>
-            </div>
+  <div class="grid grid-stats">
+    <div class="stat">
+      <div class="stat-label">Celkem zaměstnanců</div>
+      <div id="dashTotalEmployees" class="stat-value">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">V práci</div>
+      <div id="dashAtWork" class="stat-value">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Home office</div>
+      <div id="dashHomeOffice" class="stat-value">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Služební cesta</div>
+      <div id="dashBusinessTrip" class="stat-value">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Dovolená</div>
+      <div id="dashOnLeave" class="stat-value">0</div>
+    </div>
+  </div>
+</div>
 
             <div class="grid grid-admin">
               <div class="card">
