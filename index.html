@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Docházka Osoblažský Cech</title>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     :root {
       --bg: #0b1020;
@@ -310,6 +312,7 @@
 </head>
 <body>
   <div class="container">
+
     <div id="loginView" class="login-wrap">
       <div class="card">
         <h1>Přihlášení do docházky</h1>
@@ -499,38 +502,57 @@
 
           <div id="adminPanel" class="hidden stack">
             <div class="card">
-  <div class="section-title">
-    <h2>Dnešní přehled firmy</h2>
-    <span class="pill pill-admin">dashboard</span>
-  </div>
+              <div class="section-title">
+                <h2>Dnešní přehled firmy</h2>
+                <span class="pill pill-admin">dashboard</span>
+              </div>
 
-  <div class="grid grid-stats">
-    <div class="stat">
-      <div class="stat-label">Celkem zaměstnanců</div>
-      <div id="dashTotalEmployees" class="stat-value">0</div>
-    </div>
+              <div class="grid grid-stats">
+                <div class="stat">
+                  <div class="stat-label">Celkem zaměstnanců</div>
+                  <div id="dashTotalEmployees" class="stat-value">0</div>
+                </div>
 
-    <div class="stat">
-      <div class="stat-label">V práci</div>
-      <div id="dashAtWork" class="stat-value">0</div>
-    </div>
+                <div class="stat">
+                  <div class="stat-label">V práci</div>
+                  <div id="dashAtWork" class="stat-value">0</div>
+                </div>
 
-    <div class="stat">
-      <div class="stat-label">Home office</div>
-      <div id="dashHomeOffice" class="stat-value">0</div>
-    </div>
+                <div class="stat">
+                  <div class="stat-label">Home office</div>
+                  <div id="dashHomeOffice" class="stat-value">0</div>
+                </div>
 
-    <div class="stat">
-      <div class="stat-label">Služební cesta</div>
-      <div id="dashBusinessTrip" class="stat-value">0</div>
-    </div>
+                <div class="stat">
+                  <div class="stat-label">Služební cesta</div>
+                  <div id="dashBusinessTrip" class="stat-value">0</div>
+                </div>
 
-    <div class="stat">
-      <div class="stat-label">Dovolená</div>
-      <div id="dashOnLeave" class="stat-value">0</div>
-    </div>
-  </div>
-</div>
+                <div class="stat">
+                  <div class="stat-label">Dovolená</div>
+                  <div id="dashOnLeave" class="stat-value">0</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-admin">
+              <div class="card">
+                <div class="section-title">
+                  <h2>Kdo je dnes v práci a kde</h2>
+                  <span class="pill pill-admin">admin</span>
+                </div>
+                <div id="adminActiveWrap" class="empty-box">Načítám…</div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">
+                  <h2>Dnešní docházka všech</h2>
+                  <span class="pill pill-admin">live přehled</span>
+                </div>
+                <div id="adminTodayWrap" class="empty-box">Načítám…</div>
+              </div>
+            </div>
+
             <div class="grid grid-admin">
               <div class="card">
                 <div class="section-title">
@@ -799,6 +821,12 @@
     const adminLeaveWrapEl = document.getElementById("adminLeaveWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
 
+    const dashTotalEmployeesEl = document.getElementById("dashTotalEmployees");
+    const dashAtWorkEl = document.getElementById("dashAtWork");
+    const dashHomeOfficeEl = document.getElementById("dashHomeOffice");
+    const dashBusinessTripEl = document.getElementById("dashBusinessTrip");
+    const dashOnLeaveEl = document.getElementById("dashOnLeave");
+
     const adminLeaveEmployeeEl = document.getElementById("adminLeaveEmployee");
     const adminLeaveDateEl = document.getElementById("adminLeaveDate");
     const adminLeaveHoursEl = document.getElementById("adminLeaveHours");
@@ -864,6 +892,7 @@
     }
 
     function setMessage(el, text, type = "warn") {
+      if (!el) return;
       el.textContent = text;
       el.className = "message " + type;
     }
@@ -1000,6 +1029,14 @@
       window.scrollTo({ top: adminPanelEl.offsetTop, behavior: "smooth" });
     }
 
+    function resetDashboard() {
+      dashTotalEmployeesEl.textContent = "0";
+      dashAtWorkEl.textContent = "0";
+      dashHomeOfficeEl.textContent = "0";
+      dashBusinessTripEl.textContent = "0";
+      dashOnLeaveEl.textContent = "0";
+    }
+
     function renderLoggedOut() {
       loginView.classList.remove("hidden");
       passwordResetView.classList.add("hidden");
@@ -1017,6 +1054,7 @@
 
       resetEmployeeForm();
       resetAttendanceEditForm();
+      resetDashboard();
       updateRoleVisibility();
 
       profileBoxEl.innerHTML = "Přihlas se.";
@@ -1125,6 +1163,7 @@
         rolePillEl.textContent = "bez employee profilu";
         rolePillEl.className = "pill pill-warn";
         employeeOfficesInfoEl.value = "";
+        updateRoleVisibility();
         return;
       }
 
@@ -1344,9 +1383,7 @@
         return;
       }
 
-      const filtered = (data || []).filter(row => !(row.role === "admin" || row.is_admin === true));
-
-      const rows = filtered.map(row => ({
+      const rows = (data || []).map(row => ({
         "Zaměstnanec": row.employee_name || "",
         "E-mail": row.employee_email || "",
         "Měsíc": p_month,
@@ -1468,6 +1505,34 @@
       setMessage(attendanceEditMessageEl, "Docházka byla upravena.", "ok");
     }
 
+    async function loadAdminDashboard() {
+      if (!isAdmin) {
+        resetDashboard();
+        return;
+      }
+
+      const { data, error } = await supabaseClient.rpc("get_admin_dashboard_summary");
+
+      if (error) {
+        console.error("Dashboard error:", error);
+        resetDashboard();
+        return;
+      }
+
+      if (!data || !data.length) {
+        resetDashboard();
+        return;
+      }
+
+      const d = data[0];
+
+      dashTotalEmployeesEl.textContent = d.total_employees ?? 0;
+      dashAtWorkEl.textContent = d.at_work_count ?? 0;
+      dashHomeOfficeEl.textContent = d.home_office_count ?? 0;
+      dashBusinessTripEl.textContent = d.business_trip_count ?? 0;
+      dashOnLeaveEl.textContent = d.on_leave_count ?? 0;
+    }
+
     async function loadAdminData() {
       if (!isAdmin) {
         adminPanelEl.classList.add("hidden");
@@ -1488,9 +1553,9 @@
       if (employeesRes.error) throw employeesRes.error;
       if (leaveRes.error) throw leaveRes.error;
 
-      adminTodayAttendanceData = (todayRes.data || []).filter(r => !(r.role === "admin" || r.is_admin === true));
+      adminTodayAttendanceData = todayRes.data || [];
       adminEmployeesData = employeesRes.data || [];
-      adminLeaveData = (leaveRes.data || []).filter(r => !(r.role === "admin" || r.is_admin === true));
+      adminLeaveData = leaveRes.data || [];
 
       fillAdminLeaveEmployeeOptions();
 
@@ -1502,7 +1567,7 @@
           { label: "Typ", render: r => escapeHtml(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") }
         ],
-        (locationsRes.data || []).filter(r => !(r.role === "admin" || r.is_admin === true))
+        locationsRes.data || []
       );
 
       adminTodayWrapEl.innerHTML = renderSimpleTable(
@@ -1565,12 +1630,17 @@
         await loadMyAttendance();
         await loadMyLeaveSummary();
         await loadAdminData();
+        await loadAdminDashboard();
 
         if (isAdmin) {
           setMessage(appMessageEl, "Admin data načtena.", "ok");
         } else {
           setMessage(appMessageEl, "Data načtena.", "ok");
-          setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
+          setMessage(
+            attendanceMessageEl,
+            myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.",
+            "ok"
+          );
         }
       } catch (error) {
         debugLog("loadAllData ERROR", error);
