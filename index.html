@@ -371,6 +371,24 @@
           </div>
 
           <div class="card">
+            <h2>Moje dovolená</h2>
+            <div class="grid grid-stats">
+              <div class="stat">
+                <div class="stat-label">Nárok (hodiny)</div>
+                <div id="leaveTotalHoursValue" class="stat-value">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Vyčerpáno (hodiny)</div>
+                <div id="leaveUsedHoursValue" class="stat-value">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Zbývá (dny)</div>
+                <div id="leaveRemainingDaysValue" class="stat-value">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
             <h2>Příchod / Odchod</h2>
 
             <div>
@@ -391,6 +409,7 @@
                 <option value="práce">práce</option>
                 <option value="home office">home office</option>
                 <option value="služební cesta">služební cesta</option>
+                <option value="dovolená">dovolená</option>
               </select>
             </div>
 
@@ -444,6 +463,14 @@
             <div class="grid grid-admin">
               <div class="card">
                 <div class="section-title">
+                  <h2>Přehled dovolené</h2>
+                  <span class="small">jen admin</span>
+                </div>
+                <div id="adminLeaveWrap" class="empty-box">Načítám…</div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">
                   <h2 id="attendanceFormTitle">Upravit docházku</h2>
                   <span class="small">jen admin</span>
                 </div>
@@ -476,6 +503,7 @@
                     <option value="práce">práce</option>
                     <option value="home office">home office</option>
                     <option value="služební cesta">služební cesta</option>
+                    <option value="dovolená">dovolená</option>
                   </select>
                 </div>
 
@@ -501,7 +529,9 @@
 
                 <div id="attendanceEditMessage" class="message warn" style="margin-top:16px;">Klikni v tabulce docházky na Upravit.</div>
               </div>
+            </div>
 
+            <div class="grid grid-admin">
               <div class="card">
                 <div class="section-title">
                   <h2 id="employeeFormTitle">Nový zaměstnanec</h2>
@@ -561,20 +591,19 @@
 
                 <div id="createEmployeeMessage" class="message warn" style="margin-top:16px;">Vyplň údaje a ulož.</div>
               </div>
-            </div>
 
-            <div class="card">
-              <div class="section-title">
-                <h2>Zaměstnanci</h2>
-                <span class="small">přehled zaměstnanců</span>
+              <div class="card">
+                <div class="section-title">
+                  <h2>Zaměstnanci</h2>
+                  <span class="small">přehled zaměstnanců</span>
+                </div>
+                <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
               </div>
-              <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
@@ -607,6 +636,9 @@
     const openShiftValueEl = document.getElementById("openShiftValue");
     const todayArrivalValueEl = document.getElementById("todayArrivalValue");
     const todayDepartureValueEl = document.getElementById("todayDepartureValue");
+    const leaveTotalHoursValueEl = document.getElementById("leaveTotalHoursValue");
+    const leaveUsedHoursValueEl = document.getElementById("leaveUsedHoursValue");
+    const leaveRemainingDaysValueEl = document.getElementById("leaveRemainingDaysValue");
     const officeEl = document.getElementById("office");
     const attendanceTypeEl = document.getElementById("attendanceType");
     const breakMinutesEl = document.getElementById("breakMinutes");
@@ -617,6 +649,7 @@
     const adminPanelEl = document.getElementById("adminPanel");
     const adminActiveWrapEl = document.getElementById("adminActiveWrap");
     const adminTodayWrapEl = document.getElementById("adminTodayWrap");
+    const adminLeaveWrapEl = document.getElementById("adminLeaveWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
 
     const attendanceFormTitleEl = document.getElementById("attendanceFormTitle");
@@ -646,10 +679,12 @@
     let currentEmployee = null;
     let myAttendanceRows = [];
     let myOpenShift = null;
+    let myLeaveSummary = null;
     let isAdmin = false;
 
     let adminEmployeesData = [];
     let adminTodayAttendanceData = [];
+    let adminLeaveData = [];
     let editEmployeeId = null;
     let editAttendanceId = null;
 
@@ -683,6 +718,13 @@
       const mm = String(d.getMonth() + 1).padStart(2, "0");
       const dd = String(d.getDate()).padStart(2, "0");
       return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function fmtNumber(value) {
+      if (value === null || value === undefined || value === "") return "0";
+      const num = Number(value);
+      if (Number.isNaN(num)) return String(value);
+      return num % 1 === 0 ? String(num) : num.toFixed(2);
     }
 
     function renderSimpleTable(columns, rows) {
@@ -779,9 +821,11 @@
       currentEmployee = null;
       myAttendanceRows = [];
       myOpenShift = null;
+      myLeaveSummary = null;
       isAdmin = false;
       adminEmployeesData = [];
       adminTodayAttendanceData = [];
+      adminLeaveData = [];
       resetEmployeeForm();
       resetAttendanceEditForm();
       adminPanelEl.classList.add("hidden");
@@ -791,10 +835,14 @@
       openShiftValueEl.textContent = "—";
       todayArrivalValueEl.textContent = "—";
       todayDepartureValueEl.textContent = "—";
+      leaveTotalHoursValueEl.textContent = "—";
+      leaveUsedHoursValueEl.textContent = "—";
+      leaveRemainingDaysValueEl.textContent = "—";
       employeeOfficesInfoEl.value = "";
       myAttendanceWrapEl.innerHTML = `<div class="empty-box">Zatím žádné záznamy.</div>`;
       adminActiveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminTodayWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
+      adminLeaveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       employeesWrapEl.innerHTML = `<div class="empty-box">Načítám zaměstnance…</div>`;
       sessionTextEl.textContent = "Nikdo není přihlášen.";
       setMessage(appMessageEl, "Odhlášeno.", "warn");
@@ -835,8 +883,6 @@
 
     async function loadProfile() {
       const { data, error } = await supabaseClient.rpc("get_my_employee_profile");
-      debugLog("loadProfile rpc result", { data, error });
-
       if (error) throw error;
 
       currentEmployee = Array.isArray(data) && data.length ? data[0] : null;
@@ -878,8 +924,6 @@
       }
 
       const { data, error } = await supabaseClient.rpc("get_my_attendance_rows", { p_limit: 30 });
-      debugLog("loadMyAttendance rpc result", { data, error });
-
       if (error) throw error;
 
       myAttendanceRows = Array.isArray(data) ? data : [];
@@ -928,6 +972,33 @@
         ],
         myAttendanceRows
       );
+    }
+
+    async function loadMyLeaveSummary() {
+      if (!currentEmployee) {
+        myLeaveSummary = null;
+        renderMyLeaveSummary();
+        return;
+      }
+
+      const { data, error } = await supabaseClient.rpc("get_my_leave_summary");
+      if (error) throw error;
+
+      myLeaveSummary = Array.isArray(data) && data.length ? data[0] : null;
+      renderMyLeaveSummary();
+    }
+
+    function renderMyLeaveSummary() {
+      if (!myLeaveSummary) {
+        leaveTotalHoursValueEl.textContent = "—";
+        leaveUsedHoursValueEl.textContent = "—";
+        leaveRemainingDaysValueEl.textContent = "—";
+        return;
+      }
+
+      leaveTotalHoursValueEl.textContent = fmtNumber(myLeaveSummary.leave_hours_total);
+      leaveUsedHoursValueEl.textContent = fmtNumber(myLeaveSummary.leave_hours_used);
+      leaveRemainingDaysValueEl.textContent = fmtNumber(myLeaveSummary.leave_days_remaining);
     }
 
     async function doCheckIn() {
@@ -992,8 +1063,6 @@
           p_active
         });
 
-        debugLog("admin_update_employee result", { error });
-
         if (error) {
           setMessage(createEmployeeMessageEl, "Chyba při úpravě zaměstnance: " + error.message, "err");
           return;
@@ -1016,8 +1085,6 @@
         p_leave_days,
         p_leave_hours
       });
-
-      debugLog("admin_create_employee result", { error });
 
       if (error) {
         setMessage(createEmployeeMessageEl, "Chyba při vytváření zaměstnance: " + error.message, "err");
@@ -1059,8 +1126,6 @@
         p_break_minutes
       });
 
-      debugLog("admin_update_attendance result", { error });
-
       if (error) {
         setMessage(attendanceEditMessageEl, "Chyba při opravě docházky: " + error.message, "err");
         return;
@@ -1079,18 +1144,21 @@
 
       adminPanelEl.classList.remove("hidden");
 
-      const [locationsRes, todayRes, employeesRes] = await Promise.all([
+      const [locationsRes, todayRes, employeesRes, leaveRes] = await Promise.all([
         supabaseClient.rpc("get_admin_today_locations"),
         supabaseClient.rpc("get_admin_today_attendance"),
-        supabaseClient.rpc("get_admin_employees")
+        supabaseClient.rpc("get_admin_employees"),
+        supabaseClient.rpc("get_admin_leave_summary")
       ]);
 
       if (locationsRes.error) throw locationsRes.error;
       if (todayRes.error) throw todayRes.error;
       if (employeesRes.error) throw employeesRes.error;
+      if (leaveRes.error) throw leaveRes.error;
 
       adminTodayAttendanceData = todayRes.data || [];
       adminEmployeesData = employeesRes.data || [];
+      adminLeaveData = leaveRes.data || [];
 
       adminActiveWrapEl.innerHTML = renderSimpleTable(
         [
@@ -1118,6 +1186,19 @@
           }
         ],
         adminTodayAttendanceData
+      );
+
+      adminLeaveWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name || "") },
+          { label: "E-mail", render: r => escapeHtml(r.employee_email || "") },
+          { label: "Nárok dny", render: r => escapeHtml(fmtNumber(r.leave_days_total)) },
+          { label: "Nárok hodiny", render: r => escapeHtml(fmtNumber(r.leave_hours_total)) },
+          { label: "Vyčerpáno hodin", render: r => escapeHtml(fmtNumber(r.leave_hours_used)) },
+          { label: "Zbývá hodin", render: r => escapeHtml(fmtNumber(r.leave_hours_remaining)) },
+          { label: "Zbývá dnů", render: r => escapeHtml(fmtNumber(r.leave_days_remaining)) }
+        ],
+        adminLeaveData
       );
 
       employeesWrapEl.innerHTML = renderSimpleTable(
@@ -1148,6 +1229,7 @@
         await loadProfile();
         renderProfile();
         await loadMyAttendance();
+        await loadMyLeaveSummary();
         await loadAdminData();
 
         setMessage(appMessageEl, "Data načtena.", "ok");
