@@ -333,6 +333,30 @@
       </div>
     </div>
 
+    <div id="passwordResetView" class="login-wrap hidden">
+      <div class="card">
+        <h1>Nastavení nového hesla</h1>
+
+        <div>
+          <label for="newPassword">Nové heslo</label>
+          <input id="newPassword" type="password" />
+        </div>
+
+        <div style="margin-top:14px;">
+          <label for="newPassword2">Potvrzení hesla</label>
+          <input id="newPassword2" type="password" />
+        </div>
+
+        <div class="actions" style="margin-top:16px;">
+          <button id="saveNewPasswordBtn" class="btn-success" type="button">Uložit nové heslo</button>
+        </div>
+
+        <div id="passwordResetMessage" class="message warn" style="margin-top:16px;">
+          Zadej nové heslo.
+        </div>
+      </div>
+    </div>
+
     <div id="appView" class="hidden">
       <div class="topbar">
         <div>
@@ -700,14 +724,21 @@
     });
 
     const loginView = document.getElementById("loginView");
+    const passwordResetView = document.getElementById("passwordResetView");
     const appView = document.getElementById("appView");
+
     const emailEl = document.getElementById("email");
     const passwordEl = document.getElementById("password");
     const loginBtn = document.getElementById("loginBtn");
     const logoutBtn = document.getElementById("logoutBtn");
     const refreshBtn = document.getElementById("refreshBtn");
 
+    const newPasswordEl = document.getElementById("newPassword");
+    const newPassword2El = document.getElementById("newPassword2");
+    const saveNewPasswordBtn = document.getElementById("saveNewPasswordBtn");
+
     const loginMessageEl = document.getElementById("loginMessage");
+    const passwordResetMessageEl = document.getElementById("passwordResetMessage");
     const appMessageEl = document.getElementById("appMessage");
     const attendanceMessageEl = document.getElementById("attendanceMessage");
     const myLeaveMessageEl = document.getElementById("myLeaveMessage");
@@ -800,7 +831,7 @@
         catch { return String(a); }
       }).join(" ");
       console.log(...args);
-      debugBoxEl.textContent = line + "\\n\\n" + debugBoxEl.textContent;
+      debugBoxEl.textContent = line + "\n\n" + debugBoxEl.textContent;
     }
 
     function escapeHtml(value) {
@@ -938,7 +969,9 @@
 
     function renderLoggedOut() {
       loginView.classList.remove("hidden");
+      passwordResetView.classList.add("hidden");
       appView.classList.add("hidden");
+
       currentUser = null;
       currentEmployee = null;
       myAttendanceRows = [];
@@ -948,8 +981,10 @@
       adminEmployeesData = [];
       adminTodayAttendanceData = [];
       adminLeaveData = [];
+
       resetEmployeeForm();
       resetAttendanceEditForm();
+
       adminPanelEl.classList.add("hidden");
       profileBoxEl.innerHTML = "Přihlas se.";
       rolePillEl.textContent = "bez role";
@@ -969,11 +1004,14 @@
       adminLeaveEmployeeEl.innerHTML = "";
       exportMonthEl.value = currentMonthStr();
       sessionTextEl.textContent = "Nikdo není přihlášen.";
+
       setMessage(appMessageEl, "Odhlášeno.", "warn");
       setMessage(attendanceMessageEl, "Přihlas se a načti docházku.", "warn");
       setMessage(myLeaveMessageEl, "Vyber datum a počet hodin.", "warn");
       setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a hodiny.", "warn");
       setMessage(exportMessageEl, "Vyber měsíc a klikni na export.", "warn");
+      setMessage(passwordResetMessageEl, "Zadej nové heslo.", "warn");
+
       debugLog("renderLoggedOut");
     }
 
@@ -1006,6 +1044,38 @@
         return;
       }
       renderLoggedOut();
+    }
+
+    async function saveNewPassword() {
+      const p1 = newPasswordEl.value;
+      const p2 = newPassword2El.value;
+
+      if (!p1 || p1.length < 6) {
+        setMessage(passwordResetMessageEl, "Heslo musí mít alespoň 6 znaků.", "err");
+        return;
+      }
+
+      if (p1 !== p2) {
+        setMessage(passwordResetMessageEl, "Hesla se neshodují.", "err");
+        return;
+      }
+
+      setMessage(passwordResetMessageEl, "Ukládám nové heslo…", "warn");
+
+      const { error } = await supabaseClient.auth.updateUser({
+        password: p1
+      });
+
+      if (error) {
+        setMessage(passwordResetMessageEl, "Chyba: " + error.message, "err");
+        return;
+      }
+
+      setMessage(passwordResetMessageEl, "Heslo bylo změněno.", "ok");
+
+      setTimeout(() => {
+        window.location.href = window.location.origin + window.location.pathname;
+      }, 1500);
     }
 
     async function loadProfile() {
@@ -1478,6 +1548,7 @@
 
       currentUser = data.session.user;
       loginView.classList.add("hidden");
+      passwordResetView.classList.add("hidden");
       appView.classList.remove("hidden");
       sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
       await loadAllData();
@@ -1486,6 +1557,7 @@
     loginBtn.addEventListener("click", signIn);
     logoutBtn.addEventListener("click", signOut);
     refreshBtn.addEventListener("click", loadAllData);
+    saveNewPasswordBtn.addEventListener("click", saveNewPassword);
     checkInBtn.addEventListener("click", doCheckIn);
     checkOutBtn.addEventListener("click", doCheckOut);
     createMyLeaveBtn.addEventListener("click", createMyLeave);
@@ -1522,10 +1594,22 @@
       if (e.key === "Enter") signIn();
     });
 
+    newPassword2El.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") saveNewPassword();
+    });
+
     supabaseClient.auth.onAuthStateChange((_event, session) => {
+      if (_event === "PASSWORD_RECOVERY") {
+        loginView.classList.add("hidden");
+        appView.classList.add("hidden");
+        passwordResetView.classList.remove("hidden");
+        return;
+      }
+
       if (session?.user) {
         currentUser = session.user;
         loginView.classList.add("hidden");
+        passwordResetView.classList.add("hidden");
         appView.classList.remove("hidden");
         sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
 
@@ -1542,6 +1626,20 @@
       exportMonthEl.value = currentMonthStr();
       myLeaveDateEl.value = todayStr();
       adminLeaveDateEl.value = todayStr();
+
+      const hash = window.location.hash || "";
+      const search = window.location.search || "";
+      const recoveryMode =
+        hash.includes("type=recovery") ||
+        search.includes("type=recovery");
+
+      if (recoveryMode) {
+        loginView.classList.add("hidden");
+        appView.classList.add("hidden");
+        passwordResetView.classList.remove("hidden");
+        return;
+      }
+
       await loadSession();
     })();
   </script>
