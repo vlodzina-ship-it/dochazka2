@@ -112,6 +112,11 @@
       outline: none;
     }
 
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
     button {
       border: 0;
       border-radius: 10px;
@@ -409,7 +414,6 @@
                 <option value="práce">práce</option>
                 <option value="home office">home office</option>
                 <option value="služební cesta">služební cesta</option>
-                <option value="dovolená">dovolená</option>
               </select>
             </div>
 
@@ -429,6 +433,31 @@
             </div>
 
             <div id="attendanceMessage" class="message warn" style="margin-top:16px;">Přihlas se a načti docházku.</div>
+          </div>
+
+          <div class="card">
+            <h2>Zapsat dovolenou</h2>
+
+            <div>
+              <label for="myLeaveDate">Datum dovolené</label>
+              <input id="myLeaveDate" type="date" />
+            </div>
+
+            <div style="margin-top:14px;">
+              <label for="myLeaveHours">Počet hodin</label>
+              <input id="myLeaveHours" type="number" min="1" step="1" value="8" />
+            </div>
+
+            <div style="margin-top:14px;">
+              <label for="myLeaveNote">Poznámka</label>
+              <textarea id="myLeaveNote"></textarea>
+            </div>
+
+            <div class="actions" style="margin-top:16px;">
+              <button id="createMyLeaveBtn" class="btn-success" type="button">Zapsat dovolenou</button>
+            </div>
+
+            <div id="myLeaveMessage" class="message warn" style="margin-top:16px;">Vyber datum a počet hodin.</div>
           </div>
         </div>
 
@@ -471,6 +500,41 @@
 
               <div class="card">
                 <div class="section-title">
+                  <h2>Zapsat dovolenou zaměstnanci</h2>
+                  <span class="small">jen admin</span>
+                </div>
+
+                <div>
+                  <label for="adminLeaveEmployee">Zaměstnanec</label>
+                  <select id="adminLeaveEmployee"></select>
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="adminLeaveDate">Datum dovolené</label>
+                  <input id="adminLeaveDate" type="date" />
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="adminLeaveHours">Počet hodin</label>
+                  <input id="adminLeaveHours" type="number" min="1" step="1" value="8" />
+                </div>
+
+                <div style="margin-top:14px;">
+                  <label for="adminLeaveNote">Poznámka</label>
+                  <textarea id="adminLeaveNote"></textarea>
+                </div>
+
+                <div class="actions" style="margin-top:16px;">
+                  <button id="adminCreateLeaveBtn" class="btn-success" type="button">Zapsat dovolenou</button>
+                </div>
+
+                <div id="adminLeaveMessage" class="message warn" style="margin-top:16px;">Vyber zaměstnance, datum a hodiny.</div>
+              </div>
+            </div>
+
+            <div class="grid grid-admin">
+              <div class="card">
+                <div class="section-title">
                   <h2 id="attendanceFormTitle">Upravit docházku</h2>
                   <span class="small">jen admin</span>
                 </div>
@@ -503,7 +567,6 @@
                     <option value="práce">práce</option>
                     <option value="home office">home office</option>
                     <option value="služební cesta">služební cesta</option>
-                    <option value="dovolená">dovolená</option>
                   </select>
                 </div>
 
@@ -529,9 +592,7 @@
 
                 <div id="attendanceEditMessage" class="message warn" style="margin-top:16px;">Klikni v tabulce docházky na Upravit.</div>
               </div>
-            </div>
 
-            <div class="grid grid-admin">
               <div class="card">
                 <div class="section-title">
                   <h2 id="employeeFormTitle">Nový zaměstnanec</h2>
@@ -591,19 +652,20 @@
 
                 <div id="createEmployeeMessage" class="message warn" style="margin-top:16px;">Vyplň údaje a ulož.</div>
               </div>
+            </div>
 
-              <div class="card">
-                <div class="section-title">
-                  <h2>Zaměstnanci</h2>
-                  <span class="small">přehled zaměstnanců</span>
-                </div>
-                <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
+            <div class="card">
+              <div class="section-title">
+                <h2>Zaměstnanci</h2>
+                <span class="small">přehled zaměstnanců</span>
               </div>
+              <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
@@ -624,33 +686,52 @@
     const loginBtn = document.getElementById("loginBtn");
     const logoutBtn = document.getElementById("logoutBtn");
     const refreshBtn = document.getElementById("refreshBtn");
+
     const loginMessageEl = document.getElementById("loginMessage");
     const appMessageEl = document.getElementById("appMessage");
     const attendanceMessageEl = document.getElementById("attendanceMessage");
+    const myLeaveMessageEl = document.getElementById("myLeaveMessage");
+    const adminLeaveMessageEl = document.getElementById("adminLeaveMessage");
     const createEmployeeMessageEl = document.getElementById("createEmployeeMessage");
     const attendanceEditMessageEl = document.getElementById("attendanceEditMessage");
     const debugBoxEl = document.getElementById("debugBox");
+
     const sessionTextEl = document.getElementById("sessionText");
     const rolePillEl = document.getElementById("rolePill");
     const profileBoxEl = document.getElementById("profileBox");
+
     const openShiftValueEl = document.getElementById("openShiftValue");
     const todayArrivalValueEl = document.getElementById("todayArrivalValue");
     const todayDepartureValueEl = document.getElementById("todayDepartureValue");
+
     const leaveTotalHoursValueEl = document.getElementById("leaveTotalHoursValue");
     const leaveUsedHoursValueEl = document.getElementById("leaveUsedHoursValue");
     const leaveRemainingDaysValueEl = document.getElementById("leaveRemainingDaysValue");
+
     const officeEl = document.getElementById("office");
     const attendanceTypeEl = document.getElementById("attendanceType");
     const breakMinutesEl = document.getElementById("breakMinutes");
     const employeeOfficesInfoEl = document.getElementById("employeeOfficesInfo");
     const checkInBtn = document.getElementById("checkInBtn");
     const checkOutBtn = document.getElementById("checkOutBtn");
+
+    const myLeaveDateEl = document.getElementById("myLeaveDate");
+    const myLeaveHoursEl = document.getElementById("myLeaveHours");
+    const myLeaveNoteEl = document.getElementById("myLeaveNote");
+    const createMyLeaveBtn = document.getElementById("createMyLeaveBtn");
+
     const myAttendanceWrapEl = document.getElementById("myAttendanceWrap");
     const adminPanelEl = document.getElementById("adminPanel");
     const adminActiveWrapEl = document.getElementById("adminActiveWrap");
     const adminTodayWrapEl = document.getElementById("adminTodayWrap");
     const adminLeaveWrapEl = document.getElementById("adminLeaveWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
+
+    const adminLeaveEmployeeEl = document.getElementById("adminLeaveEmployee");
+    const adminLeaveDateEl = document.getElementById("adminLeaveDate");
+    const adminLeaveHoursEl = document.getElementById("adminLeaveHours");
+    const adminLeaveNoteEl = document.getElementById("adminLeaveNote");
+    const adminCreateLeaveBtn = document.getElementById("adminCreateLeaveBtn");
 
     const attendanceFormTitleEl = document.getElementById("attendanceFormTitle");
     const editAttendanceEmployeeEl = document.getElementById("editAttendanceEmployee");
@@ -725,6 +806,16 @@
       const num = Number(value);
       if (Number.isNaN(num)) return String(value);
       return num % 1 === 0 ? String(num) : num.toFixed(2);
+    }
+
+    function fillAdminLeaveEmployeeOptions() {
+      adminLeaveEmployeeEl.innerHTML = "";
+      for (const employee of adminEmployeesData) {
+        const option = document.createElement("option");
+        option.value = employee.id;
+        option.textContent = `${employee.name || ""} (${employee.email || ""})`;
+        adminLeaveEmployeeEl.appendChild(option);
+      }
     }
 
     function renderSimpleTable(columns, rows) {
@@ -844,9 +935,12 @@
       adminTodayWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminLeaveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       employeesWrapEl.innerHTML = `<div class="empty-box">Načítám zaměstnance…</div>`;
+      adminLeaveEmployeeEl.innerHTML = "";
       sessionTextEl.textContent = "Nikdo není přihlášen.";
       setMessage(appMessageEl, "Odhlášeno.", "warn");
       setMessage(attendanceMessageEl, "Přihlas se a načti docházku.", "warn");
+      setMessage(myLeaveMessageEl, "Vyber datum a počet hodin.", "warn");
+      setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a hodiny.", "warn");
       debugLog("renderLoggedOut");
     }
 
@@ -1033,6 +1127,70 @@
       setMessage(attendanceMessageEl, "Odchod zapsán.", "ok");
     }
 
+    async function createMyLeave() {
+      const p_date = myLeaveDateEl.value;
+      const p_hours = Number(myLeaveHoursEl.value || 0);
+      const p_note = myLeaveNoteEl.value.trim();
+
+      if (!p_date || !p_hours) {
+        setMessage(myLeaveMessageEl, "Vyplň datum a počet hodin.", "err");
+        return;
+      }
+
+      setMessage(myLeaveMessageEl, "Zapisuji dovolenou…", "warn");
+
+      const { error } = await supabaseClient.rpc("create_my_leave", {
+        p_date,
+        p_hours,
+        p_note
+      });
+
+      if (error) {
+        setMessage(myLeaveMessageEl, "Chyba při zápisu dovolené: " + error.message, "err");
+        return;
+      }
+
+      myLeaveDateEl.value = "";
+      myLeaveHoursEl.value = "8";
+      myLeaveNoteEl.value = "";
+
+      await loadAllData();
+      setMessage(myLeaveMessageEl, "Dovolená byla zapsána.", "ok");
+    }
+
+    async function adminCreateLeave() {
+      const p_employee_id = Number(adminLeaveEmployeeEl.value || 0);
+      const p_date = adminLeaveDateEl.value;
+      const p_hours = Number(adminLeaveHoursEl.value || 0);
+      const p_note = adminLeaveNoteEl.value.trim();
+
+      if (!p_employee_id || !p_date || !p_hours) {
+        setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a počet hodin.", "err");
+        return;
+      }
+
+      setMessage(adminLeaveMessageEl, "Zapisuji dovolenou…", "warn");
+
+      const { error } = await supabaseClient.rpc("admin_create_leave", {
+        p_employee_id,
+        p_date,
+        p_hours,
+        p_note
+      });
+
+      if (error) {
+        setMessage(adminLeaveMessageEl, "Chyba při zápisu dovolené: " + error.message, "err");
+        return;
+      }
+
+      adminLeaveDateEl.value = "";
+      adminLeaveHoursEl.value = "8";
+      adminLeaveNoteEl.value = "";
+
+      await loadAllData();
+      setMessage(adminLeaveMessageEl, "Dovolená byla zaměstnanci zapsána.", "ok");
+    }
+
     async function createOrUpdateEmployee() {
       const p_name = newEmployeeNameEl.value.trim();
       const p_email = newEmployeeEmailEl.value.trim().toLowerCase();
@@ -1160,6 +1318,8 @@
       adminEmployeesData = employeesRes.data || [];
       adminLeaveData = leaveRes.data || [];
 
+      fillAdminLeaveEmployeeOptions();
+
       adminActiveWrapEl.innerHTML = renderSimpleTable(
         [
           { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name || "") },
@@ -1260,6 +1420,8 @@
     refreshBtn.addEventListener("click", loadAllData);
     checkInBtn.addEventListener("click", doCheckIn);
     checkOutBtn.addEventListener("click", doCheckOut);
+    createMyLeaveBtn.addEventListener("click", createMyLeave);
+    adminCreateLeaveBtn.addEventListener("click", adminCreateLeave);
     createEmployeeBtn.addEventListener("click", createOrUpdateEmployee);
     cancelEditEmployeeBtn.addEventListener("click", resetEmployeeForm);
     saveAttendanceEditBtn.addEventListener("click", saveAttendanceEdit);
