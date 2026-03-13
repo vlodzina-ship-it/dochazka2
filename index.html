@@ -382,112 +382,114 @@
             <div id="profileBox" class="profile-box">Přihlas se.</div>
           </div>
 
-          <div class="card">
-            <h2>Moje dnešní docházka</h2>
-            <div class="grid grid-stats">
-              <div class="stat">
-                <div class="stat-label">Otevřená směna</div>
-                <div id="openShiftValue" class="stat-value">—</div>
-              </div>
-              <div class="stat">
-                <div class="stat-label">Dnešní příchod</div>
-                <div id="todayArrivalValue" class="stat-value">—</div>
-              </div>
-              <div class="stat">
-                <div class="stat-label">Dnešní odchod</div>
-                <div id="todayDepartureValue" class="stat-value">—</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>Moje dovolená</h2>
-            <div class="grid grid-stats">
-              <div class="stat">
-                <div class="stat-label">Nárok (hodiny)</div>
-                <div id="leaveTotalHoursValue" class="stat-value">—</div>
-              </div>
-              <div class="stat">
-                <div class="stat-label">Vyčerpáno (hodiny)</div>
-                <div id="leaveUsedHoursValue" class="stat-value">—</div>
-              </div>
-              <div class="stat">
-                <div class="stat-label">Zbývá (dny)</div>
-                <div id="leaveRemainingDaysValue" class="stat-value">—</div>
+          <div id="employeeOnlyBlock" class="stack">
+            <div class="card">
+              <h2>Moje dnešní docházka</h2>
+              <div class="grid grid-stats">
+                <div class="stat">
+                  <div class="stat-label">Otevřená směna</div>
+                  <div id="openShiftValue" class="stat-value">—</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-label">Dnešní příchod</div>
+                  <div id="todayArrivalValue" class="stat-value">—</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-label">Dnešní odchod</div>
+                  <div id="todayDepartureValue" class="stat-value">—</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="card">
-            <h2>Příchod / Odchod</h2>
-
-            <div>
-              <label for="office">Místo práce</label>
-              <select id="office">
-                <option value="Osoblaha">Osoblaha</option>
-                <option value="Hlinka">Hlinka</option>
-                <option value="Slezské Pavlovice">Slezské Pavlovice</option>
-                <option value="Hlavní kancelář">Hlavní kancelář</option>
-                <option value="home office">home office</option>
-                <option value="kancelář dle potřeby">kancelář dle potřeby</option>
-              </select>
+            <div class="card">
+              <h2>Moje dovolená</h2>
+              <div class="grid grid-stats">
+                <div class="stat">
+                  <div class="stat-label">Nárok (hodiny)</div>
+                  <div id="leaveTotalHoursValue" class="stat-value">—</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-label">Vyčerpáno (hodiny)</div>
+                  <div id="leaveUsedHoursValue" class="stat-value">—</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-label">Zbývá (dny)</div>
+                  <div id="leaveRemainingDaysValue" class="stat-value">—</div>
+                </div>
+              </div>
             </div>
 
-            <div style="margin-top:14px;">
-              <label for="attendanceType">Typ</label>
-              <select id="attendanceType">
-                <option value="práce">práce</option>
-                <option value="home office">home office</option>
-                <option value="služební cesta">služební cesta</option>
-              </select>
+            <div class="card">
+              <h2>Příchod / Odchod</h2>
+
+              <div>
+                <label for="office">Místo práce</label>
+                <select id="office">
+                  <option value="Osoblaha">Osoblaha</option>
+                  <option value="Hlinka">Hlinka</option>
+                  <option value="Slezské Pavlovice">Slezské Pavlovice</option>
+                  <option value="Hlavní kancelář">Hlavní kancelář</option>
+                  <option value="home office">home office</option>
+                  <option value="kancelář dle potřeby">kancelář dle potřeby</option>
+                </select>
+              </div>
+
+              <div style="margin-top:14px;">
+                <label for="attendanceType">Typ</label>
+                <select id="attendanceType">
+                  <option value="práce">práce</option>
+                  <option value="home office">home office</option>
+                  <option value="služební cesta">služební cesta</option>
+                </select>
+              </div>
+
+              <div style="margin-top:14px;">
+                <label for="breakMinutes">Přestávka (minuty)</label>
+                <input id="breakMinutes" type="number" min="0" step="1" value="30" />
+              </div>
+
+              <div style="margin-top:14px;">
+                <label for="employeeOfficesInfo">Moje přidělená kancelář / offices</label>
+                <input id="employeeOfficesInfo" type="text" disabled />
+              </div>
+
+              <div class="actions" style="margin-top:16px;">
+                <button id="checkInBtn" class="btn-success" type="button">Příchod</button>
+                <button id="checkOutBtn" class="btn-primary" type="button">Odchod</button>
+              </div>
+
+              <div id="attendanceMessage" class="message warn" style="margin-top:16px;">Přihlas se a načti docházku.</div>
             </div>
 
-            <div style="margin-top:14px;">
-              <label for="breakMinutes">Přestávka (minuty)</label>
-              <input id="breakMinutes" type="number" min="0" step="1" value="30" />
+            <div class="card">
+              <h2>Zapsat dovolenou</h2>
+
+              <div>
+                <label for="myLeaveDate">Datum dovolené</label>
+                <input id="myLeaveDate" type="date" />
+              </div>
+
+              <div style="margin-top:14px;">
+                <label for="myLeaveHours">Počet hodin</label>
+                <input id="myLeaveHours" type="number" min="1" step="1" value="8" />
+              </div>
+
+              <div style="margin-top:14px;">
+                <label for="myLeaveNote">Poznámka</label>
+                <textarea id="myLeaveNote"></textarea>
+              </div>
+
+              <div class="actions" style="margin-top:16px;">
+                <button id="createMyLeaveBtn" class="btn-success" type="button">Zapsat dovolenou</button>
+              </div>
+
+              <div id="myLeaveMessage" class="message warn" style="margin-top:16px;">Vyber datum a počet hodin.</div>
             </div>
-
-            <div style="margin-top:14px;">
-              <label for="employeeOfficesInfo">Moje přidělená kancelář / offices</label>
-              <input id="employeeOfficesInfo" type="text" disabled />
-            </div>
-
-            <div class="actions" style="margin-top:16px;">
-              <button id="checkInBtn" class="btn-success" type="button">Příchod</button>
-              <button id="checkOutBtn" class="btn-primary" type="button">Odchod</button>
-            </div>
-
-            <div id="attendanceMessage" class="message warn" style="margin-top:16px;">Přihlas se a načti docházku.</div>
-          </div>
-
-          <div class="card">
-            <h2>Zapsat dovolenou</h2>
-
-            <div>
-              <label for="myLeaveDate">Datum dovolené</label>
-              <input id="myLeaveDate" type="date" />
-            </div>
-
-            <div style="margin-top:14px;">
-              <label for="myLeaveHours">Počet hodin</label>
-              <input id="myLeaveHours" type="number" min="1" step="1" value="8" />
-            </div>
-
-            <div style="margin-top:14px;">
-              <label for="myLeaveNote">Poznámka</label>
-              <textarea id="myLeaveNote"></textarea>
-            </div>
-
-            <div class="actions" style="margin-top:16px;">
-              <button id="createMyLeaveBtn" class="btn-success" type="button">Zapsat dovolenou</button>
-            </div>
-
-            <div id="myLeaveMessage" class="message warn" style="margin-top:16px;">Vyber datum a počet hodin.</div>
           </div>
         </div>
 
         <div class="stack">
-          <div class="card">
+          <div id="myAttendanceCard" class="card">
             <div class="section-title">
               <h2>Moje poslední docházka</h2>
               <span class="small">zaměstnanec vidí jen sebe, admin všechny</span>
@@ -727,6 +729,9 @@
     const passwordResetView = document.getElementById("passwordResetView");
     const appView = document.getElementById("appView");
 
+    const employeeOnlyBlockEl = document.getElementById("employeeOnlyBlock");
+    const myAttendanceCardEl = document.getElementById("myAttendanceCard");
+
     const emailEl = document.getElementById("email");
     const passwordEl = document.getElementById("password");
     const loginBtn = document.getElementById("loginBtn");
@@ -870,9 +875,22 @@
       return num % 1 === 0 ? String(num) : num.toFixed(2);
     }
 
+    function updateRoleVisibility() {
+      if (isAdmin) {
+        employeeOnlyBlockEl.classList.add("hidden");
+        myAttendanceCardEl.classList.add("hidden");
+        adminPanelEl.classList.remove("hidden");
+      } else {
+        employeeOnlyBlockEl.classList.remove("hidden");
+        myAttendanceCardEl.classList.remove("hidden");
+        adminPanelEl.classList.add("hidden");
+      }
+    }
+
     function fillAdminLeaveEmployeeOptions() {
       adminLeaveEmployeeEl.innerHTML = "";
-      for (const employee of adminEmployeesData) {
+      const filtered = adminEmployeesData.filter(e => !(e.role === "admin" || e.is_admin === true));
+      for (const employee of filtered) {
         const option = document.createElement("option");
         option.value = employee.id;
         option.textContent = `${employee.name || ""} (${employee.email || ""})`;
@@ -984,8 +1002,8 @@
 
       resetEmployeeForm();
       resetAttendanceEditForm();
+      updateRoleVisibility();
 
-      adminPanelEl.classList.add("hidden");
       profileBoxEl.innerHTML = "Přihlas se.";
       rolePillEl.textContent = "bez role";
       rolePillEl.className = "pill pill-warn";
@@ -1110,10 +1128,11 @@
       `;
 
       employeeOfficesInfoEl.value = currentEmployee.offices || "";
+      updateRoleVisibility();
     }
 
     async function loadMyAttendance() {
-      if (!currentEmployee) {
+      if (!currentEmployee || isAdmin) {
         myAttendanceRows = [];
         myOpenShift = null;
         renderMyAttendance();
@@ -1129,11 +1148,11 @@
     }
 
     function renderMyAttendance() {
-      if (!currentEmployee) {
+      if (!currentEmployee || isAdmin) {
         openShiftValueEl.textContent = "—";
         todayArrivalValueEl.textContent = "—";
         todayDepartureValueEl.textContent = "—";
-        myAttendanceWrapEl.innerHTML = `<div class="empty-box">Bez employee profilu nelze načíst docházku.</div>`;
+        myAttendanceWrapEl.innerHTML = `<div class="empty-box">Žádná data.</div>`;
         checkInBtn.disabled = true;
         checkOutBtn.disabled = true;
         return;
@@ -1172,7 +1191,7 @@
     }
 
     async function loadMyLeaveSummary() {
-      if (!currentEmployee) {
+      if (!currentEmployee || isAdmin) {
         myLeaveSummary = null;
         renderMyLeaveSummary();
         return;
@@ -1186,7 +1205,7 @@
     }
 
     function renderMyLeaveSummary() {
-      if (!myLeaveSummary) {
+      if (!myLeaveSummary || isAdmin) {
         leaveTotalHoursValueEl.textContent = "—";
         leaveUsedHoursValueEl.textContent = "—";
         leaveRemainingDaysValueEl.textContent = "—";
@@ -1310,7 +1329,9 @@
         return;
       }
 
-      const rows = (data || []).map(row => ({
+      const filtered = (data || []).filter(row => !(row.role === "admin" || row.is_admin === true));
+
+      const rows = filtered.map(row => ({
         "Zaměstnanec": row.employee_name || "",
         "E-mail": row.employee_email || "",
         "Měsíc": p_month,
@@ -1452,9 +1473,9 @@
       if (employeesRes.error) throw employeesRes.error;
       if (leaveRes.error) throw leaveRes.error;
 
-      adminTodayAttendanceData = todayRes.data || [];
+      adminTodayAttendanceData = (todayRes.data || []).filter(r => !(r.role === "admin" || r.is_admin === true));
       adminEmployeesData = employeesRes.data || [];
-      adminLeaveData = leaveRes.data || [];
+      adminLeaveData = (leaveRes.data || []).filter(r => !(r.role === "admin" || r.is_admin === true));
 
       fillAdminLeaveEmployeeOptions();
 
@@ -1466,7 +1487,7 @@
           { label: "Typ", render: r => escapeHtml(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") }
         ],
-        locationsRes.data || []
+        (locationsRes.data || []).filter(r => !(r.role === "admin" || r.is_admin === true))
       );
 
       adminTodayWrapEl.innerHTML = renderSimpleTable(
@@ -1530,8 +1551,12 @@
         await loadMyLeaveSummary();
         await loadAdminData();
 
-        setMessage(appMessageEl, "Data načtena.", "ok");
-        setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
+        if (isAdmin) {
+          setMessage(appMessageEl, "Admin data načtena.", "ok");
+        } else {
+          setMessage(appMessageEl, "Data načtena.", "ok");
+          setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
+        }
       } catch (error) {
         debugLog("loadAllData ERROR", error);
         setMessage(appMessageEl, "Chyba načítání: " + (error?.message || String(error)), "err");
@@ -1598,8 +1623,8 @@
       if (e.key === "Enter") saveNewPassword();
     });
 
-    supabaseClient.auth.onAuthStateChange((_event, session) => {
-      if (_event === "PASSWORD_RECOVERY") {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
         loginView.classList.add("hidden");
         appView.classList.add("hidden");
         passwordResetView.classList.remove("hidden");
