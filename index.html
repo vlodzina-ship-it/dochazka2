@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Docházka Osoblažský Cech</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --bg: #0b1020;
@@ -535,6 +536,24 @@
             <div class="grid grid-admin">
               <div class="card">
                 <div class="section-title">
+                  <h2>Export pro účetní</h2>
+                  <span class="small">souhrn po zaměstnancích</span>
+                </div>
+
+                <div>
+                  <label for="exportMonth">Měsíc</label>
+                  <input id="exportMonth" type="month" />
+                </div>
+
+                <div class="actions" style="margin-top:16px;">
+                  <button id="exportMonthBtn" class="btn-success" type="button">Export pro účetní</button>
+                </div>
+
+                <div id="exportMessage" class="message warn" style="margin-top:16px;">Vyber měsíc a klikni na export.</div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">
                   <h2 id="attendanceFormTitle">Upravit docházku</h2>
                   <span class="small">jen admin</span>
                 </div>
@@ -592,7 +611,9 @@
 
                 <div id="attendanceEditMessage" class="message warn" style="margin-top:16px;">Klikni v tabulce docházky na Upravit.</div>
               </div>
+            </div>
 
+            <div class="grid grid-admin">
               <div class="card">
                 <div class="section-title">
                   <h2 id="employeeFormTitle">Nový zaměstnanec</h2>
@@ -652,20 +673,19 @@
 
                 <div id="createEmployeeMessage" class="message warn" style="margin-top:16px;">Vyplň údaje a ulož.</div>
               </div>
-            </div>
 
-            <div class="card">
-              <div class="section-title">
-                <h2>Zaměstnanci</h2>
-                <span class="small">přehled zaměstnanců</span>
+              <div class="card">
+                <div class="section-title">
+                  <h2>Zaměstnanci</h2>
+                  <span class="small">přehled zaměstnanců</span>
+                </div>
+                <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
               </div>
-              <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
@@ -692,6 +712,7 @@
     const attendanceMessageEl = document.getElementById("attendanceMessage");
     const myLeaveMessageEl = document.getElementById("myLeaveMessage");
     const adminLeaveMessageEl = document.getElementById("adminLeaveMessage");
+    const exportMessageEl = document.getElementById("exportMessage");
     const createEmployeeMessageEl = document.getElementById("createEmployeeMessage");
     const attendanceEditMessageEl = document.getElementById("attendanceEditMessage");
     const debugBoxEl = document.getElementById("debugBox");
@@ -732,6 +753,9 @@
     const adminLeaveHoursEl = document.getElementById("adminLeaveHours");
     const adminLeaveNoteEl = document.getElementById("adminLeaveNote");
     const adminCreateLeaveBtn = document.getElementById("adminCreateLeaveBtn");
+
+    const exportMonthEl = document.getElementById("exportMonth");
+    const exportMonthBtn = document.getElementById("exportMonthBtn");
 
     const attendanceFormTitleEl = document.getElementById("attendanceFormTitle");
     const editAttendanceEmployeeEl = document.getElementById("editAttendanceEmployee");
@@ -776,7 +800,7 @@
         catch { return String(a); }
       }).join(" ");
       console.log(...args);
-      debugBoxEl.textContent = line + "\n\n" + debugBoxEl.textContent;
+      debugBoxEl.textContent = line + "\\n\\n" + debugBoxEl.textContent;
     }
 
     function escapeHtml(value) {
@@ -799,6 +823,13 @@
       const mm = String(d.getMonth() + 1).padStart(2, "0");
       const dd = String(d.getDate()).padStart(2, "0");
       return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function currentMonthStr() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      return `${yyyy}-${mm}`;
     }
 
     function fmtNumber(value) {
@@ -936,11 +967,13 @@
       adminLeaveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       employeesWrapEl.innerHTML = `<div class="empty-box">Načítám zaměstnance…</div>`;
       adminLeaveEmployeeEl.innerHTML = "";
+      exportMonthEl.value = currentMonthStr();
       sessionTextEl.textContent = "Nikdo není přihlášen.";
       setMessage(appMessageEl, "Odhlášeno.", "warn");
       setMessage(attendanceMessageEl, "Přihlas se a načti docházku.", "warn");
       setMessage(myLeaveMessageEl, "Vyber datum a počet hodin.", "warn");
       setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a hodiny.", "warn");
+      setMessage(exportMessageEl, "Vyber měsíc a klikni na export.", "warn");
       debugLog("renderLoggedOut");
     }
 
@@ -1191,6 +1224,41 @@
       setMessage(adminLeaveMessageEl, "Dovolená byla zaměstnanci zapsána.", "ok");
     }
 
+    async function exportMonthSummary() {
+      const p_month = exportMonthEl.value;
+      if (!p_month) {
+        setMessage(exportMessageEl, "Vyber měsíc.", "err");
+        return;
+      }
+
+      setMessage(exportMessageEl, "Generuji export…", "warn");
+
+      const { data, error } = await supabaseClient.rpc("get_admin_month_summary", { p_month });
+
+      if (error) {
+        setMessage(exportMessageEl, "Chyba exportu: " + error.message, "err");
+        return;
+      }
+
+      const rows = (data || []).map(row => ({
+        "Zaměstnanec": row.employee_name || "",
+        "E-mail": row.employee_email || "",
+        "Měsíc": p_month,
+        "Odpracováno hodin": Number(row.work_hours || 0),
+        "Dovolená hodin": Number(row.leave_hours || 0),
+        "Dovolená dnů": Number(row.leave_days || 0)
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, "Souhrn");
+
+      const filename = `dochazka_${p_month}.xlsx`;
+      XLSX.writeFile(wb, filename);
+
+      setMessage(exportMessageEl, `Export hotový: ${filename}`, "ok");
+    }
+
     async function createOrUpdateEmployee() {
       const p_name = newEmployeeNameEl.value.trim();
       const p_email = newEmployeeEmailEl.value.trim().toLowerCase();
@@ -1422,6 +1490,7 @@
     checkOutBtn.addEventListener("click", doCheckOut);
     createMyLeaveBtn.addEventListener("click", createMyLeave);
     adminCreateLeaveBtn.addEventListener("click", adminCreateLeave);
+    exportMonthBtn.addEventListener("click", exportMonthSummary);
     createEmployeeBtn.addEventListener("click", createOrUpdateEmployee);
     cancelEditEmployeeBtn.addEventListener("click", resetEmployeeForm);
     saveAttendanceEditBtn.addEventListener("click", saveAttendanceEdit);
@@ -1470,6 +1539,9 @@
 
     (async function bootstrap() {
       renderLoggedOut();
+      exportMonthEl.value = currentMonthStr();
+      myLeaveDateEl.value = todayStr();
+      adminLeaveDateEl.value = todayStr();
       await loadSession();
     })();
   </script>
