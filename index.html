@@ -623,7 +623,7 @@
 
                 <div style="margin-bottom:14px;">
                   <label for="editAttendanceEmployee">Zaměstnanec</label>
-                  <input id="editAttendanceEmployee" type="text" disabled />
+                  <select id="editAttendanceEmployee"></select>
                 </div>
 
                 <div>
@@ -971,6 +971,26 @@
       }
     }
 
+    function fillEditAttendanceEmployeeOptions() {
+      editAttendanceEmployeeEl.innerHTML = "";
+      const filtered = adminEmployeesData.filter(e => !(e.role === "admin" || e.is_admin === true));
+
+      if (!filtered.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Žádní zaměstnanci";
+        editAttendanceEmployeeEl.appendChild(option);
+        return;
+      }
+
+      for (const employee of filtered) {
+        const option = document.createElement("option");
+        option.value = employee.id;
+        option.textContent = `${employee.name || ""} (${employee.email || ""})`;
+        editAttendanceEmployeeEl.appendChild(option);
+      }
+    }
+
     function renderSimpleTable(columns, rows) {
       if (!rows || !rows.length) return `<div class="empty-box">Žádná data.</div>`;
 
@@ -1032,7 +1052,9 @@
     function resetAttendanceEditForm() {
       editAttendanceId = null;
       attendanceFormTitleEl.textContent = "Upravit docházku";
-      editAttendanceEmployeeEl.value = "";
+      if (editAttendanceEmployeeEl.options.length > 0) {
+        editAttendanceEmployeeEl.selectedIndex = 0;
+      }
       editAttendanceDateEl.value = "";
       editAttendanceOfficeEl.value = "Osoblaha";
       editAttendanceTypeEl.value = "práce";
@@ -1046,7 +1068,11 @@
     function fillAttendanceFormForEdit(row) {
       editAttendanceId = row.id;
       attendanceFormTitleEl.textContent = `Upravit docházku ID ${row.id}`;
-      editAttendanceEmployeeEl.value = `${row.employee_name || ""} (${row.employee_email || ""})`;
+
+      if (row.employee_id !== undefined && row.employee_id !== null) {
+        editAttendanceEmployeeEl.value = String(row.employee_id);
+      }
+
       editAttendanceDateEl.value = row.date || "";
       editAttendanceOfficeEl.value = row.office || "Osoblaha";
       editAttendanceTypeEl.value = row.type || "práce";
@@ -1082,7 +1108,6 @@
       adminLeaveData = [];
 
       resetEmployeeForm();
-      resetAttendanceEditForm();
       resetDashboard();
       updateRoleVisibility();
 
@@ -1102,8 +1127,19 @@
       adminLeaveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       employeesWrapEl.innerHTML = `<div class="empty-box">Načítám zaměstnance…</div>`;
       adminLeaveEmployeeEl.innerHTML = "";
+      editAttendanceEmployeeEl.innerHTML = "";
       exportMonthEl.value = currentMonthStr();
       sessionTextEl.textContent = "Nikdo není přihlášen.";
+
+      editAttendanceId = null;
+      attendanceFormTitleEl.textContent = "Upravit docházku";
+      editAttendanceDateEl.value = "";
+      editAttendanceOfficeEl.value = "Osoblaha";
+      editAttendanceTypeEl.value = "práce";
+      editAttendanceTimeFromEl.value = "";
+      editAttendanceTimeToEl.value = "";
+      editAttendanceBreakMinutesEl.value = "30";
+      cancelAttendanceEditBtn.classList.add("hidden");
 
       setMessage(appMessageEl, "Odhlášeno.", "warn");
       setMessage(attendanceMessageEl, "Přihlas se a načti docházku.", "warn");
@@ -1111,6 +1147,7 @@
       setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a hodiny.", "warn");
       setMessage(exportMessageEl, "Vyber měsíc a klikni na export.", "warn");
       setMessage(passwordResetMessageEl, "Zadej nové heslo.", "warn");
+      setMessage(attendanceEditMessageEl, "Klikni v tabulce docházky na Upravit.", "warn");
 
       debugLog("renderLoggedOut");
     }
@@ -1588,6 +1625,7 @@
       adminLeaveData = leaveRes.data || [];
 
       fillAdminLeaveEmployeeOptions();
+      fillEditAttendanceEmployeeOptions();
 
       adminActiveWrapEl.innerHTML = renderSimpleTable(
         [
