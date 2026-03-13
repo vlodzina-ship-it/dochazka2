@@ -919,6 +919,35 @@
       return num % 1 === 0 ? String(num) : num.toFixed(2);
     }
 
+    function parseRowDateTime(dateValue, timeValue) {
+      if (!dateValue || !timeValue) return null;
+      const parsed = new Date(`${dateValue}T${timeValue}`);
+      if (Number.isNaN(parsed.getTime())) return null;
+      return parsed;
+    }
+
+    function getWorkedMinutes(row) {
+      const start = parseRowDateTime(row.date, row.time_from);
+      const end = parseRowDateTime(row.date, row.time_to);
+
+      if (!start || !end) return 0;
+      if (end <= start) return 0;
+
+      const rawMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+      const breakMinutes = Number(row.break_minutes || 0);
+      const workedMinutes = rawMinutes - breakMinutes;
+
+      if (workedMinutes <= 0) return 0;
+      return workedMinutes;
+    }
+
+    function formatWorkedMinutes(minutes) {
+      const safeMinutes = Math.max(0, Number(minutes || 0));
+      const hours = Math.floor(safeMinutes / 60);
+      const mins = safeMinutes % 60;
+      return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+    }
+
     function updateRoleVisibility() {
       if (isAdmin) {
         employeeOnlyBlockEl.classList.add("hidden");
@@ -1238,7 +1267,8 @@
           { label: "Typ", render: r => escapeHtml(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") },
           { label: "Do", render: r => escapeHtml(r.time_to || "—") },
-          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") }
+          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") },
+          { label: "Odpracováno", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) }
         ],
         myAttendanceRows
       );
@@ -1579,6 +1609,7 @@
           { label: "Od", render: r => escapeHtml(r.time_from || "—") },
           { label: "Do", render: r => escapeHtml(r.time_to || "—") },
           { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") },
+          { label: "Odpracováno", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) },
           {
             label: "Akce",
             render: r => `<button type="button" class="btn-secondary edit-attendance-btn" data-id="${r.id}">Upravit</button>`
