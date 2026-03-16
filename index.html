@@ -763,6 +763,40 @@
             <div id="myAttendanceWrap" class="empty-box">Zatím žádné záznamy.</div>
           </div>
 
+          <div id="myAttendanceHistoryCard" class="card">
+            <div class="section-title">
+              <h2>Historie docházky</h2>
+              <span id="historySummaryLabel" class="small">vybraný měsíc</span>
+            </div>
+
+            <div class="grid grid-form-2" style="margin-bottom:12px; align-items:end;">
+              <div>
+                <label for="historyMonth">Měsíc</label>
+                <input id="historyMonth" type="month" />
+              </div>
+              <div class="actions" style="margin-top:0;">
+                <button id="loadHistoryBtn" class="btn-secondary" type="button">Načíst měsíc</button>
+              </div>
+            </div>
+
+            <div class="grid grid-stats" style="margin-bottom:12px;">
+              <div class="stat">
+                <div class="stat-label">Záznamy</div>
+                <div id="historyRecordsValue" class="stat-value">0</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Odpracováno</div>
+                <div id="historyWorkedValue" class="stat-value">00:00</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Dny v práci</div>
+                <div id="historyDaysValue" class="stat-value">0</div>
+              </div>
+            </div>
+
+            <div id="myAttendanceHistoryWrap" class="empty-box">Vyber měsíc a načti historii docházky.</div>
+          </div>
+
           <div id="adminPanel" class="hidden">
             <div class="admin-layout">
               <div class="admin-main">
@@ -1093,6 +1127,14 @@
     const leaveRemainingDaysValueEl = document.getElementById("leaveRemainingDaysValue");
 
     const monthlySummaryLabelEl = document.getElementById("monthlySummaryLabel");
+    const historyMonthEl = document.getElementById("historyMonth");
+    const loadHistoryBtn = document.getElementById("loadHistoryBtn");
+    const myAttendanceHistoryCardEl = document.getElementById("myAttendanceHistoryCard");
+    const myAttendanceHistoryWrapEl = document.getElementById("myAttendanceHistoryWrap");
+    const historySummaryLabelEl = document.getElementById("historySummaryLabel");
+    const historyRecordsValueEl = document.getElementById("historyRecordsValue");
+    const historyWorkedValueEl = document.getElementById("historyWorkedValue");
+    const historyDaysValueEl = document.getElementById("historyDaysValue");
     const monthlyWorkedValueEl = document.getElementById("monthlyWorkedValue");
     const monthlyWorkDaysValueEl = document.getElementById("monthlyWorkDaysValue");
     const monthlyLeaveDaysValueEl = document.getElementById("monthlyLeaveDaysValue");
@@ -1169,6 +1211,7 @@
     let currentUser = null;
     let currentEmployee = null;
     let myAttendanceRows = [];
+    let myAttendanceHistoryRows = [];
     let myOpenShift = null;
     let myLeaveSummary = null;
     let isAdmin = false;
@@ -1323,6 +1366,76 @@
       return `<span class="type-badge type-default">${safeText}</span>`;
     }
 
+    function getAttendanceRowsForMonth(rows, monthStr) {
+      return (rows || [])
+        .filter((row) => row?.date && String(row.date).startsWith(monthStr))
+        .sort((a, b) => {
+          const da = String(a.date || "");
+          const db = String(b.date || "");
+          if (da === db) return Number(b.id || 0) - Number(a.id || 0);
+          return db.localeCompare(da);
+        });
+    }
+
+    function renderAttendanceHistory() {
+      if (!currentEmployee || isAdmin) {
+        myAttendanceHistoryCardEl.classList.add("hidden");
+        myAttendanceHistoryWrapEl.innerHTML = `<div class="empty-box">Žádná data.</div>`;
+        historySummaryLabelEl.textContent = "vybraný měsíc";
+        historyRecordsValueEl.textContent = "0";
+        historyWorkedValueEl.textContent = "00:00";
+        historyDaysValueEl.textContent = "0";
+        return;
+      }
+
+      myAttendanceHistoryCardEl.classList.remove("hidden");
+
+      const month = historyMonthEl?.value || currentMonthStr();
+      const rows = getAttendanceRowsForMonth(myAttendanceHistoryRows, month);
+      const workDays = new Set();
+      let totalWorkedMinutes = 0;
+
+      for (const row of rows) {
+        const workedMinutes = getWorkedMinutes(row);
+        if (workedMinutes > 0) {
+          totalWorkedMinutes += workedMinutes;
+          workDays.add(row.date);
+        }
+      }
+
+      historySummaryLabelEl.textContent = formatMonthLabel(month);
+      historyRecordsValueEl.textContent = String(rows.length);
+      historyWorkedValueEl.textContent = formatWorkedMinutes(totalWorkedMinutes);
+      historyDaysValueEl.textContent = String(workDays.size);
+
+      myAttendanceHistoryWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "Datum", render: r => escapeHtml(r.date || "") },
+          { label: "Od", render: r => escapeHtml(r.time_from || "—") },
+          { label: "Do", render: r => escapeHtml(r.time_to || "—") },
+          { label: "Hodiny", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) },
+          { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
+          { label: "Místo", render: r => escapeHtml(r.office || "—") },
+          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") }
+        ],
+        rows
+      );
+    }
+
+    async function loadAttendanceHistory() {
+      if (!currentEmployee || isAdmin) {
+        myAttendanceHistoryRows = [];
+        renderAttendanceHistory();
+        return;
+      }
+
+      const { data, error } = await supabaseClient.rpc("get_my_attendance_rows", { p_limit: 366 });
+      if (error) throw error;
+
+      myAttendanceHistoryRows = Array.isArray(data) ? data : [];
+      renderAttendanceHistory();
+    }
+
     function renderMonthlySummary() {
       if (!currentEmployee || isAdmin) {
         myMonthlySummaryCardEl.classList.add("hidden");
@@ -1346,11 +1459,13 @@
       if (isAdmin) {
         employeeOnlyBlockEl.classList.add("hidden");
         myAttendanceCardEl.classList.add("hidden");
+        myAttendanceHistoryCardEl.classList.add("hidden");
         myMonthlySummaryCardEl.classList.add("hidden");
         adminPanelEl.classList.remove("hidden");
       } else {
         employeeOnlyBlockEl.classList.remove("hidden");
         myAttendanceCardEl.classList.remove("hidden");
+        myAttendanceHistoryCardEl.classList.remove("hidden");
         myMonthlySummaryCardEl.classList.remove("hidden");
         adminPanelEl.classList.add("hidden");
       }
@@ -1624,6 +1739,13 @@
       monthlyLeaveDaysValueEl.textContent = "—";
       employeeOfficesInfoEl.value = "";
       myAttendanceWrapEl.innerHTML = `<div class="empty-box">Zatím žádné záznamy.</div>`;
+      myAttendanceHistoryWrapEl.innerHTML = `<div class="empty-box">Vyber měsíc a načti historii docházky.</div>`;
+      myAttendanceHistoryRows = [];
+      if (historyMonthEl) historyMonthEl.value = currentMonthStr();
+      historySummaryLabelEl.textContent = "vybraný měsíc";
+      historyRecordsValueEl.textContent = "0";
+      historyWorkedValueEl.textContent = "00:00";
+      historyDaysValueEl.textContent = "0";
       adminActiveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminTodayWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminLeaveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
@@ -2262,6 +2384,7 @@
         await loadProfile();
         renderProfile();
         await loadMyAttendance();
+        await loadAttendanceHistory();
         await loadMyLeaveSummary();
         await loadAdminData();
         await loadAdminDashboard();
@@ -2301,6 +2424,7 @@
     loginBtn.addEventListener("click", signIn);
     logoutBtn.addEventListener("click", signOut);
     refreshBtn.addEventListener("click", loadAllData);
+    loadHistoryBtn?.addEventListener("click", loadAttendanceHistory);
     saveNewPasswordBtn.addEventListener("click", saveNewPassword);
     checkInBtn.addEventListener("click", doCheckIn);
     checkOutBtn.addEventListener("click", doCheckOut);
@@ -2376,6 +2500,7 @@
 
     (async function bootstrap() {
       exportMonthEl.value = currentMonthStr();
+      if (historyMonthEl) historyMonthEl.value = currentMonthStr();
       myLeaveDateEl.value = todayStr();
       adminLeaveDateEl.value = todayStr();
       manualAttendanceDateEl.value = todayStr();
