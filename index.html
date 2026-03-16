@@ -492,6 +492,27 @@
         </div>
 
         <div class="stack">
+          <div id="myMonthlySummaryCard" class="card">
+            <div class="section-title">
+              <h2>Měsíční přehled</h2>
+              <span id="monthlySummaryLabel" class="small">aktuální měsíc</span>
+            </div>
+            <div class="grid grid-stats">
+              <div class="stat">
+                <div class="stat-label">Odpracováno za měsíc</div>
+                <div id="monthlyWorkedValue" class="stat-value">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Dny v práci</div>
+                <div id="monthlyWorkDaysValue" class="stat-value">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Dny dovolené</div>
+                <div id="monthlyLeaveDaysValue" class="stat-value">—</div>
+              </div>
+            </div>
+          </div>
+
           <div id="myAttendanceCard" class="card">
             <div class="section-title">
               <h2>Moje poslední docházka</h2>
@@ -768,6 +789,7 @@
 
     const employeeOnlyBlockEl = document.getElementById("employeeOnlyBlock");
     const myAttendanceCardEl = document.getElementById("myAttendanceCard");
+    const myMonthlySummaryCardEl = document.getElementById("myMonthlySummaryCard");
 
     const emailEl = document.getElementById("email");
     const passwordEl = document.getElementById("password");
@@ -801,6 +823,11 @@
     const leaveTotalHoursValueEl = document.getElementById("leaveTotalHoursValue");
     const leaveUsedHoursValueEl = document.getElementById("leaveUsedHoursValue");
     const leaveRemainingDaysValueEl = document.getElementById("leaveRemainingDaysValue");
+
+    const monthlySummaryLabelEl = document.getElementById("monthlySummaryLabel");
+    const monthlyWorkedValueEl = document.getElementById("monthlyWorkedValue");
+    const monthlyWorkDaysValueEl = document.getElementById("monthlyWorkDaysValue");
+    const monthlyLeaveDaysValueEl = document.getElementById("monthlyLeaveDaysValue");
 
     const officeEl = document.getElementById("office");
     const attendanceTypeEl = document.getElementById("attendanceType");
@@ -948,14 +975,72 @@
       return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
     }
 
+    function formatMonthLabel(monthStr) {
+      if (!monthStr || !monthStr.includes("-")) return "aktuální měsíc";
+      const [year, month] = monthStr.split("-");
+      return `${month}.${year}`;
+    }
+
+    function getMonthlySummary(rows) {
+      const month = currentMonthStr();
+      const workDays = new Set();
+      const leaveDays = new Set();
+      let totalWorkedMinutes = 0;
+
+      for (const row of rows) {
+        if (!row?.date || !String(row.date).startsWith(month)) continue;
+
+        const type = String(row.type || "").toLowerCase().trim();
+
+        if (type === "dovolená") {
+          leaveDays.add(row.date);
+          continue;
+        }
+
+        const workedMinutes = getWorkedMinutes(row);
+        if (workedMinutes > 0) {
+          totalWorkedMinutes += workedMinutes;
+          workDays.add(row.date);
+        }
+      }
+
+      return {
+        month,
+        totalWorkedMinutes,
+        workDays: workDays.size,
+        leaveDays: leaveDays.size
+      };
+    }
+
+    function renderMonthlySummary() {
+      if (!currentEmployee || isAdmin) {
+        myMonthlySummaryCardEl.classList.add("hidden");
+        monthlySummaryLabelEl.textContent = "aktuální měsíc";
+        monthlyWorkedValueEl.textContent = "—";
+        monthlyWorkDaysValueEl.textContent = "—";
+        monthlyLeaveDaysValueEl.textContent = "—";
+        return;
+      }
+
+      myMonthlySummaryCardEl.classList.remove("hidden");
+
+      const summary = getMonthlySummary(myAttendanceRows);
+      monthlySummaryLabelEl.textContent = formatMonthLabel(summary.month);
+      monthlyWorkedValueEl.textContent = formatWorkedMinutes(summary.totalWorkedMinutes);
+      monthlyWorkDaysValueEl.textContent = String(summary.workDays);
+      monthlyLeaveDaysValueEl.textContent = String(summary.leaveDays);
+    }
+
     function updateRoleVisibility() {
       if (isAdmin) {
         employeeOnlyBlockEl.classList.add("hidden");
         myAttendanceCardEl.classList.add("hidden");
+        myMonthlySummaryCardEl.classList.add("hidden");
         adminPanelEl.classList.remove("hidden");
       } else {
         employeeOnlyBlockEl.classList.remove("hidden");
         myAttendanceCardEl.classList.remove("hidden");
+        myMonthlySummaryCardEl.classList.remove("hidden");
         adminPanelEl.classList.add("hidden");
       }
     }
@@ -1120,6 +1205,10 @@
       leaveTotalHoursValueEl.textContent = "—";
       leaveUsedHoursValueEl.textContent = "—";
       leaveRemainingDaysValueEl.textContent = "—";
+      monthlySummaryLabelEl.textContent = "aktuální měsíc";
+      monthlyWorkedValueEl.textContent = "—";
+      monthlyWorkDaysValueEl.textContent = "—";
+      monthlyLeaveDaysValueEl.textContent = "—";
       employeeOfficesInfoEl.value = "";
       myAttendanceWrapEl.innerHTML = `<div class="empty-box">Zatím žádné záznamy.</div>`;
       adminActiveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
@@ -1256,6 +1345,7 @@
         myAttendanceRows = [];
         myOpenShift = null;
         renderMyAttendance();
+        renderMonthlySummary();
         return;
       }
 
@@ -1265,6 +1355,7 @@
       myAttendanceRows = Array.isArray(data) ? data : [];
       myOpenShift = myAttendanceRows.find(r => !r.time_to) || null;
       renderMyAttendance();
+      renderMonthlySummary();
     }
 
     function renderMyAttendance() {
