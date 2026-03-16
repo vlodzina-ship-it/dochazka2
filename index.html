@@ -359,11 +359,6 @@
       grid-column: 1 / -1;
     }
 
-    .compact-card .card,
-    .compact-card {
-      min-height: unset;
-    }
-
     .employees-table-wrap th:nth-child(1),
     .employees-table-wrap td:nth-child(1),
     .employees-table-wrap th:nth-child(2),
@@ -372,10 +367,6 @@
     .employees-table-wrap td:nth-child(5) {
       white-space: normal;
       word-break: break-word;
-    }
-
-    .employees-table-wrap tbody tr:hover td {
-      background: rgba(88, 124, 255, 0.05);
     }
 
     .employees-toolbar {
@@ -435,6 +426,31 @@
       margin: 40px auto;
     }
 
+    .employees-table-wrap table thead th {
+      background: #e9eefc;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .employees-table-wrap tbody tr:nth-child(even) td {
+      background: rgba(0,0,0,0.015);
+    }
+
+    .employees-table-wrap tbody tr:hover td {
+      background: rgba(88,124,255,0.08);
+    }
+
+    .employees-table-wrap .btn-secondary {
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+
+    .employees-table-wrap .btn-secondary:hover {
+      background: #587cff;
+      color: #fff;
+    }
+
     @media (max-width: 1280px) {
       .grid-main { grid-template-columns: 280px minmax(0, 1fr); }
     }
@@ -471,38 +487,10 @@
       th, td { padding: 6px; font-size: 12px; }
       .employees-toolbar { grid-template-columns: 1fr; }
     }
-  
-    /* Employees table visual improvements */
-    .employees-table-wrap table thead th {
-      background: #e9eefc;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-
-    .employees-table-wrap tbody tr:nth-child(even) td {
-      background: rgba(0,0,0,0.015);
-    }
-
-    .employees-table-wrap tbody tr:hover td {
-      background: rgba(88,124,255,0.08);
-    }
-
-    .employees-table-wrap .btn-secondary {
-      padding: 6px 10px;
-      font-size: 12px;
-      border-radius: 6px;
-    }
-
-    .employees-table-wrap .btn-secondary:hover {
-      background: #587cff;
-      color: #fff;
-    }
-
-</style>
+  </style>
 </head>
 <body>
   <div class="container">
-
     <div id="loginView" class="login-wrap">
       <div class="card">
         <h1>Přihlášení do docházky</h1>
@@ -800,7 +788,7 @@
           <div id="adminPanel" class="hidden">
             <div class="admin-layout">
               <div class="admin-main">
-                <div class="card compact-card">
+                <div class="card">
                   <div class="section-title">
                     <h2>Dnešní přehled firmy</h2>
                     <span class="pill pill-admin">dashboard</span>
@@ -811,22 +799,18 @@
                       <div class="stat-label">Celkem zaměstnanců</div>
                       <div id="dashTotalEmployees" class="stat-value">0</div>
                     </div>
-
                     <div class="stat">
                       <div class="stat-label">V práci</div>
                       <div id="dashAtWork" class="stat-value">0</div>
                     </div>
-
                     <div class="stat">
                       <div class="stat-label">Home office</div>
                       <div id="dashHomeOffice" class="stat-value">0</div>
                     </div>
-
                     <div class="stat">
                       <div class="stat-label">Služební cesta</div>
                       <div id="dashBusinessTrip" class="stat-value">0</div>
                     </div>
-
                     <div class="stat">
                       <div class="stat-label">Dovolená</div>
                       <div id="dashOnLeave" class="stat-value">0</div>
@@ -894,6 +878,31 @@
               </div>
 
               <div class="admin-side">
+                <div class="card">
+                  <div class="section-title">
+                    <h2>Historie docházky (admin)</h2>
+                    <span class="small">kontrola zaměstnance</span>
+                  </div>
+
+                  <div class="grid grid-form-2" style="margin-bottom:12px; align-items:end;">
+                    <div>
+                      <label for="adminHistoryEmployee">Zaměstnanec</label>
+                      <select id="adminHistoryEmployee"></select>
+                    </div>
+                    <div>
+                      <label for="adminHistoryMonth">Měsíc</label>
+                      <input id="adminHistoryMonth" type="month" />
+                    </div>
+                  </div>
+
+                  <div class="actions" style="margin-bottom:12px;">
+                    <button id="adminLoadHistoryBtn" class="btn-secondary" type="button">Načíst docházku</button>
+                  </div>
+
+                  <div id="adminHistorySummary" class="message warn" style="margin-bottom:12px;">Vyber zaměstnance a měsíc.</div>
+                  <div id="adminHistoryWrap" class="empty-box">Vyber zaměstnance a měsíc.</div>
+                </div>
+
                 <div class="card">
                   <div class="section-title">
                     <h2>Zapsat dovolenou zaměstnanci</h2>
@@ -1071,8 +1080,7 @@
         </div>
       </div>
     </div>
-      </div>
-    </div>
+  </div>
 
   <script>
     const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
@@ -1092,6 +1100,7 @@
 
     const employeeOnlyBlockEl = document.getElementById("employeeOnlyBlock");
     const myAttendanceCardEl = document.getElementById("myAttendanceCard");
+    const myAttendanceHistoryCardEl = document.getElementById("myAttendanceHistoryCard");
     const myMonthlySummaryCardEl = document.getElementById("myMonthlySummaryCard");
 
     const emailEl = document.getElementById("email");
@@ -1113,6 +1122,7 @@
     const exportMessageEl = document.getElementById("exportMessage");
     const createEmployeeMessageEl = document.getElementById("createEmployeeMessage");
     const attendanceEditMessageEl = document.getElementById("attendanceEditMessage");
+    const adminHistorySummaryEl = document.getElementById("adminHistorySummary");
 
     const sessionTextEl = document.getElementById("sessionText");
     const rolePillEl = document.getElementById("rolePill");
@@ -1127,17 +1137,17 @@
     const leaveRemainingDaysValueEl = document.getElementById("leaveRemainingDaysValue");
 
     const monthlySummaryLabelEl = document.getElementById("monthlySummaryLabel");
+    const monthlyWorkedValueEl = document.getElementById("monthlyWorkedValue");
+    const monthlyWorkDaysValueEl = document.getElementById("monthlyWorkDaysValue");
+    const monthlyLeaveDaysValueEl = document.getElementById("monthlyLeaveDaysValue");
+
     const historyMonthEl = document.getElementById("historyMonth");
     const loadHistoryBtn = document.getElementById("loadHistoryBtn");
-    const myAttendanceHistoryCardEl = document.getElementById("myAttendanceHistoryCard");
     const myAttendanceHistoryWrapEl = document.getElementById("myAttendanceHistoryWrap");
     const historySummaryLabelEl = document.getElementById("historySummaryLabel");
     const historyRecordsValueEl = document.getElementById("historyRecordsValue");
     const historyWorkedValueEl = document.getElementById("historyWorkedValue");
     const historyDaysValueEl = document.getElementById("historyDaysValue");
-    const monthlyWorkedValueEl = document.getElementById("monthlyWorkedValue");
-    const monthlyWorkDaysValueEl = document.getElementById("monthlyWorkDaysValue");
-    const monthlyLeaveDaysValueEl = document.getElementById("monthlyLeaveDaysValue");
 
     const officeEl = document.getElementById("office");
     const attendanceTypeEl = document.getElementById("attendanceType");
@@ -1180,6 +1190,11 @@
     const adminLeaveHoursEl = document.getElementById("adminLeaveHours");
     const adminLeaveNoteEl = document.getElementById("adminLeaveNote");
     const adminCreateLeaveBtn = document.getElementById("adminCreateLeaveBtn");
+
+    const adminHistoryEmployeeEl = document.getElementById("adminHistoryEmployee");
+    const adminHistoryMonthEl = document.getElementById("adminHistoryMonth");
+    const adminLoadHistoryBtn = document.getElementById("adminLoadHistoryBtn");
+    const adminHistoryWrapEl = document.getElementById("adminHistoryWrap");
 
     const exportMonthEl = document.getElementById("exportMonth");
     const exportMonthBtn = document.getElementById("exportMonthBtn");
@@ -1277,16 +1292,12 @@
     function getWorkedMinutes(row) {
       const start = parseRowDateTime(row.date, row.time_from);
       const end = parseRowDateTime(row.date, row.time_to);
-
       if (!start || !end) return 0;
       if (end <= start) return 0;
-
       const rawMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
       const breakMinutes = Number(row.break_minutes || 0);
       const workedMinutes = rawMinutes - breakMinutes;
-
-      if (workedMinutes <= 0) return 0;
-      return workedMinutes;
+      return workedMinutes > 0 ? workedMinutes : 0;
     }
 
     function formatWorkedMinutes(minutes) {
@@ -1320,14 +1331,11 @@
 
       for (const row of rows) {
         if (!row?.date || !String(row.date).startsWith(month)) continue;
-
         const type = normalizeText(row.type);
-
         if (type === "dovolena" || type === "vacation" || type === "leave") {
           leaveDays.add(row.date);
           continue;
         }
-
         const workedMinutes = getWorkedMinutes(row);
         if (workedMinutes > 0) {
           totalWorkedMinutes += workedMinutes;
@@ -1335,35 +1343,27 @@
         }
       }
 
-      return {
-        month,
-        totalWorkedMinutes,
-        workDays: workDays.size,
-        leaveDays: leaveDays.size
-      };
+      return { month, totalWorkedMinutes, workDays: workDays.size, leaveDays: leaveDays.size };
     }
 
     function renderAttendanceTypeBadge(type) {
       const safeText = escapeHtml(type || "—");
       const normalized = normalizeText(type);
-
-      if (normalized === "prace" || normalized === "work") {
-        return `<span class="type-badge type-work">${safeText}</span>`;
-      }
-
-      if (normalized === "home office" || normalized === "homeoffice") {
-        return `<span class="type-badge type-home-office">${safeText}</span>`;
-      }
-
-      if (normalized === "sluzebni cesta" || normalized === "business trip" || normalized === "trip") {
-        return `<span class="type-badge type-business-trip">${safeText}</span>`;
-      }
-
-      if (normalized === "dovolena" || normalized === "vacation" || normalized === "leave") {
-        return `<span class="type-badge type-vacation">${safeText}</span>`;
-      }
-
+      if (normalized === "prace" || normalized === "work") return `<span class="type-badge type-work">${safeText}</span>`;
+      if (normalized === "home office" || normalized === "homeoffice") return `<span class="type-badge type-home-office">${safeText}</span>`;
+      if (normalized === "sluzebni cesta" || normalized === "business trip" || normalized === "trip") return `<span class="type-badge type-business-trip">${safeText}</span>`;
+      if (normalized === "dovolena" || normalized === "vacation" || normalized === "leave") return `<span class="type-badge type-vacation">${safeText}</span>`;
       return `<span class="type-badge type-default">${safeText}</span>`;
+    }
+
+    function renderSimpleTable(columns, rows) {
+      if (!rows || !rows.length) return `<div class="empty-box">Žádná data.</div>`;
+      const thead = columns.map(c => `<th>${escapeHtml(c.label)}</th>`).join("");
+      const tbody = rows.map(row => {
+        const tds = columns.map(c => `<td>${c.render ? c.render(row) : escapeHtml(row[c.key])}</td>`).join("");
+        return `<tr>${tds}</tr>`;
+      }).join("");
+      return `<div class="table-wrap"><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table></div>`;
     }
 
     function getAttendanceRowsForMonth(rows, monthStr) {
@@ -1389,7 +1389,6 @@
       }
 
       myAttendanceHistoryCardEl.classList.remove("hidden");
-
       const month = historyMonthEl?.value || currentMonthStr();
       const rows = getAttendanceRowsForMonth(myAttendanceHistoryRows, month);
       const workDays = new Set();
@@ -1428,12 +1427,63 @@
         renderAttendanceHistory();
         return;
       }
-
       const { data, error } = await supabaseClient.rpc("get_my_attendance_rows", { p_limit: 366 });
       if (error) throw error;
-
       myAttendanceHistoryRows = Array.isArray(data) ? data : [];
       renderAttendanceHistory();
+    }
+
+    async function loadAdminAttendanceHistory() {
+      if (!isAdmin) return;
+      const employeeId = Number(adminHistoryEmployeeEl.value || 0);
+      const month = adminHistoryMonthEl.value;
+
+      if (!employeeId || !month) {
+        adminHistoryWrapEl.innerHTML = `<div class="empty-box">Vyber zaměstnance a měsíc.</div>`;
+        setMessage(adminHistorySummaryEl, "Vyber zaměstnance a měsíc.", "warn");
+        return;
+      }
+
+      const { data, error } = await supabaseClient.rpc("get_attendance_by_month", {
+        p_employee_id: employeeId,
+        p_month: month
+      });
+
+      if (error) {
+        adminHistoryWrapEl.innerHTML = `<div class="empty-box">Chyba načítání.</div>`;
+        setMessage(adminHistorySummaryEl, "Chyba načítání: " + error.message, "err");
+        return;
+      }
+
+      const rows = Array.isArray(data) ? data : [];
+      const workDays = new Set();
+      let totalWorkedMinutes = 0;
+      for (const row of rows) {
+        const workedMinutes = getWorkedMinutes(row);
+        if (workedMinutes > 0) {
+          totalWorkedMinutes += workedMinutes;
+          workDays.add(row.date);
+        }
+      }
+
+      setMessage(
+        adminHistorySummaryEl,
+        `Měsíc ${formatMonthLabel(month)} · záznamy ${rows.length} · odpracováno ${formatWorkedMinutes(totalWorkedMinutes)} · dny v práci ${workDays.size}`,
+        "ok"
+      );
+
+      adminHistoryWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "Datum", render: r => escapeHtml(r.date || "") },
+          { label: "Od", render: r => escapeHtml(r.time_from || "—") },
+          { label: "Do", render: r => escapeHtml(r.time_to || "—") },
+          { label: "Hodiny", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) },
+          { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
+          { label: "Místo", render: r => escapeHtml(r.office || "—") },
+          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") }
+        ],
+        rows
+      );
     }
 
     function renderMonthlySummary() {
@@ -1447,7 +1497,6 @@
       }
 
       myMonthlySummaryCardEl.classList.remove("hidden");
-
       const summary = getMonthlySummary(myAttendanceRows);
       monthlySummaryLabelEl.textContent = formatMonthLabel(summary.month);
       monthlyWorkedValueEl.textContent = formatWorkedMinutes(summary.totalWorkedMinutes);
@@ -1482,10 +1531,20 @@
       }
     }
 
+    function fillAdminHistoryEmployeeOptions() {
+      adminHistoryEmployeeEl.innerHTML = "";
+      const filtered = adminEmployeesData.filter(e => !(e.role === "admin" || e.is_admin === true));
+      for (const employee of filtered) {
+        const option = document.createElement("option");
+        option.value = employee.id;
+        option.textContent = `${employee.name || ""} (${employee.email || ""})`;
+        adminHistoryEmployeeEl.appendChild(option);
+      }
+    }
+
     function fillEditAttendanceEmployeeOptions() {
       editAttendanceEmployeeEl.innerHTML = "";
       const filtered = adminEmployeesData.filter(e => !(e.role === "admin" || e.is_admin === true));
-
       if (!filtered.length) {
         const option = document.createElement("option");
         option.value = "";
@@ -1493,7 +1552,6 @@
         editAttendanceEmployeeEl.appendChild(option);
         return;
       }
-
       for (const employee of filtered) {
         const option = document.createElement("option");
         option.value = employee.id;
@@ -1502,30 +1560,9 @@
       }
     }
 
-    function renderSimpleTable(columns, rows) {
-      if (!rows || !rows.length) return `<div class="empty-box">Žádná data.</div>`;
-
-      const thead = columns.map(c => `<th>${escapeHtml(c.label)}</th>`).join("");
-      const tbody = rows.map(row => {
-        const tds = columns.map(c => `<td>${c.render ? c.render(row) : escapeHtml(row[c.key])}</td>`).join("");
-        return `<tr>${tds}</tr>`;
-      }).join("");
-
-      return `
-        <div class="table-wrap">
-          <table>
-            <thead><tr>${thead}</tr></thead>
-            <tbody>${tbody}</tbody>
-          </table>
-        </div>
-      `;
-    }
-
     function renderRoleBadge(role) {
       const normalized = normalizeText(role);
-      if (normalized === "admin") {
-        return `<span class="pill pill-admin">admin</span>`;
-      }
+      if (normalized === "admin") return `<span class="pill pill-admin">admin</span>`;
       return `<span class="pill pill-employee">employee</span>`;
     }
 
@@ -1546,14 +1583,7 @@
           if (activeFilter === "active" && !(employee.active !== false)) return false;
           if (activeFilter === "inactive" && employee.active !== false) return false;
           if (!search) return true;
-
-          const haystack = normalizeText([
-            employee.name,
-            employee.email,
-            employee.offices,
-            employee.role
-          ].join(" "));
-
+          const haystack = normalizeText([employee.name, employee.email, employee.offices, employee.role].join(" "));
           return haystack.includes(search);
         })
         .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "cs"));
@@ -1561,7 +1591,6 @@
 
     function renderEmployeesTable() {
       filteredAdminEmployeesData = getFilteredEmployees();
-
       employeesWrapEl.innerHTML = renderSimpleTable(
         [
           { label: "Jméno", render: r => escapeHtml(r.name || "") },
@@ -1581,7 +1610,6 @@
       createEmployeeBtn.textContent = "Přidat zaměstnance";
       createEmployeeBtn.className = "btn-success";
       cancelEditEmployeeBtn.classList.add("hidden");
-
       newEmployeeNameEl.value = "";
       newEmployeeEmailEl.value = "";
       newEmployeeRoleEl.value = "employee";
@@ -1590,7 +1618,6 @@
       newEmployeeLeaveDaysEl.value = "20";
       newEmployeeLeaveHoursEl.value = "160";
       newEmployeeActiveEl.value = "true";
-
       setMessage(createEmployeeMessageEl, "Vyplň údaje a ulož.", "warn");
     }
 
@@ -1600,7 +1627,6 @@
       createEmployeeBtn.textContent = "Uložit změny";
       createEmployeeBtn.className = "btn-primary";
       cancelEditEmployeeBtn.classList.remove("hidden");
-
       newEmployeeNameEl.value = employee.name || "";
       newEmployeeEmailEl.value = employee.email || "";
       newEmployeeRoleEl.value = employee.role || "employee";
@@ -1609,7 +1635,6 @@
       newEmployeeLeaveDaysEl.value = employee.leave_days ?? 0;
       newEmployeeLeaveHoursEl.value = employee.leave_hours ?? 0;
       newEmployeeActiveEl.value = String(employee.active !== false);
-
       setMessage(createEmployeeMessageEl, `Upravuješ zaměstnance ID ${employee.id}: ${employee.name}`, "warn");
       window.scrollTo({ top: adminPanelEl.offsetTop, behavior: "smooth" });
     }
@@ -1617,9 +1642,7 @@
     function resetAttendanceEditForm() {
       editAttendanceId = null;
       attendanceFormTitleEl.textContent = "Upravit / vložit docházku";
-      if (editAttendanceEmployeeEl.options.length > 0) {
-        editAttendanceEmployeeEl.selectedIndex = 0;
-      }
+      if (editAttendanceEmployeeEl.options.length > 0) editAttendanceEmployeeEl.selectedIndex = 0;
       editAttendanceDateEl.value = todayStr();
       editAttendanceOfficeEl.value = "Osoblaha";
       editAttendanceTypeEl.value = "práce";
@@ -1643,11 +1666,7 @@
     function fillAttendanceFormForEdit(row) {
       editAttendanceId = row.id;
       attendanceFormTitleEl.textContent = `Upravit docházku ID ${row.id}`;
-
-      if (row.employee_id !== undefined && row.employee_id !== null) {
-        editAttendanceEmployeeEl.value = String(row.employee_id);
-      }
-
+      if (row.employee_id !== undefined && row.employee_id !== null) editAttendanceEmployeeEl.value = String(row.employee_id);
       editAttendanceDateEl.value = row.date || "";
       editAttendanceOfficeEl.value = row.office || "Osoblaha";
       editAttendanceTypeEl.value = row.type || "práce";
@@ -1704,19 +1723,18 @@
     }
 
     function renderLoggedOut() {
-      if (isPasswordRecoveryFlow) {
-        showRecoveryView();
-      } else {
-        showLoginView();
-      }
+      if (isPasswordRecoveryFlow) showRecoveryView();
+      else showLoginView();
 
       currentUser = null;
       currentEmployee = null;
       myAttendanceRows = [];
+      myAttendanceHistoryRows = [];
       myOpenShift = null;
       myLeaveSummary = null;
       isAdmin = false;
       adminEmployeesData = [];
+      filteredAdminEmployeesData = [];
       adminTodayAttendanceData = [];
       adminLeaveData = [];
 
@@ -1740,7 +1758,6 @@
       employeeOfficesInfoEl.value = "";
       myAttendanceWrapEl.innerHTML = `<div class="empty-box">Zatím žádné záznamy.</div>`;
       myAttendanceHistoryWrapEl.innerHTML = `<div class="empty-box">Vyber měsíc a načti historii docházky.</div>`;
-      myAttendanceHistoryRows = [];
       if (historyMonthEl) historyMonthEl.value = currentMonthStr();
       historySummaryLabelEl.textContent = "vybraný měsíc";
       historyRecordsValueEl.textContent = "0";
@@ -1749,25 +1766,26 @@
       adminActiveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminTodayWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminLeaveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
+      adminHistoryWrapEl.innerHTML = `<div class="empty-box">Vyber zaměstnance a měsíc.</div>`;
+      setMessage(adminHistorySummaryEl, "Vyber zaměstnance a měsíc.", "warn");
       employeesWrapEl.innerHTML = `<div class="empty-box">Načítám zaměstnance…</div>`;
       if (employeeSearchInputEl) employeeSearchInputEl.value = "";
       if (employeeRoleFilterEl) employeeRoleFilterEl.value = "all";
       if (employeeActiveFilterEl) employeeActiveFilterEl.value = "all";
       adminLeaveEmployeeEl.innerHTML = "";
+      adminHistoryEmployeeEl.innerHTML = "";
       editAttendanceEmployeeEl.innerHTML = "";
       exportMonthEl.value = currentMonthStr();
+      if (adminHistoryMonthEl) adminHistoryMonthEl.value = currentMonthStr();
       sessionTextEl.textContent = isPasswordRecoveryFlow ? "Probíhá reset hesla." : "Nikdo není přihlášen.";
 
       resetAttendanceEditForm();
       resetManualAttendanceForm();
-
       setMessage(attendanceMessageEl, "Přihlas se a načti docházku.", "warn");
       setMessage(myLeaveMessageEl, "Vyber datum a počet hodin.", "warn");
       setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a hodiny.", "warn");
       setMessage(exportMessageEl, "Vyber měsíc a klikni na export.", "warn");
       setMessage(passwordResetMessageEl, "Zadej nové heslo.", "warn");
-
-      debugLog("renderLoggedOut");
     }
 
     async function signIn() {
@@ -1779,21 +1797,17 @@
 
       const email = emailEl.value.trim();
       const password = passwordEl.value;
-
       if (!email || !password) {
         setMessage(loginMessageEl, "Vyplň e-mail i heslo.", "err");
         return;
       }
 
       setMessage(loginMessageEl, "Přihlašuji…", "warn");
-
       const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
       if (error) {
         setMessage(loginMessageEl, "Login chyba: " + error.message, "err");
         return;
       }
-
       passwordEl.value = "";
       setMessage(loginMessageEl, "Přihlášení proběhlo.", "ok");
     }
@@ -1804,11 +1818,7 @@
         console.error("Logout chyba:", error.message);
         return;
       }
-
-      if (!passwordWasJustChanged) {
-        isPasswordRecoveryFlow = false;
-      }
-
+      if (!passwordWasJustChanged) isPasswordRecoveryFlow = false;
       cleanRecoveryUrl();
       renderLoggedOut();
     }
@@ -1816,21 +1826,17 @@
     async function saveNewPassword() {
       const p1 = newPasswordEl.value;
       const p2 = newPassword2El.value;
-
       if (!p1 || p1.length < 6) {
         setMessage(passwordResetMessageEl, "Heslo musí mít alespoň 6 znaků.", "err");
         return;
       }
-
       if (p1 !== p2) {
         setMessage(passwordResetMessageEl, "Hesla se neshodují.", "err");
         return;
       }
 
       setMessage(passwordResetMessageEl, "Ukládám nové heslo…", "warn");
-
       const { error } = await supabaseClient.auth.updateUser({ password: p1 });
-
       if (error) {
         setMessage(passwordResetMessageEl, "Chyba: " + error.message, "err");
         return;
@@ -1839,10 +1845,8 @@
       passwordWasJustChanged = true;
       isPasswordRecoveryFlow = false;
       setMessage(passwordResetMessageEl, "Heslo bylo změněno. Probíhá návrat na přihlášení…", "ok");
-
       newPasswordEl.value = "";
       newPassword2El.value = "";
-
       cleanRecoveryUrl();
       await supabaseClient.auth.signOut();
       passwordWasJustChanged = false;
@@ -1853,7 +1857,6 @@
     async function loadProfile() {
       const { data, error } = await supabaseClient.rpc("get_my_employee_profile");
       if (error) throw error;
-
       currentEmployee = Array.isArray(data) && data.length ? data[0] : null;
       isAdmin = !!(currentEmployee && (currentEmployee.role === "admin" || currentEmployee.is_admin === true));
     }
@@ -1870,7 +1873,6 @@
 
       rolePillEl.textContent = isAdmin ? "admin" : (currentEmployee.role || "employee");
       rolePillEl.className = "pill " + (isAdmin ? "pill-admin" : "pill-employee");
-
       profileBoxEl.innerHTML = `
         <strong>${escapeHtml(currentEmployee.name || "")}</strong><br>
         ${escapeHtml(currentEmployee.email || "")}<br>
@@ -1881,10 +1883,8 @@
         auth_user_id: <span class="mono">${escapeHtml(currentEmployee.auth_user_id || "")}</span><br>
         offices: <span class="mono">${escapeHtml(currentEmployee.offices || "—")}</span>
       `;
-
       employeeOfficesInfoEl.value = currentEmployee.offices || "";
       updateRoleVisibility();
-
       if (!isAdmin) {
         manualAttendanceOfficeEl.value = currentEmployee.offices?.split(",")[0]?.trim() || manualAttendanceOfficeEl.value;
       }
@@ -1901,7 +1901,6 @@
 
       const { data, error } = await supabaseClient.rpc("get_my_attendance_rows", { p_limit: 30 });
       if (error) throw error;
-
       myAttendanceRows = Array.isArray(data) ? data : [];
       myOpenShift = myAttendanceRows.find(r => !r.time_to) || null;
       renderMyAttendance();
@@ -1923,17 +1922,12 @@
       const todayRows = myAttendanceRows.filter(r => r.date === today).sort((a, b) => b.id - a.id);
       const firstToday = todayRows.length ? todayRows[todayRows.length - 1] : null;
       const latestToday = todayRows.length ? todayRows[0] : null;
-
       openShiftValueEl.textContent = myOpenShift ? "ano" : "ne";
       todayArrivalValueEl.textContent = firstToday?.time_from || "—";
       todayDepartureValueEl.textContent = latestToday?.time_to || "—";
-
       if (latestToday?.office) officeEl.value = latestToday.office;
       if (latestToday?.type) attendanceTypeEl.value = latestToday.type;
-      if (latestToday?.break_minutes !== null && latestToday?.break_minutes !== undefined) {
-        breakMinutesEl.value = latestToday.break_minutes;
-      }
-
+      if (latestToday?.break_minutes !== null && latestToday?.break_minutes !== undefined) breakMinutesEl.value = latestToday.break_minutes;
       checkInBtn.disabled = !!myOpenShift;
       checkOutBtn.disabled = !myOpenShift;
 
@@ -1958,10 +1952,8 @@
         renderMyLeaveSummary();
         return;
       }
-
       const { data, error } = await supabaseClient.rpc("get_my_leave_summary");
       if (error) throw error;
-
       myLeaveSummary = Array.isArray(data) && data.length ? data[0] : null;
       renderMyLeaveSummary();
     }
@@ -1973,7 +1965,6 @@
         leaveRemainingDaysValueEl.textContent = "—";
         return;
       }
-
       leaveTotalHoursValueEl.textContent = fmtNumber(myLeaveSummary.leave_hours_total);
       leaveUsedHoursValueEl.textContent = fmtNumber(myLeaveSummary.leave_hours_used);
       leaveRemainingDaysValueEl.textContent = fmtNumber(myLeaveSummary.leave_days_remaining);
@@ -1985,12 +1976,10 @@
         p_type: attendanceTypeEl.value,
         p_break_minutes: Number(breakMinutesEl.value || 0)
       });
-
       if (error) {
         setMessage(attendanceMessageEl, "Chyba při zápisu příchodu: " + error.message, "err");
         return;
       }
-
       await loadAllData();
       setMessage(attendanceMessageEl, "Příchod zapsán.", "ok");
     }
@@ -2001,12 +1990,10 @@
         p_type: attendanceTypeEl.value,
         p_break_minutes: Number(breakMinutesEl.value || 0)
       });
-
       if (error) {
         setMessage(attendanceMessageEl, "Chyba při zápisu odchodu: " + error.message, "err");
         return;
       }
-
       await loadAllData();
       setMessage(attendanceMessageEl, "Odchod zapsán.", "ok");
     }
@@ -2018,28 +2005,19 @@
       const p_time_from = manualAttendanceTimeFromEl.value;
       const p_time_to = manualAttendanceTimeToEl.value;
       const p_break_minutes = Number(manualAttendanceBreakMinutesEl.value || 0);
-
       if (!p_date || !p_office || !p_type || !p_time_from) {
         setMessage(manualAttendanceMessageEl, "Vyplň datum, místo, typ a čas od.", "err");
         return;
       }
 
       setMessage(manualAttendanceMessageEl, "Zapisuji ruční docházku…", "warn");
-
       const { error } = await supabaseClient.rpc("create_my_attendance_manual", {
-        p_date,
-        p_office,
-        p_type,
-        p_time_from,
-        p_time_to,
-        p_break_minutes
+        p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes
       });
-
       if (error) {
         setMessage(manualAttendanceMessageEl, "Chyba ručního zápisu: " + error.message + " (zkontroluj, že v Supabase existuje RPC create_my_attendance_manual)", "err");
         return;
       }
-
       resetManualAttendanceForm();
       await loadAllData();
       setMessage(manualAttendanceMessageEl, "Docházka byla ručně zapsána.", "ok");
@@ -2049,29 +2027,19 @@
       const p_date = myLeaveDateEl.value;
       const p_hours = Number(myLeaveHoursEl.value || 0);
       const p_note = myLeaveNoteEl.value.trim();
-
       if (!p_date || !p_hours) {
-        setMessage(myLeaveMessageEl, "Vyplň datum a počet hodin.", "err");
+        setMessage(myLeaveMessageEl, "Vyber datum a počet hodin.", "err");
         return;
       }
-
       setMessage(myLeaveMessageEl, "Zapisuji dovolenou…", "warn");
-
-      const { error } = await supabaseClient.rpc("create_my_leave", {
-        p_date,
-        p_hours,
-        p_note
-      });
-
+      const { error } = await supabaseClient.rpc("create_my_leave", { p_date, p_hours, p_note });
       if (error) {
         setMessage(myLeaveMessageEl, "Chyba při zápisu dovolené: " + error.message, "err");
         return;
       }
-
       myLeaveDateEl.value = "";
       myLeaveHoursEl.value = "8";
       myLeaveNoteEl.value = "";
-
       await loadAllData();
       setMessage(myLeaveMessageEl, "Dovolená byla zapsána.", "ok");
     }
@@ -2081,30 +2049,20 @@
       const p_date = adminLeaveDateEl.value;
       const p_hours = Number(adminLeaveHoursEl.value || 0);
       const p_note = adminLeaveNoteEl.value.trim();
-
       if (!p_employee_id || !p_date || !p_hours) {
         setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a počet hodin.", "err");
         return;
       }
 
       setMessage(adminLeaveMessageEl, "Zapisuji dovolenou…", "warn");
-
-      const { error } = await supabaseClient.rpc("admin_create_leave", {
-        p_employee_id,
-        p_date,
-        p_hours,
-        p_note
-      });
-
+      const { error } = await supabaseClient.rpc("admin_create_leave", { p_employee_id, p_date, p_hours, p_note });
       if (error) {
         setMessage(adminLeaveMessageEl, "Chyba při zápisu dovolené: " + error.message, "err");
         return;
       }
-
       adminLeaveDateEl.value = "";
       adminLeaveHoursEl.value = "8";
       adminLeaveNoteEl.value = "";
-
       await loadAllData();
       setMessage(adminLeaveMessageEl, "Dovolená byla zaměstnanci zapsána.", "ok");
     }
@@ -2117,9 +2075,7 @@
       }
 
       setMessage(exportMessageEl, "Generuji export…", "warn");
-
       const { data, error } = await supabaseClient.rpc("get_admin_month_summary", { p_month });
-
       if (error) {
         setMessage(exportMessageEl, "Chyba exportu: " + error.message, "err");
         return;
@@ -2137,11 +2093,8 @@
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(rows);
       XLSX.utils.book_append_sheet(wb, ws, "Souhrn");
-
-      const filename = `dochazka_${p_month}.xlsx`;
-      XLSX.writeFile(wb, filename);
-
-      setMessage(exportMessageEl, `Export hotový: ${filename}`, "ok");
+      XLSX.writeFile(wb, `dochazka_${p_month}.xlsx`);
+      setMessage(exportMessageEl, `Export hotový: dochazka_${p_month}.xlsx`, "ok");
     }
 
     async function createOrUpdateEmployee() {
@@ -2153,7 +2106,6 @@
       const p_leave_days = Number(newEmployeeLeaveDaysEl.value || 0);
       const p_leave_hours = Number(newEmployeeLeaveHoursEl.value || 0);
       const p_active = newEmployeeActiveEl.value === "true";
-
       if (!p_name || !p_email || !p_role) {
         setMessage(createEmployeeMessageEl, "Vyplň jméno, e-mail a roli.", "err");
         return;
@@ -2161,7 +2113,6 @@
 
       if (editEmployeeId) {
         setMessage(createEmployeeMessageEl, "Ukládám změny zaměstnance…", "warn");
-
         const { error } = await supabaseClient.rpc("admin_update_employee", {
           p_id: editEmployeeId,
           p_name,
@@ -2173,12 +2124,10 @@
           p_leave_hours,
           p_active
         });
-
         if (error) {
           setMessage(createEmployeeMessageEl, "Chyba při úpravě zaměstnance: " + error.message, "err");
           return;
         }
-
         resetEmployeeForm();
         await loadAllData();
         setMessage(createEmployeeMessageEl, "Zaměstnanec byl upraven.", "ok");
@@ -2186,7 +2135,6 @@
       }
 
       setMessage(createEmployeeMessageEl, "Vytvářím zaměstnance…", "warn");
-
       const { error } = await supabaseClient.rpc("admin_create_employee", {
         p_name,
         p_email,
@@ -2196,12 +2144,10 @@
         p_leave_days,
         p_leave_hours
       });
-
       if (error) {
         setMessage(createEmployeeMessageEl, "Chyba při vytváření zaměstnance: " + error.message, "err");
         return;
       }
-
       resetEmployeeForm();
       await loadAllData();
       setMessage(createEmployeeMessageEl, "Zaměstnanec byl vytvořen.", "ok");
@@ -2215,29 +2161,19 @@
       const p_time_from = editAttendanceTimeFromEl.value;
       const p_time_to = editAttendanceTimeToEl.value;
       const p_break_minutes = Number(editAttendanceBreakMinutesEl.value || 0);
-
       if (!p_employee_id || !p_date || !p_office || !p_type || !p_time_from) {
         setMessage(attendanceEditMessageEl, "Vyber zaměstnance a vyplň datum, místo, typ a čas od.", "err");
         return;
       }
 
       setMessage(attendanceEditMessageEl, "Vkládám nový záznam docházky…", "warn");
-
       const { error } = await supabaseClient.rpc("admin_insert_attendance", {
-        p_employee_id,
-        p_date,
-        p_office,
-        p_type,
-        p_time_from,
-        p_time_to,
-        p_break_minutes
+        p_employee_id, p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes
       });
-
       if (error) {
         setMessage(attendanceEditMessageEl, "Chyba při vložení docházky: " + error.message, "err");
         return;
       }
-
       resetAttendanceEditForm();
       await loadAllData();
       setMessage(attendanceEditMessageEl, "Nový záznam docházky byl vložen.", "ok");
@@ -2248,36 +2184,25 @@
         setMessage(attendanceEditMessageEl, "Pro úpravu nejdřív vyber řádek tlačítkem Upravit. Pro nový záznam použij Vložit ručně.", "err");
         return;
       }
-
       const p_date = editAttendanceDateEl.value;
       const p_office = editAttendanceOfficeEl.value;
       const p_type = editAttendanceTypeEl.value;
       const p_time_from = editAttendanceTimeFromEl.value;
       const p_time_to = editAttendanceTimeToEl.value;
       const p_break_minutes = Number(editAttendanceBreakMinutesEl.value || 0);
-
       if (!p_date || !p_office || !p_type || !p_time_from) {
         setMessage(attendanceEditMessageEl, "Vyplň datum, místo, typ a čas od.", "err");
         return;
       }
 
       setMessage(attendanceEditMessageEl, "Ukládám opravu docházky…", "warn");
-
       const { error } = await supabaseClient.rpc("admin_update_attendance", {
-        p_id: editAttendanceId,
-        p_date,
-        p_office,
-        p_type,
-        p_time_from,
-        p_time_to,
-        p_break_minutes
+        p_id: editAttendanceId, p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes
       });
-
       if (error) {
         setMessage(attendanceEditMessageEl, "Chyba při opravě docházky: " + error.message, "err");
         return;
       }
-
       resetAttendanceEditForm();
       await loadAllData();
       setMessage(attendanceEditMessageEl, "Docházka byla upravena.", "ok");
@@ -2288,20 +2213,11 @@
         resetDashboard();
         return;
       }
-
       const { data, error } = await supabaseClient.rpc("get_admin_dashboard_summary");
-
-      if (error) {
-        console.error("Dashboard error:", error);
+      if (error || !data || !data.length) {
         resetDashboard();
         return;
       }
-
-      if (!data || !data.length) {
-        resetDashboard();
-        return;
-      }
-
       const d = data[0];
       dashTotalEmployeesEl.textContent = d.total_employees ?? 0;
       dashAtWorkEl.textContent = d.at_work_count ?? 0;
@@ -2317,7 +2233,6 @@
       }
 
       adminPanelEl.classList.remove("hidden");
-
       const [locationsRes, todayRes, employeesRes, leaveRes] = await Promise.all([
         supabaseClient.rpc("get_admin_today_locations"),
         supabaseClient.rpc("get_admin_today_attendance"),
@@ -2335,6 +2250,7 @@
       adminLeaveData = leaveRes.data || [];
 
       fillAdminLeaveEmployeeOptions();
+      fillAdminHistoryEmployeeOptions();
       fillEditAttendanceEmployeeOptions();
 
       adminActiveWrapEl.innerHTML = renderSimpleTable(
@@ -2377,6 +2293,8 @@
       );
 
       renderEmployeesTable();
+
+      if (adminHistoryMonthEl && !adminHistoryMonthEl.value) adminHistoryMonthEl.value = currentMonthStr();
     }
 
     async function loadAllData() {
@@ -2388,33 +2306,24 @@
         await loadMyLeaveSummary();
         await loadAdminData();
         await loadAdminDashboard();
-
-        if (!isAdmin) {
-          setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
-        }
+        if (!isAdmin) setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
       } catch (error) {
-        debugLog("loadAllData ERROR", error);
         console.error("Chyba načítání:", error);
-        if (!isAdmin) {
-          setMessage(attendanceMessageEl, "Chyba načítání: " + (error?.message || String(error)), "err");
-        }
+        if (!isAdmin) setMessage(attendanceMessageEl, "Chyba načítání: " + (error?.message || String(error)), "err");
       }
     }
 
     async function loadSession() {
       const { data, error } = await supabaseClient.auth.getSession();
-
       if (error || !data?.session?.user) {
         renderLoggedOut();
         return;
       }
-
       if (isPasswordRecoveryFlow) {
         showRecoveryView();
         setMessage(passwordResetMessageEl, "Reset link je aktivní. Nastav nové heslo.", "warn");
         return;
       }
-
       currentUser = data.session.user;
       showAppView();
       sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
@@ -2425,6 +2334,7 @@
     logoutBtn.addEventListener("click", signOut);
     refreshBtn.addEventListener("click", loadAllData);
     loadHistoryBtn?.addEventListener("click", loadAttendanceHistory);
+    adminLoadHistoryBtn?.addEventListener("click", loadAdminAttendanceHistory);
     saveNewPasswordBtn.addEventListener("click", saveNewPassword);
     checkInBtn.addEventListener("click", doCheckIn);
     checkOutBtn.addEventListener("click", doCheckOut);
@@ -2444,22 +2354,18 @@
     employeesWrapEl.addEventListener("click", (e) => {
       const btn = e.target.closest(".edit-employee-btn");
       if (!btn) return;
-
       const id = Number(btn.dataset.id);
       const employee = adminEmployeesData.find(x => Number(x.id) === id);
       if (!employee) return;
-
       fillEmployeeFormForEdit(employee);
     });
 
     adminTodayWrapEl.addEventListener("click", (e) => {
       const btn = e.target.closest(".edit-attendance-btn");
       if (!btn) return;
-
       const id = Number(btn.dataset.id);
       const row = adminTodayAttendanceData.find(x => Number(x.id) === id);
       if (!row) return;
-
       fillAttendanceFormForEdit(row);
     });
 
@@ -2472,27 +2378,21 @@
     });
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
-      debugLog("onAuthStateChange", event, session?.user?.email || null);
-
       if (event === "PASSWORD_RECOVERY") {
         isPasswordRecoveryFlow = true;
         showRecoveryView();
         setMessage(passwordResetMessageEl, "Reset link rozpoznán. Nastav nové heslo.", "warn");
         return;
       }
-
       if (isPasswordRecoveryFlow && !passwordWasJustChanged) {
         showRecoveryView();
         return;
       }
-
       if (session?.user) {
         currentUser = session.user;
         showAppView();
         sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
-        setTimeout(() => {
-          loadAllData();
-        }, 0);
+        setTimeout(() => { loadAllData(); }, 0);
       } else {
         renderLoggedOut();
       }
@@ -2501,19 +2401,17 @@
     (async function bootstrap() {
       exportMonthEl.value = currentMonthStr();
       if (historyMonthEl) historyMonthEl.value = currentMonthStr();
+      if (adminHistoryMonthEl) adminHistoryMonthEl.value = currentMonthStr();
       myLeaveDateEl.value = todayStr();
       adminLeaveDateEl.value = todayStr();
       manualAttendanceDateEl.value = todayStr();
-
       isPasswordRecoveryFlow = detectRecoveryModeFromUrl();
       renderLoggedOut();
-
       if (isPasswordRecoveryFlow) {
         showRecoveryView();
         setMessage(passwordResetMessageEl, "Odkaz pro reset hesla byl rozpoznán. Nastav nové heslo.", "warn");
         return;
       }
-
       await loadSession();
     })();
   </script>
