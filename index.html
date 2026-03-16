@@ -854,7 +854,14 @@
                       <h2>Dnešní docházka všech</h2>
                       <span class="pill pill-admin">live přehled</span>
                     </div>
-                    <div id="adminTodayWrap" class="empty-box">Načítám…</div>
+                    <div class="actions" style="margin-bottom:10px; flex-wrap:wrap;">
+                    <button class="btn-secondary today-filter-btn" data-filter="all" type="button">Všichni</button>
+                    <button class="btn-secondary today-filter-btn" data-filter="work" type="button">V práci</button>
+                    <button class="btn-secondary today-filter-btn" data-filter="home" type="button">Home office</button>
+                    <button class="btn-secondary today-filter-btn" data-filter="trip" type="button">Služební cesta</button>
+                    <button class="btn-secondary today-filter-btn" data-filter="leave" type="button">Dovolená</button>
+                  </div>
+                  <div id="adminTodayWrap" class="empty-box">Načítám…</div>
                   </div>
                 </div>
 
@@ -926,7 +933,16 @@
                   </div>
 
                   <div class="actions" style="margin-bottom:12px;">
-                    <button id="adminLoadHistoryBtn" class="btn-secondary" type="button">Načíst docházku</button>
+                    <button id="todayFilterButtons?.forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentTodayFilter = btn.dataset.filter || "all";
+        if (typeof loadAdminData === "function") {
+          loadAdminData();
+        }
+      });
+    });
+
+    adminLoadHistoryBtn" class="btn-secondary" type="button">Načíst docházku</button>
                   </div>
 
                   <div id="adminHistorySummary" class="message warn" style="margin-bottom:12px;">Vyber zaměstnance a měsíc.</div>
@@ -1229,6 +1245,7 @@
     const adminPanelEl = document.getElementById("adminPanel");
     const adminActiveWrapEl = document.getElementById("adminActiveWrap");
     const adminTodayWrapEl = document.getElementById("adminTodayWrap");
+    const todayFilterButtons = document.querySelectorAll(".today-filter-btn");
     const adminLeaveWrapEl = document.getElementById("adminLeaveWrap");
     const attendanceIssuesWrapEl = document.getElementById("attendanceIssuesWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
@@ -1297,6 +1314,7 @@
     let adminEmployeesData = [];
     let filteredAdminEmployeesData = [];
     let adminTodayAttendanceData = [];
+    let currentTodayFilter = "all";
     let adminLeaveData = [];
     let editEmployeeId = null;
     let editAttendanceId = null;
@@ -2596,6 +2614,16 @@
         ],
         locationsRes.data || []
       );
+
+      const filteredTodayRows = (adminTodayAttendanceData || []).filter(r => {
+        if (currentTodayFilter === "all") return true;
+        const type = normalizeText(r.type || "");
+        if (currentTodayFilter === "work") return type === "work" || type === "prace";
+        if (currentTodayFilter === "home") return type.includes("home");
+        if (currentTodayFilter === "trip") return type.includes("trip") || type.includes("cesta");
+        if (currentTodayFilter === "leave") return type.includes("leave") || type.includes("dovolena");
+        return true;
+      });
 
       adminTodayWrapEl.innerHTML = renderSimpleTable(
         [
