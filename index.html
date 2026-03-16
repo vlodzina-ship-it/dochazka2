@@ -325,6 +325,22 @@
       min-width: 720px;
     }
 
+    .employees-table-wrap table {
+      min-width: 760px;
+    }
+
+    .employees-card {
+      grid-column: 1 / -1;
+    }
+
+    .employees-table-wrap th:nth-child(2),
+    .employees-table-wrap td:nth-child(2),
+    .employees-table-wrap th:nth-child(3),
+    .employees-table-wrap td:nth-child(3) {
+      white-space: normal;
+      word-break: break-word;
+    }
+
     th, td {
       padding: 6px 7px;
       text-align: left;
@@ -333,6 +349,12 @@
       font-size: 12px;
       line-height: 1.2;
       white-space: nowrap;
+    }
+
+    .employees-table-wrap th,
+    .employees-table-wrap td {
+      font-size: 11px;
+      padding: 5px 6px;
     }
 
     th {
@@ -900,7 +922,7 @@
                 <div id="createEmployeeMessage" class="message warn" style="margin-top:14px;">Vyplň údaje a ulož.</div>
               </div>
 
-              <div class="card">
+              <div class="card employees-card">
                 <div class="section-title">
                   <h2>Zaměstnanci</h2>
                   <span class="small">přehled zaměstnanců</span>
@@ -2068,20 +2090,15 @@
 
       employeesWrapEl.innerHTML = renderSimpleTable(
         [
-          { label: "ID", render: r => escapeHtml(r.id) },
           { label: "Jméno", render: r => escapeHtml(r.name || "") },
           { label: "E-mail", render: r => escapeHtml(r.email || "") },
           { label: "Role", render: r => escapeHtml(r.role || "") },
-          { label: "Admin", render: r => escapeHtml(String(!!r.is_admin)) },
           { label: "Aktivní", render: r => escapeHtml(String(!!r.active)) },
           { label: "Offices", render: r => escapeHtml(r.offices || "—") },
-          { label: "Weekly", render: r => escapeHtml(r.weekly || "—") },
-          { label: "Dovolená dny", render: r => escapeHtml(r.leave_days ?? "—") },
-          { label: "Dovolená hodiny", render: r => escapeHtml(r.leave_hours ?? "—") },
           { label: "Akce", render: r => `<button type="button" class="btn-secondary edit-employee-btn" data-id="${r.id}">Upravit</button>` }
         ],
         adminEmployeesData
-      );
+      ).replace('<div class="table-wrap">', '<div class="table-wrap employees-table-wrap">');
     }
 
     async function loadAllData() {
