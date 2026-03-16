@@ -213,6 +213,45 @@
       color: #ffe3a0;
     }
 
+    .type-badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .type-work {
+      background: rgba(30, 157, 100, 0.18);
+      border: 1px solid rgba(30, 157, 100, 0.35);
+      color: #b6f4d3;
+    }
+
+    .type-home-office {
+      background: rgba(88, 124, 255, 0.18);
+      border: 1px solid rgba(88, 124, 255, 0.35);
+      color: #c6d2ff;
+    }
+
+    .type-business-trip {
+      background: rgba(215, 160, 27, 0.18);
+      border: 1px solid rgba(215, 160, 27, 0.35);
+      color: #ffe3a0;
+    }
+
+    .type-vacation {
+      background: rgba(160, 92, 255, 0.18);
+      border: 1px solid rgba(160, 92, 255, 0.35);
+      color: #dfc8ff;
+    }
+
+    .type-default {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--text);
+    }
+
     .stat {
       background: var(--panel2);
       border: 1px solid var(--border);
@@ -1012,6 +1051,33 @@
       };
     }
 
+    function normalizeAttendanceType(type) {
+      return String(type || "").toLowerCase().trim();
+    }
+
+    function renderAttendanceTypeBadge(type) {
+      const safeText = escapeHtml(type || "—");
+      const normalized = normalizeAttendanceType(type);
+
+      if (normalized === "práce") {
+        return `<span class="type-badge type-work">${safeText}</span>`;
+      }
+
+      if (normalized === "home office") {
+        return `<span class="type-badge type-home-office">${safeText}</span>`;
+      }
+
+      if (normalized === "služební cesta") {
+        return `<span class="type-badge type-business-trip">${safeText}</span>`;
+      }
+
+      if (normalized === "dovolená") {
+        return `<span class="type-badge type-vacation">${safeText}</span>`;
+      }
+
+      return `<span class="type-badge type-default">${safeText}</span>`;
+    }
+
     function renderMonthlySummary() {
       if (!currentEmployee || isAdmin) {
         myMonthlySummaryCardEl.classList.add("hidden");
@@ -1392,7 +1458,7 @@
           { label: "ID", render: r => escapeHtml(r.id) },
           { label: "Datum", render: r => escapeHtml(r.date) },
           { label: "Místo", render: r => escapeHtml(r.office || "") },
-          { label: "Typ", render: r => escapeHtml(r.type || "") },
+          { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") },
           { label: "Do", render: r => escapeHtml(r.time_to || "—") },
           { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") },
@@ -1723,7 +1789,7 @@
           { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name || "") },
           { label: "E-mail", render: r => escapeHtml(r.employee_email || "") },
           { label: "Místo", render: r => escapeHtml(r.office || "") },
-          { label: "Typ", render: r => escapeHtml(r.type || "") },
+          { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") }
         ],
         locationsRes.data || []
@@ -1734,7 +1800,7 @@
           { label: "ID", render: r => escapeHtml(r.id) },
           { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name || "") },
           { label: "Místo", render: r => escapeHtml(r.office || "") },
-          { label: "Typ", render: r => escapeHtml(r.type || "") },
+          { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") },
           { label: "Do", render: r => escapeHtml(r.time_to || "—") },
           { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") },
