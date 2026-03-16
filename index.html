@@ -181,6 +181,10 @@
     .btn-danger { background: var(--danger); }
     .btn-danger:hover { background: var(--danger-hover); }
 
+    .today-filter-btn.active-filter {
+      background: var(--primary);
+    }
+
     .actions {
       display: flex;
       gap: 8px;
@@ -855,13 +859,13 @@
                       <span class="pill pill-admin">live přehled</span>
                     </div>
                     <div class="actions" style="margin-bottom:10px; flex-wrap:wrap;">
-                    <button class="btn-secondary today-filter-btn" data-filter="all" type="button">Všichni</button>
-                    <button class="btn-secondary today-filter-btn" data-filter="work" type="button">V práci</button>
-                    <button class="btn-secondary today-filter-btn" data-filter="home" type="button">Home office</button>
-                    <button class="btn-secondary today-filter-btn" data-filter="trip" type="button">Služební cesta</button>
-                    <button class="btn-secondary today-filter-btn" data-filter="leave" type="button">Dovolená</button>
-                  </div>
-                  <div id="adminTodayWrap" class="empty-box">Načítám…</div>
+                      <button class="btn-secondary today-filter-btn active-filter" data-filter="all" type="button">Všichni</button>
+                      <button class="btn-secondary today-filter-btn" data-filter="work" type="button">V práci</button>
+                      <button class="btn-secondary today-filter-btn" data-filter="home" type="button">Home office</button>
+                      <button class="btn-secondary today-filter-btn" data-filter="trip" type="button">Služební cesta</button>
+                      <button class="btn-secondary today-filter-btn" data-filter="leave" type="button">Dovolená</button>
+                    </div>
+                    <div id="adminTodayWrap" class="empty-box">Načítám…</div>
                   </div>
                 </div>
 
@@ -933,16 +937,7 @@
                   </div>
 
                   <div class="actions" style="margin-bottom:12px;">
-                    <button id="todayFilterButtons?.forEach(btn => {
-      btn.addEventListener("click", () => {
-        currentTodayFilter = btn.dataset.filter || "all";
-        if (typeof loadAdminData === "function") {
-          loadAdminData();
-        }
-      });
-    });
-
-    adminLoadHistoryBtn" class="btn-secondary" type="button">Načíst docházku</button>
+                    <button id="adminLoadHistoryBtn" class="btn-secondary" type="button">Načíst docházku</button>
                   </div>
 
                   <div id="adminHistorySummary" class="message warn" style="margin-bottom:12px;">Vyber zaměstnance a měsíc.</div>
@@ -1167,9 +1162,9 @@
 
     const employeeOnlyBlockEl = document.getElementById("employeeOnlyBlock");
     const myAttendanceCardEl = document.getElementById("myAttendanceCard");
-    const timeSummaryCardEl = document.getElementById("timeSummaryCard");
     const myAttendanceHistoryCardEl = document.getElementById("myAttendanceHistoryCard");
     const myMonthlySummaryCardEl = document.getElementById("myMonthlySummaryCard");
+    const timeSummaryCardEl = document.getElementById("timeSummaryCard");
 
     const emailEl = document.getElementById("email");
     const passwordEl = document.getElementById("password");
@@ -1191,6 +1186,7 @@
     const createEmployeeMessageEl = document.getElementById("createEmployeeMessage");
     const attendanceEditMessageEl = document.getElementById("attendanceEditMessage");
     const adminHistorySummaryEl = document.getElementById("adminHistorySummary");
+    const lockMonthMessageEl = document.getElementById("lockMonthMessage");
 
     const sessionTextEl = document.getElementById("sessionText");
     const rolePillEl = document.getElementById("rolePill");
@@ -1208,6 +1204,7 @@
     const monthlyWorkedValueEl = document.getElementById("monthlyWorkedValue");
     const monthlyWorkDaysValueEl = document.getElementById("monthlyWorkDaysValue");
     const monthlyLeaveDaysValueEl = document.getElementById("monthlyLeaveDaysValue");
+
     const timeSummaryLabelEl = document.getElementById("timeSummaryLabel");
     const todayWorkedValueEl = document.getElementById("todayWorkedValue");
     const monthWorkedSummaryValueEl = document.getElementById("monthWorkedSummaryValue");
@@ -1245,13 +1242,13 @@
     const adminPanelEl = document.getElementById("adminPanel");
     const adminActiveWrapEl = document.getElementById("adminActiveWrap");
     const adminTodayWrapEl = document.getElementById("adminTodayWrap");
-    const todayFilterButtons = document.querySelectorAll(".today-filter-btn");
-    const adminLeaveWrapEl = document.getElementById("adminLeaveWrap");
     const attendanceIssuesWrapEl = document.getElementById("attendanceIssuesWrap");
+    const adminLeaveWrapEl = document.getElementById("adminLeaveWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
     const employeeSearchInputEl = document.getElementById("employeeSearchInput");
     const employeeRoleFilterEl = document.getElementById("employeeRoleFilter");
     const employeeActiveFilterEl = document.getElementById("employeeActiveFilter");
+    const todayFilterButtons = document.querySelectorAll(".today-filter-btn");
 
     const dashTotalEmployeesEl = document.getElementById("dashTotalEmployees");
     const dashAtWorkEl = document.getElementById("dashAtWork");
@@ -1274,7 +1271,6 @@
     const checkLockBtn = document.getElementById("checkLockBtn");
     const lockMonthBtn = document.getElementById("lockMonthBtn");
     const unlockMonthBtn = document.getElementById("unlockMonthBtn");
-    const lockMonthMessageEl = document.getElementById("lockMonthMessage");
 
     const exportMonthEl = document.getElementById("exportMonth");
     const exportMonthBtn = document.getElementById("exportMonthBtn");
@@ -1314,17 +1310,13 @@
     let adminEmployeesData = [];
     let filteredAdminEmployeesData = [];
     let adminTodayAttendanceData = [];
-    let currentTodayFilter = "all";
     let adminLeaveData = [];
     let editEmployeeId = null;
     let editAttendanceId = null;
+    let currentTodayFilter = "all";
 
     let isPasswordRecoveryFlow = false;
     let passwordWasJustChanged = false;
-
-    function debugLog(...args) {
-      console.log(...args);
-    }
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -1379,19 +1371,24 @@
       return parsed;
     }
 
+    function normalizeText(value) {
+      return String(value || "")
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ");
+    }
+
     function getAutoBreakMinutes(row) {
       const start = parseRowDateTime(row.date, row.time_from);
       const end = parseRowDateTime(row.date, row.time_to);
       if (!start || !end) return Number(row.break_minutes || 0);
       if (end <= start) return Number(row.break_minutes || 0);
-
       const rawMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
       const enteredBreak = Number(row.break_minutes || 0);
-
-      if (rawMinutes < 360) {
-        return 0;
-      }
-
+      if (rawMinutes < 360) return 0;
       return enteredBreak;
     }
 
@@ -1421,16 +1418,6 @@
 
     function monthFromDateStr(dateStr) {
       return String(dateStr || "").slice(0, 7);
-    }
-
-    function normalizeText(value) {
-      return String(value || "")
-        .toLowerCase()
-        .trim()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[_-]+/g, " ")
-        .replace(/\s+/g, " ");
     }
 
     function getMonthlySummary(rows) {
@@ -1487,6 +1474,71 @@
         });
     }
 
+    function getTodayWorkedMinutes(rows) {
+      const today = todayStr();
+      return (rows || []).filter((row) => row?.date === today).reduce((sum, row) => sum + getWorkedMinutes(row), 0);
+    }
+
+    function getExpectedMonthlyMinutes(employee, monthStr) {
+      const normalizedWeekly = normalizeText(employee?.weekly || "");
+      const uniqueWorkDays = new Set(
+        getAttendanceRowsForMonth(myAttendanceRows, monthStr)
+          .filter((row) => {
+            const type = normalizeText(row.type);
+            return type !== "dovolena" && type !== "vacation" && type !== "leave";
+          })
+          .map((row) => row.date)
+      ).size;
+
+      if (!uniqueWorkDays) return 0;
+      if (normalizedWeekly.includes("polovicni") || normalizedWeekly.includes("poloviční") || normalizedWeekly.includes("0.5")) return uniqueWorkDays * 4 * 60;
+      if (normalizedWeekly.includes("zkraceny") || normalizedWeekly.includes("zkrácený") || normalizedWeekly.includes("6h")) return uniqueWorkDays * 6 * 60;
+      return uniqueWorkDays * 8 * 60;
+    }
+
+    function renderMonthlySummary() {
+      if (!currentEmployee || isAdmin) {
+        myMonthlySummaryCardEl.classList.add("hidden");
+        timeSummaryCardEl.classList.add("hidden");
+        monthlySummaryLabelEl.textContent = "aktuální měsíc";
+        monthlyWorkedValueEl.textContent = "—";
+        monthlyWorkDaysValueEl.textContent = "—";
+        monthlyLeaveDaysValueEl.textContent = "—";
+        return;
+      }
+
+      myMonthlySummaryCardEl.classList.remove("hidden");
+      const summary = getMonthlySummary(myAttendanceRows);
+      monthlySummaryLabelEl.textContent = formatMonthLabel(summary.month);
+      monthlyWorkedValueEl.textContent = formatWorkedMinutes(summary.totalWorkedMinutes);
+      monthlyWorkDaysValueEl.textContent = String(summary.workDays);
+      monthlyLeaveDaysValueEl.textContent = String(summary.leaveDays);
+    }
+
+    function renderTimeSummary() {
+      if (!currentEmployee || isAdmin) {
+        timeSummaryCardEl.classList.add("hidden");
+        timeSummaryLabelEl.textContent = "dnes a aktuální měsíc";
+        todayWorkedValueEl.textContent = "00:00";
+        monthWorkedSummaryValueEl.textContent = "00:00";
+        overtimeValueEl.textContent = "00:00";
+        return;
+      }
+
+      timeSummaryCardEl.classList.remove("hidden");
+      const month = currentMonthStr();
+      const monthlyRows = getAttendanceRowsForMonth(myAttendanceRows, month);
+      const todayWorkedMinutes = getTodayWorkedMinutes(myAttendanceRows);
+      const monthWorkedMinutes = monthlyRows.reduce((sum, row) => sum + getWorkedMinutes(row), 0);
+      const expectedMonthlyMinutes = getExpectedMonthlyMinutes(currentEmployee, month);
+      const overtimeMinutes = Math.max(0, monthWorkedMinutes - expectedMonthlyMinutes);
+
+      timeSummaryLabelEl.textContent = formatMonthLabel(month);
+      todayWorkedValueEl.textContent = formatWorkedMinutes(todayWorkedMinutes);
+      monthWorkedSummaryValueEl.textContent = formatWorkedMinutes(monthWorkedMinutes);
+      overtimeValueEl.textContent = formatWorkedMinutes(overtimeMinutes);
+    }
+
     function renderAttendanceHistory() {
       if (!currentEmployee || isAdmin) {
         myAttendanceHistoryCardEl.classList.add("hidden");
@@ -1495,10 +1547,6 @@
         historyRecordsValueEl.textContent = "0";
         historyWorkedValueEl.textContent = "00:00";
         historyDaysValueEl.textContent = "0";
-      todayWorkedValueEl.textContent = "00:00";
-      monthWorkedSummaryValueEl.textContent = "00:00";
-      overtimeValueEl.textContent = "00:00";
-      timeSummaryLabelEl.textContent = "dnes a aktuální měsíc";
         return;
       }
 
@@ -1548,9 +1596,7 @@
     }
 
     async function getMonthLockStatus(monthStr) {
-      const { data, error } = await supabaseClient.rpc("is_attendance_month_locked", {
-        p_month: monthStr
-      });
+      const { data, error } = await supabaseClient.rpc("is_attendance_month_locked", { p_month: monthStr });
       if (error) throw error;
       return !!data;
     }
@@ -1559,9 +1605,7 @@
       const monthStr = monthFromDateStr(dateStr);
       if (!monthStr) return;
       const isLocked = await getMonthLockStatus(monthStr);
-      if (isLocked) {
-        throw new Error(`Měsíc ${formatMonthLabel(monthStr)} je uzamčený.`);
-      }
+      if (isLocked) throw new Error(`Měsíc ${formatMonthLabel(monthStr)} je uzamčený.`);
     }
 
     async function loadAttendanceLockStatus() {
@@ -1573,11 +1617,7 @@
       }
       try {
         const isLocked = await getMonthLockStatus(monthStr);
-        setMessage(
-          lockMonthMessageEl,
-          isLocked ? `Měsíc ${formatMonthLabel(monthStr)} je zamčený.` : `Měsíc ${formatMonthLabel(monthStr)} není zamčený.`,
-          isLocked ? "err" : "ok"
-        );
+        setMessage(lockMonthMessageEl, isLocked ? `Měsíc ${formatMonthLabel(monthStr)} je zamčený.` : `Měsíc ${formatMonthLabel(monthStr)} není zamčený.`, isLocked ? "err" : "ok");
       } catch (error) {
         setMessage(lockMonthMessageEl, "Chyba načítání uzávěrky: " + error.message, "err");
       }
@@ -1591,37 +1631,119 @@
         return;
       }
       try {
-        const { error } = await supabaseClient.rpc("set_attendance_month_lock", {
-          p_month: monthStr,
-          p_locked: locked
-        });
+        const { error } = await supabaseClient.rpc("set_attendance_month_lock", { p_month: monthStr, p_locked: locked });
         if (error) throw error;
-        setMessage(
-          lockMonthMessageEl,
-          locked ? `Měsíc ${formatMonthLabel(monthStr)} byl zamčen.` : `Měsíc ${formatMonthLabel(monthStr)} byl odemčen.`,
-          locked ? "err" : "ok"
-        );
+        setMessage(lockMonthMessageEl, locked ? `Měsíc ${formatMonthLabel(monthStr)} byl zamčen.` : `Měsíc ${formatMonthLabel(monthStr)} byl odemčen.`, locked ? "err" : "ok");
       } catch (error) {
         setMessage(lockMonthMessageEl, "Chyba při změně uzávěrky: " + error.message, "err");
       }
+    }
+
+    function filterTodayRows(rows) {
+      return (rows || []).filter(r => {
+        if (currentTodayFilter === "all") return true;
+        const type = normalizeText(r.type || "");
+        if (currentTodayFilter === "work") return type === "work" || type === "prace";
+        if (currentTodayFilter === "home") return type.includes("home");
+        if (currentTodayFilter === "trip") return type.includes("trip") || type.includes("cesta");
+        if (currentTodayFilter === "leave") return type.includes("leave") || type.includes("dovolena");
+        return true;
+      });
+    }
+
+    function updateTodayFilterButtons() {
+      todayFilterButtons.forEach(btn => {
+        btn.classList.toggle("active-filter", (btn.dataset.filter || "all") === currentTodayFilter);
+      });
+    }
+
+    function renderAdminTodayTable() {
+      const filteredTodayRows = filterTodayRows(adminTodayAttendanceData);
+      adminTodayWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "ID", render: r => escapeHtml(r.id) },
+          { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name || "") },
+          { label: "Místo", render: r => escapeHtml(r.office || "") },
+          { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
+          { label: "Od", render: r => escapeHtml(r.time_from || "—") },
+          { label: "Do", render: r => escapeHtml(r.time_to || "—") },
+          { label: "Přestávka", render: r => escapeHtml(getAutoBreakMinutes(r) + " min") },
+          { label: "Odpracováno", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) },
+          { label: "Akce", render: r => `<button type="button" class="btn-secondary edit-attendance-btn" data-id="${r.id}">Upravit</button>` }
+        ],
+        filteredTodayRows
+      );
+      updateTodayFilterButtons();
+    }
+
+    function buildAttendanceIssues(rows) {
+      const issues = [];
+      for (const row of rows || []) {
+        const employeeName = row.employee_name || "Neznámý zaměstnanec";
+        const dateText = row.date || "bez data";
+        const start = parseRowDateTime(row.date, row.time_from);
+        const end = parseRowDateTime(row.date, row.time_to);
+        const rawMinutes = start && end && end > start ? Math.round((end.getTime() - start.getTime()) / 60000) : 0;
+        const breakMinutes = Number(getAutoBreakMinutes(row) || 0);
+
+        if (!row.time_to) {
+          issues.push({ severity: "err", employee_name: employeeName, date: dateText, issue: "Otevřená směna", detail: `Chybí čas odchodu. Od: ${row.time_from || "—"}` });
+        }
+        if (rawMinutes > 12 * 60) {
+          issues.push({ severity: "err", employee_name: employeeName, date: dateText, issue: "Směna delší než 12 hodin", detail: `Délka směny ${formatWorkedMinutes(rawMinutes)}.` });
+        }
+        if (rawMinutes >= 6 * 60 && breakMinutes <= 0) {
+          issues.push({ severity: "warn", employee_name: employeeName, date: dateText, issue: "Chybí přestávka", detail: `Směna je ${formatWorkedMinutes(rawMinutes)}, ale přestávka je 0 min.` });
+        }
+      }
+
+      const groupedByEmployeeDate = new Map();
+      for (const row of rows || []) {
+        const key = `${row.employee_name || "?"}__${row.date || "?"}`;
+        groupedByEmployeeDate.set(key, (groupedByEmployeeDate.get(key) || 0) + 1);
+      }
+      for (const [key, count] of groupedByEmployeeDate.entries()) {
+        if (count > 1) {
+          const [employee_name, date] = key.split("__");
+          issues.push({ severity: "warn", employee_name, date, issue: "Více záznamů v jednom dni", detail: `Počet záznamů za den: ${count}. Zkontroluj, jestli nejde o duplicitní příchod.` });
+        }
+      }
+
+      return issues.sort((a, b) => {
+        if (a.severity !== b.severity) return a.severity === "err" ? -1 : 1;
+        return String(b.date).localeCompare(String(a.date));
+      });
+    }
+
+    function renderAttendanceIssues(rows) {
+      const issues = buildAttendanceIssues(rows);
+      if (!issues.length) {
+        attendanceIssuesWrapEl.innerHTML = `<div class="empty-box">Nenalezeny žádné zjevné chyby v docházce.</div>`;
+        return;
+      }
+      attendanceIssuesWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "Priorita", render: r => r.severity === "err" ? `<span class="pill pill-inactive">chyba</span>` : `<span class="pill pill-warn">pozor</span>` },
+          { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name) },
+          { label: "Datum", render: r => escapeHtml(r.date) },
+          { label: "Problém", render: r => escapeHtml(r.issue) },
+          { label: "Detail", render: r => escapeHtml(r.detail) }
+        ],
+        issues
+      );
     }
 
     async function loadAdminAttendanceHistory() {
       if (!isAdmin) return;
       const employeeId = Number(adminHistoryEmployeeEl.value || 0);
       const month = adminHistoryMonthEl.value;
-
       if (!employeeId || !month) {
         adminHistoryWrapEl.innerHTML = `<div class="empty-box">Vyber zaměstnance a měsíc.</div>`;
         setMessage(adminHistorySummaryEl, "Vyber zaměstnance a měsíc.", "warn");
         return;
       }
 
-      const { data, error } = await supabaseClient.rpc("get_attendance_by_month", {
-        p_employee_id: employeeId,
-        p_month: month
-      });
-
+      const { data, error } = await supabaseClient.rpc("get_attendance_by_month", { p_employee_id: employeeId, p_month: month });
       if (error) {
         adminHistoryWrapEl.innerHTML = `<div class="empty-box">Chyba načítání.</div>`;
         setMessage(adminHistorySummaryEl, "Chyba načítání: " + error.message, "err");
@@ -1639,12 +1761,7 @@
         }
       }
 
-      setMessage(
-        adminHistorySummaryEl,
-        `Měsíc ${formatMonthLabel(month)} · záznamy ${rows.length} · odpracováno ${formatWorkedMinutes(totalWorkedMinutes)} · dny v práci ${workDays.size}`,
-        "ok"
-      );
-
+      setMessage(adminHistorySummaryEl, `Měsíc ${formatMonthLabel(month)} · záznamy ${rows.length} · odpracováno ${formatWorkedMinutes(totalWorkedMinutes)} · dny v práci ${workDays.size}`, "ok");
       adminHistoryWrapEl.innerHTML = renderSimpleTable(
         [
           { label: "Datum", render: r => escapeHtml(r.date || "") },
@@ -1659,84 +1776,20 @@
       );
     }
 
-    function getTodayWorkedMinutes(rows) {
-      const today = todayStr();
-      return (rows || []).filter((row) => row?.date === today).reduce((sum, row) => sum + getWorkedMinutes(row), 0);
-    }
-
-    function getExpectedMonthlyMinutes(employee, monthStr) {
-      const normalizedWeekly = normalizeText(employee?.weekly || "");
-      const uniqueWorkDays = new Set(
-        getAttendanceRowsForMonth(myAttendanceRows, monthStr)
-          .filter((row) => {
-            const type = normalizeText(row.type);
-            return type !== "dovolena" && type !== "vacation" && type !== "leave";
-          })
-          .map((row) => row.date)
-      ).size;
-
-      if (!uniqueWorkDays) return 0;
-      if (normalizedWeekly.includes("polovicni") || normalizedWeekly.includes("poloviční") || normalizedWeekly.includes("0.5")) return uniqueWorkDays * 4 * 60;
-      if (normalizedWeekly.includes("zkraceny") || normalizedWeekly.includes("zkrácený") || normalizedWeekly.includes("6h")) return uniqueWorkDays * 6 * 60;
-      return uniqueWorkDays * 8 * 60;
-    }
-
-    function renderTimeSummary() {
-      if (!currentEmployee || isAdmin) {
-        timeSummaryCardEl.classList.add("hidden");
-        timeSummaryLabelEl.textContent = "dnes a aktuální měsíc";
-        todayWorkedValueEl.textContent = "00:00";
-        monthWorkedSummaryValueEl.textContent = "00:00";
-        overtimeValueEl.textContent = "00:00";
-        return;
-      }
-
-      timeSummaryCardEl.classList.remove("hidden");
-      const month = currentMonthStr();
-      const monthlyRows = getAttendanceRowsForMonth(myAttendanceRows, month);
-      const todayWorkedMinutes = getTodayWorkedMinutes(myAttendanceRows);
-      const monthWorkedMinutes = monthlyRows.reduce((sum, row) => sum + getWorkedMinutes(row), 0);
-      const expectedMonthlyMinutes = getExpectedMonthlyMinutes(currentEmployee, month);
-      const overtimeMinutes = Math.max(0, monthWorkedMinutes - expectedMonthlyMinutes);
-
-      timeSummaryLabelEl.textContent = formatMonthLabel(month);
-      todayWorkedValueEl.textContent = formatWorkedMinutes(todayWorkedMinutes);
-      monthWorkedSummaryValueEl.textContent = formatWorkedMinutes(monthWorkedMinutes);
-      overtimeValueEl.textContent = formatWorkedMinutes(overtimeMinutes);
-    }
-
-    function renderMonthlySummary() {
-      if (!currentEmployee || isAdmin) {
-        myMonthlySummaryCardEl.classList.add("hidden");
-        timeSummaryCardEl.classList.add("hidden");
-        monthlySummaryLabelEl.textContent = "aktuální měsíc";
-        monthlyWorkedValueEl.textContent = "—";
-        monthlyWorkDaysValueEl.textContent = "—";
-        monthlyLeaveDaysValueEl.textContent = "—";
-        return;
-      }
-
-      myMonthlySummaryCardEl.classList.remove("hidden");
-      timeSummaryCardEl.classList.remove("hidden");
-      const summary = getMonthlySummary(myAttendanceRows);
-      monthlySummaryLabelEl.textContent = formatMonthLabel(summary.month);
-      monthlyWorkedValueEl.textContent = formatWorkedMinutes(summary.totalWorkedMinutes);
-      monthlyWorkDaysValueEl.textContent = String(summary.workDays);
-      monthlyLeaveDaysValueEl.textContent = String(summary.leaveDays);
-    }
-
     function updateRoleVisibility() {
       if (isAdmin) {
         employeeOnlyBlockEl.classList.add("hidden");
         myAttendanceCardEl.classList.add("hidden");
         myAttendanceHistoryCardEl.classList.add("hidden");
         myMonthlySummaryCardEl.classList.add("hidden");
+        timeSummaryCardEl.classList.add("hidden");
         adminPanelEl.classList.remove("hidden");
       } else {
         employeeOnlyBlockEl.classList.remove("hidden");
         myAttendanceCardEl.classList.remove("hidden");
         myAttendanceHistoryCardEl.classList.remove("hidden");
         myMonthlySummaryCardEl.classList.remove("hidden");
+        timeSummaryCardEl.classList.remove("hidden");
         adminPanelEl.classList.add("hidden");
       }
     }
@@ -1782,9 +1835,9 @@
     }
 
     function renderRoleBadge(role) {
-      const normalized = normalizeText(role);
-      if (normalized === "admin") return `<span class="pill pill-admin">admin</span>`;
-      return `<span class="pill pill-employee">employee</span>`;
+      return normalizeText(role) === "admin"
+        ? `<span class="pill pill-admin">admin</span>`
+        : `<span class="pill pill-employee">employee</span>`;
     }
 
     function renderActiveBadge(active) {
@@ -1808,97 +1861,6 @@
           return haystack.includes(search);
         })
         .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "cs"));
-    }
-
-    function buildAttendanceIssues(rows) {
-      const issues = [];
-
-      for (const row of rows || []) {
-        const employeeName = row.employee_name || "Neznámý zaměstnanec";
-        const dateText = row.date || "bez data";
-        const start = parseRowDateTime(row.date, row.time_from);
-        const end = parseRowDateTime(row.date, row.time_to);
-        const rawMinutes = start && end && end > start ? Math.round((end.getTime() - start.getTime()) / 60000) : 0;
-        const breakMinutes = Number(row.break_minutes || 0);
-
-        if (!row.time_to) {
-          issues.push({
-            severity: "err",
-            employee_name: employeeName,
-            date: dateText,
-            issue: "Otevřená směna",
-            detail: `Chybí čas odchodu. Od: ${row.time_from || "—"}`
-          });
-        }
-
-        if (rawMinutes > 12 * 60) {
-          issues.push({
-            severity: "err",
-            employee_name: employeeName,
-            date: dateText,
-            issue: "Směna delší než 12 hodin",
-            detail: `Délka směny ${formatWorkedMinutes(rawMinutes)}.`
-          });
-        }
-
-        if (rawMinutes >= 6 * 60 && breakMinutes <= 0) {
-          issues.push({
-            severity: "warn",
-            employee_name: employeeName,
-            date: dateText,
-            issue: "Chybí přestávka",
-            detail: `Směna je ${formatWorkedMinutes(rawMinutes)}, ale přestávka je 0 min.`
-          });
-        }
-      }
-
-      const groupedByEmployeeDate = new Map();
-      for (const row of rows || []) {
-        const key = `${row.employee_name || "?"}__${row.date || "?"}`;
-        groupedByEmployeeDate.set(key, (groupedByEmployeeDate.get(key) || 0) + 1);
-      }
-
-      for (const [key, count] of groupedByEmployeeDate.entries()) {
-        if (count > 1) {
-          const [employee_name, date] = key.split("__");
-          issues.push({
-            severity: "warn",
-            employee_name,
-            date,
-            issue: "Více záznamů v jednom dni",
-            detail: `Počet záznamů za den: ${count}. Zkontroluj, jestli nejde o duplicitní příchod.`
-          });
-        }
-      }
-
-      return issues.sort((a, b) => {
-        if (a.severity !== b.severity) return a.severity === "err" ? -1 : 1;
-        return String(b.date).localeCompare(String(a.date));
-      });
-    }
-
-    function renderAttendanceIssues(rows) {
-      const issues = buildAttendanceIssues(rows);
-      if (!issues.length) {
-        attendanceIssuesWrapEl.innerHTML = `<div class="empty-box">Nenalezeny žádné zjevné chyby v docházce.</div>`;
-        return;
-      }
-
-      attendanceIssuesWrapEl.innerHTML = renderSimpleTable(
-        [
-          {
-            label: "Priorita",
-            render: r => r.severity === "err"
-              ? `<span class="pill pill-inactive">chyba</span>`
-              : `<span class="pill pill-warn">pozor</span>`
-          },
-          { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name) },
-          { label: "Datum", render: r => escapeHtml(r.date) },
-          { label: "Problém", render: r => escapeHtml(r.issue) },
-          { label: "Detail", render: r => escapeHtml(r.detail) }
-        ],
-        issues
-      );
     }
 
     function renderEmployeesTable() {
@@ -2049,6 +2011,7 @@
       filteredAdminEmployeesData = [];
       adminTodayAttendanceData = [];
       adminLeaveData = [];
+      currentTodayFilter = "all";
 
       resetEmployeeForm();
       resetDashboard();
@@ -2067,6 +2030,10 @@
       monthlyWorkedValueEl.textContent = "—";
       monthlyWorkDaysValueEl.textContent = "—";
       monthlyLeaveDaysValueEl.textContent = "—";
+      timeSummaryLabelEl.textContent = "dnes a aktuální měsíc";
+      todayWorkedValueEl.textContent = "00:00";
+      monthWorkedSummaryValueEl.textContent = "00:00";
+      overtimeValueEl.textContent = "00:00";
       employeeOfficesInfoEl.value = "";
       myAttendanceWrapEl.innerHTML = `<div class="empty-box">Zatím žádné záznamy.</div>`;
       myAttendanceHistoryWrapEl.innerHTML = `<div class="empty-box">Vyber měsíc a načti historii docházky.</div>`;
@@ -2081,6 +2048,7 @@
       adminLeaveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminHistoryWrapEl.innerHTML = `<div class="empty-box">Vyber zaměstnance a měsíc.</div>`;
       setMessage(adminHistorySummaryEl, "Vyber zaměstnance a měsíc.", "warn");
+      setMessage(lockMonthMessageEl, "Vyber měsíc a zjisti stav uzávěrky.", "warn");
       employeesWrapEl.innerHTML = `<div class="empty-box">Načítám zaměstnance…</div>`;
       if (employeeSearchInputEl) employeeSearchInputEl.value = "";
       if (employeeRoleFilterEl) employeeRoleFilterEl.value = "all";
@@ -2092,6 +2060,7 @@
       exportMonthEl.value = currentMonthStr();
       if (adminHistoryMonthEl) adminHistoryMonthEl.value = currentMonthStr();
       sessionTextEl.textContent = isPasswordRecoveryFlow ? "Probíhá reset hesla." : "Nikdo není přihlášen.";
+      updateTodayFilterButtons();
 
       resetAttendanceEditForm();
       resetManualAttendanceForm();
@@ -2099,7 +2068,6 @@
       setMessage(myLeaveMessageEl, "Vyber datum a počet hodin.", "warn");
       setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a hodiny.", "warn");
       setMessage(exportMessageEl, "Vyber měsíc a klikni na export.", "warn");
-      setMessage(lockMonthMessageEl, "Vyber měsíc a zjisti stav uzávěrky.", "warn");
       setMessage(passwordResetMessageEl, "Zadej nové heslo.", "warn");
     }
 
@@ -2109,14 +2077,12 @@
         setMessage(loginMessageEl, "Právě probíhá reset hesla. Nejprve nastav nové heslo.", "warn");
         return;
       }
-
       const email = emailEl.value.trim();
       const password = passwordEl.value;
       if (!email || !password) {
         setMessage(loginMessageEl, "Vyplň e-mail i heslo.", "err");
         return;
       }
-
       setMessage(loginMessageEl, "Přihlašuji…", "warn");
       const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) {
@@ -2129,10 +2095,7 @@
 
     async function signOut() {
       const { error } = await supabaseClient.auth.signOut();
-      if (error) {
-        console.error("Logout chyba:", error.message);
-        return;
-      }
+      if (error) return;
       if (!passwordWasJustChanged) isPasswordRecoveryFlow = false;
       cleanRecoveryUrl();
       renderLoggedOut();
@@ -2149,14 +2112,12 @@
         setMessage(passwordResetMessageEl, "Hesla se neshodují.", "err");
         return;
       }
-
       setMessage(passwordResetMessageEl, "Ukládám nové heslo…", "warn");
       const { error } = await supabaseClient.auth.updateUser({ password: p1 });
       if (error) {
         setMessage(passwordResetMessageEl, "Chyba: " + error.message, "err");
         return;
       }
-
       passwordWasJustChanged = true;
       isPasswordRecoveryFlow = false;
       setMessage(passwordResetMessageEl, "Heslo bylo změněno. Probíhá návrat na přihlášení…", "ok");
@@ -2185,7 +2146,6 @@
         updateRoleVisibility();
         return;
       }
-
       rolePillEl.textContent = isAdmin ? "admin" : (currentEmployee.role || "employee");
       rolePillEl.className = "pill " + (isAdmin ? "pill-admin" : "pill-employee");
       profileBoxEl.innerHTML = `
@@ -2200,9 +2160,7 @@
       `;
       employeeOfficesInfoEl.value = currentEmployee.offices || "";
       updateRoleVisibility();
-      if (!isAdmin) {
-        manualAttendanceOfficeEl.value = currentEmployee.offices?.split(",")[0]?.trim() || manualAttendanceOfficeEl.value;
-      }
+      if (!isAdmin) manualAttendanceOfficeEl.value = currentEmployee.offices?.split(",")[0]?.trim() || manualAttendanceOfficeEl.value;
     }
 
     async function loadMyAttendance() {
@@ -2210,17 +2168,17 @@
         myAttendanceRows = [];
         myOpenShift = null;
         renderMyAttendance();
-      renderMonthlySummary();
-      renderTimeSummary();
+        renderMonthlySummary();
+        renderTimeSummary();
         return;
       }
-
       const { data, error } = await supabaseClient.rpc("get_my_attendance_rows", { p_limit: 30 });
       if (error) throw error;
       myAttendanceRows = Array.isArray(data) ? data : [];
       myOpenShift = myAttendanceRows.find(r => !r.time_to) || null;
       renderMyAttendance();
       renderMonthlySummary();
+      renderTimeSummary();
     }
 
     function renderMyAttendance() {
@@ -2233,7 +2191,6 @@
         checkOutBtn.disabled = true;
         return;
       }
-
       const today = todayStr();
       const todayRows = myAttendanceRows.filter(r => r.date === today).sort((a, b) => b.id - a.id);
       const firstToday = todayRows.length ? todayRows[todayRows.length - 1] : null;
@@ -2325,18 +2282,14 @@
         setMessage(manualAttendanceMessageEl, "Vyplň datum, místo, typ a čas od.", "err");
         return;
       }
-
       try {
         await ensureMonthUnlockedOrThrow(p_date);
       } catch (error) {
         setMessage(manualAttendanceMessageEl, error.message, "err");
         return;
       }
-
       setMessage(manualAttendanceMessageEl, "Zapisuji ruční docházku…", "warn");
-      const { error } = await supabaseClient.rpc("create_my_attendance_manual", {
-        p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes
-      });
+      const { error } = await supabaseClient.rpc("create_my_attendance_manual", { p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes });
       if (error) {
         setMessage(manualAttendanceMessageEl, "Chyba ručního zápisu: " + error.message + " (zkontroluj, že v Supabase existuje RPC create_my_attendance_manual)", "err");
         return;
@@ -2360,7 +2313,6 @@
         setMessage(myLeaveMessageEl, error.message, "err");
         return;
       }
-
       setMessage(myLeaveMessageEl, "Zapisuji dovolenou…", "warn");
       const { error } = await supabaseClient.rpc("create_my_leave", { p_date, p_hours, p_note });
       if (error) {
@@ -2383,14 +2335,12 @@
         setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a počet hodin.", "err");
         return;
       }
-
       try {
         await ensureMonthUnlockedOrThrow(p_date);
       } catch (error) {
         setMessage(adminLeaveMessageEl, error.message, "err");
         return;
       }
-
       setMessage(adminLeaveMessageEl, "Zapisuji dovolenou…", "warn");
       const { error } = await supabaseClient.rpc("admin_create_leave", { p_employee_id, p_date, p_hours, p_note });
       if (error) {
@@ -2410,14 +2360,12 @@
         setMessage(exportMessageEl, "Vyber měsíc.", "err");
         return;
       }
-
       setMessage(exportMessageEl, "Generuji export…", "warn");
       const { data, error } = await supabaseClient.rpc("get_admin_month_summary", { p_month });
       if (error) {
         setMessage(exportMessageEl, "Chyba exportu: " + error.message, "err");
         return;
       }
-
       const rows = (data || []).map(row => ({
         "Zaměstnanec": row.employee_name || "",
         "E-mail": row.employee_email || "",
@@ -2426,7 +2374,6 @@
         "Dovolená hodin": Number(row.leave_hours || 0),
         "Dovolená dnů": Number(row.leave_days || 0)
       }));
-
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(rows);
       XLSX.utils.book_append_sheet(wb, ws, "Souhrn");
@@ -2502,18 +2449,14 @@
         setMessage(attendanceEditMessageEl, "Vyber zaměstnance a vyplň datum, místo, typ a čas od.", "err");
         return;
       }
-
       try {
         await ensureMonthUnlockedOrThrow(p_date);
       } catch (error) {
         setMessage(attendanceEditMessageEl, error.message, "err");
         return;
       }
-
       setMessage(attendanceEditMessageEl, "Vkládám nový záznam docházky…", "warn");
-      const { error } = await supabaseClient.rpc("admin_insert_attendance", {
-        p_employee_id, p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes
-      });
+      const { error } = await supabaseClient.rpc("admin_insert_attendance", { p_employee_id, p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes });
       if (error) {
         setMessage(attendanceEditMessageEl, "Chyba při vložení docházky: " + error.message, "err");
         return;
@@ -2538,18 +2481,14 @@
         setMessage(attendanceEditMessageEl, "Vyplň datum, místo, typ a čas od.", "err");
         return;
       }
-
       try {
         await ensureMonthUnlockedOrThrow(p_date);
       } catch (error) {
         setMessage(attendanceEditMessageEl, error.message, "err");
         return;
       }
-
       setMessage(attendanceEditMessageEl, "Ukládám opravu docházky…", "warn");
-      const { error } = await supabaseClient.rpc("admin_update_attendance", {
-        p_id: editAttendanceId, p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes
-      });
+      const { error } = await supabaseClient.rpc("admin_update_attendance", { p_id: editAttendanceId, p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes });
       if (error) {
         setMessage(attendanceEditMessageEl, "Chyba při opravě docházky: " + error.message, "err");
         return;
@@ -2582,8 +2521,8 @@
         adminPanelEl.classList.add("hidden");
         return;
       }
-
       adminPanelEl.classList.remove("hidden");
+
       const [locationsRes, todayRes, employeesRes, leaveRes] = await Promise.all([
         supabaseClient.rpc("get_admin_today_locations"),
         supabaseClient.rpc("get_admin_today_attendance"),
@@ -2615,31 +2554,7 @@
         locationsRes.data || []
       );
 
-      const filteredTodayRows = (adminTodayAttendanceData || []).filter(r => {
-        if (currentTodayFilter === "all") return true;
-        const type = normalizeText(r.type || "");
-        if (currentTodayFilter === "work") return type === "work" || type === "prace";
-        if (currentTodayFilter === "home") return type.includes("home");
-        if (currentTodayFilter === "trip") return type.includes("trip") || type.includes("cesta");
-        if (currentTodayFilter === "leave") return type.includes("leave") || type.includes("dovolena");
-        return true;
-      });
-
-      adminTodayWrapEl.innerHTML = renderSimpleTable(
-        [
-          { label: "ID", render: r => escapeHtml(r.id) },
-          { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name || "") },
-          { label: "Místo", render: r => escapeHtml(r.office || "") },
-          { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
-          { label: "Od", render: r => escapeHtml(r.time_from || "—") },
-          { label: "Do", render: r => escapeHtml(r.time_to || "—") },
-          { label: "Přestávka", render: r => escapeHtml(getAutoBreakMinutes(r) + " min") },
-          { label: "Odpracováno", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) },
-          { label: "Akce", render: r => `<button type="button" class="btn-secondary edit-attendance-btn" data-id="${r.id}">Upravit</button>` }
-        ],
-        adminTodayAttendanceData
-      );
-
+      renderAdminTodayTable();
       renderAttendanceIssues(adminTodayAttendanceData);
 
       adminLeaveWrapEl.innerHTML = renderSimpleTable(
@@ -2671,7 +2586,6 @@
         await loadAdminDashboard();
         if (!isAdmin) setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
       } catch (error) {
-        console.error("Chyba načítání:", error);
         if (!isAdmin) setMessage(attendanceMessageEl, "Chyba načítání: " + (error?.message || String(error)), "err");
       }
     }
@@ -2716,6 +2630,13 @@
     insertAttendanceBtn.addEventListener("click", insertAttendanceManual);
     saveAttendanceEditBtn.addEventListener("click", saveAttendanceEdit);
     cancelAttendanceEditBtn.addEventListener("click", resetAttendanceEditForm);
+
+    todayFilterButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentTodayFilter = btn.dataset.filter || "all";
+        renderAdminTodayTable();
+      });
+    });
 
     employeesWrapEl.addEventListener("click", (e) => {
       const btn = e.target.closest(".edit-employee-btn");
@@ -2765,6 +2686,7 @@
     });
 
     (async function bootstrap() {
+      lockMonthEl.value = previousMonthStr();
       exportMonthEl.value = currentMonthStr();
       if (historyMonthEl) historyMonthEl.value = currentMonthStr();
       if (adminHistoryMonthEl) adminHistoryMonthEl.value = currentMonthStr();
