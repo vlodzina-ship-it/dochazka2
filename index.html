@@ -624,6 +624,7 @@
                 <label for="breakMinutes">Přestávka (minuty)</label>
                 <input id="breakMinutes" type="number" min="0" step="1" value="30" />
               </div>
+              <div class="small" style="margin-top:6px;">Pokud směna nedosáhne 6 hodin, přestávka se do výpočtu nezapočítá.</div>
 
               <div style="margin-top:12px;">
                 <label for="employeeOfficesInfo">Moje přidělená kancelář / offices</label>
@@ -1026,6 +1027,7 @@
                     <label for="editAttendanceBreakMinutes">Přestávka (minuty)</label>
                     <input id="editAttendanceBreakMinutes" type="number" min="0" step="1" />
                   </div>
+                  <div class="small" style="margin-top:6px;">Pokud směna nedosáhne 6 hodin, přestávka se do výpočtu nezapočítá.</div>
 
                   <div class="actions" style="margin-top:14px;">
                     <button id="insertAttendanceBtn" class="btn-success" type="button">Vložit ručně</button>
@@ -1315,13 +1317,29 @@
       return parsed;
     }
 
+    function getAutoBreakMinutes(row) {
+      const start = parseRowDateTime(row.date, row.time_from);
+      const end = parseRowDateTime(row.date, row.time_to);
+      if (!start || !end) return Number(row.break_minutes || 0);
+      if (end <= start) return Number(row.break_minutes || 0);
+
+      const rawMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+      const enteredBreak = Number(row.break_minutes || 0);
+
+      if (rawMinutes < 360) {
+        return 0;
+      }
+
+      return enteredBreak;
+    }
+
     function getWorkedMinutes(row) {
       const start = parseRowDateTime(row.date, row.time_from);
       const end = parseRowDateTime(row.date, row.time_to);
       if (!start || !end) return 0;
       if (end <= start) return 0;
       const rawMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
-      const breakMinutes = Number(row.break_minutes || 0);
+      const breakMinutes = getAutoBreakMinutes(row);
       const workedMinutes = rawMinutes - breakMinutes;
       return workedMinutes > 0 ? workedMinutes : 0;
     }
@@ -1445,7 +1463,7 @@
           { label: "Hodiny", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) },
           { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
           { label: "Místo", render: r => escapeHtml(r.office || "—") },
-          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") }
+          { label: "Přestávka", render: r => escapeHtml(getAutoBreakMinutes(r) + " min") }
         ],
         rows
       );
@@ -1510,7 +1528,7 @@
           { label: "Hodiny", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) },
           { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
           { label: "Místo", render: r => escapeHtml(r.office || "—") },
-          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") }
+          { label: "Přestávka", render: r => escapeHtml(getAutoBreakMinutes(r) + " min") }
         ],
         rows
       );
@@ -2018,7 +2036,7 @@
           { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") },
           { label: "Do", render: r => escapeHtml(r.time_to || "—") },
-          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") },
+          { label: "Přestávka", render: r => escapeHtml(getAutoBreakMinutes(r) + " min") },
           { label: "Odpracováno", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) }
         ],
         myAttendanceRows
@@ -2351,7 +2369,7 @@
           { label: "Typ", render: r => renderAttendanceTypeBadge(r.type || "") },
           { label: "Od", render: r => escapeHtml(r.time_from || "—") },
           { label: "Do", render: r => escapeHtml(r.time_to || "—") },
-          { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") },
+          { label: "Přestávka", render: r => escapeHtml(getAutoBreakMinutes(r) + " min") },
           { label: "Odpracováno", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) },
           { label: "Akce", render: r => `<button type="button" class="btn-secondary edit-attendance-btn" data-id="${r.id}">Upravit</button>` }
         ],
