@@ -105,8 +105,22 @@
     }
 
     .grid-admin {
-      grid-template-columns: minmax(0, 1.15fr) minmax(420px, 0.85fr);
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 400px);
       align-items: start;
+    }
+
+    .admin-layout {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 400px);
+      align-items: start;
+    }
+
+    .admin-main,
+    .admin-side {
+      display: grid;
+      gap: 12px;
+      align-content: start;
     }
 
     .grid-form-2 {
@@ -333,6 +347,11 @@
       grid-column: 1 / -1;
     }
 
+    .compact-card .card,
+    .compact-card {
+      min-height: unset;
+    }
+
     .employees-table-wrap th:nth-child(2),
     .employees-table-wrap td:nth-child(2),
     .employees-table-wrap th:nth-child(3),
@@ -393,7 +412,8 @@
       .grid-main,
       .grid-stats,
       .grid-admin,
-      .grid-form-2 {
+      .grid-form-2,
+      .admin-layout {
         grid-template-columns: 1fr;
       }
 
@@ -684,254 +704,256 @@
             <div id="myAttendanceWrap" class="empty-box">Zatím žádné záznamy.</div>
           </div>
 
-          <div id="adminPanel" class="hidden stack">
-            <div class="card">
-              <div class="section-title">
-                <h2>Dnešní přehled firmy</h2>
-                <span class="pill pill-admin">dashboard</span>
+          <div id="adminPanel" class="hidden">
+            <div class="admin-layout">
+              <div class="admin-main">
+                <div class="card compact-card">
+                  <div class="section-title">
+                    <h2>Dnešní přehled firmy</h2>
+                    <span class="pill pill-admin">dashboard</span>
+                  </div>
+
+                  <div class="grid grid-stats">
+                    <div class="stat">
+                      <div class="stat-label">Celkem zaměstnanců</div>
+                      <div id="dashTotalEmployees" class="stat-value">0</div>
+                    </div>
+
+                    <div class="stat">
+                      <div class="stat-label">V práci</div>
+                      <div id="dashAtWork" class="stat-value">0</div>
+                    </div>
+
+                    <div class="stat">
+                      <div class="stat-label">Home office</div>
+                      <div id="dashHomeOffice" class="stat-value">0</div>
+                    </div>
+
+                    <div class="stat">
+                      <div class="stat-label">Služební cesta</div>
+                      <div id="dashBusinessTrip" class="stat-value">0</div>
+                    </div>
+
+                    <div class="stat">
+                      <div class="stat-label">Dovolená</div>
+                      <div id="dashOnLeave" class="stat-value">0</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-admin">
+                  <div class="card">
+                    <div class="section-title">
+                      <h2>Kdo je dnes v práci a kde</h2>
+                      <span class="pill pill-admin">admin</span>
+                    </div>
+                    <div id="adminActiveWrap" class="empty-box">Načítám…</div>
+                  </div>
+
+                  <div class="card">
+                    <div class="section-title">
+                      <h2>Dnešní docházka všech</h2>
+                      <span class="pill pill-admin">live přehled</span>
+                    </div>
+                    <div id="adminTodayWrap" class="empty-box">Načítám…</div>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="section-title">
+                    <h2>Přehled dovolené</h2>
+                    <span class="small">jen admin</span>
+                  </div>
+                  <div id="adminLeaveWrap" class="empty-box">Načítám…</div>
+                </div>
+
+                <div class="card employees-card">
+                  <div class="section-title">
+                    <h2>Zaměstnanci</h2>
+                    <span class="small">přehled zaměstnanců</span>
+                  </div>
+                  <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
+                </div>
               </div>
 
-              <div class="grid grid-stats">
-                <div class="stat">
-                  <div class="stat-label">Celkem zaměstnanců</div>
-                  <div id="dashTotalEmployees" class="stat-value">0</div>
+              <div class="admin-side">
+                <div class="card">
+                  <div class="section-title">
+                    <h2>Zapsat dovolenou zaměstnanci</h2>
+                    <span class="small">jen admin</span>
+                  </div>
+
+                  <div>
+                    <label for="adminLeaveEmployee">Zaměstnanec</label>
+                    <select id="adminLeaveEmployee"></select>
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="adminLeaveDate">Datum dovolené</label>
+                    <input id="adminLeaveDate" type="date" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="adminLeaveHours">Počet hodin</label>
+                    <input id="adminLeaveHours" type="number" min="1" step="1" value="8" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="adminLeaveNote">Poznámka</label>
+                    <textarea id="adminLeaveNote"></textarea>
+                  </div>
+
+                  <div class="actions" style="margin-top:14px;">
+                    <button id="adminCreateLeaveBtn" class="btn-success" type="button">Zapsat dovolenou</button>
+                  </div>
+
+                  <div id="adminLeaveMessage" class="message warn" style="margin-top:14px;">Vyber zaměstnance, datum a hodiny.</div>
                 </div>
 
-                <div class="stat">
-                  <div class="stat-label">V práci</div>
-                  <div id="dashAtWork" class="stat-value">0</div>
+                <div class="card">
+                  <div class="section-title">
+                    <h2>Export pro účetní</h2>
+                    <span class="small">souhrn po zaměstnancích</span>
+                  </div>
+
+                  <div>
+                    <label for="exportMonth">Měsíc</label>
+                    <input id="exportMonth" type="month" />
+                  </div>
+
+                  <div class="actions" style="margin-top:14px;">
+                    <button id="exportMonthBtn" class="btn-success" type="button">Export pro účetní</button>
+                  </div>
+
+                  <div id="exportMessage" class="message warn" style="margin-top:14px;">Vyber měsíc a klikni na export.</div>
                 </div>
 
-                <div class="stat">
-                  <div class="stat-label">Home office</div>
-                  <div id="dashHomeOffice" class="stat-value">0</div>
+                <div class="card">
+                  <div class="section-title">
+                    <h2 id="attendanceFormTitle">Upravit / vložit docházku</h2>
+                    <span class="small">jen admin</span>
+                  </div>
+
+                  <div style="margin-bottom:12px;">
+                    <label for="editAttendanceEmployee">Zaměstnanec</label>
+                    <select id="editAttendanceEmployee"></select>
+                  </div>
+
+                  <div>
+                    <label for="editAttendanceDate">Datum</label>
+                    <input id="editAttendanceDate" type="date" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="editAttendanceOffice">Místo</label>
+                    <select id="editAttendanceOffice">
+                      <option value="Osoblaha">Osoblaha</option>
+                      <option value="Hlinka">Hlinka</option>
+                      <option value="Slezské Pavlovice">Slezské Pavlovice</option>
+                      <option value="Hlavní kancelář">Hlavní kancelář</option>
+                      <option value="home office">home office</option>
+                      <option value="kancelář dle potřeby">kancelář dle potřeby</option>
+                    </select>
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="editAttendanceType">Typ</label>
+                    <select id="editAttendanceType">
+                      <option value="práce">práce</option>
+                      <option value="home office">home office</option>
+                      <option value="služební cesta">služební cesta</option>
+                    </select>
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="editAttendanceTimeFrom">Od</label>
+                    <input id="editAttendanceTimeFrom" type="time" step="1" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="editAttendanceTimeTo">Do</label>
+                    <input id="editAttendanceTimeTo" type="time" step="1" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="editAttendanceBreakMinutes">Přestávka (minuty)</label>
+                    <input id="editAttendanceBreakMinutes" type="number" min="0" step="1" />
+                  </div>
+
+                  <div class="actions" style="margin-top:14px;">
+                    <button id="insertAttendanceBtn" class="btn-success" type="button">Vložit ručně</button>
+                    <button id="saveAttendanceEditBtn" class="btn-primary" type="button">Uložit opravu</button>
+                    <button id="cancelAttendanceEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
+                  </div>
+
+                  <div id="attendanceEditMessage" class="message warn" style="margin-top:14px;">Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.</div>
                 </div>
 
-                <div class="stat">
-                  <div class="stat-label">Služební cesta</div>
-                  <div id="dashBusinessTrip" class="stat-value">0</div>
+                <div class="card">
+                  <div class="section-title">
+                    <h2 id="employeeFormTitle">Nový zaměstnanec</h2>
+                    <span class="small">jen admin</span>
+                  </div>
+
+                  <div>
+                    <label for="newEmployeeName">Jméno</label>
+                    <input id="newEmployeeName" type="text" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="newEmployeeEmail">E-mail</label>
+                    <input id="newEmployeeEmail" type="email" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="newEmployeeRole">Role</label>
+                    <select id="newEmployeeRole">
+                      <option value="employee">employee</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="newEmployeeOffices">Offices</label>
+                    <input id="newEmployeeOffices" type="text" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="newEmployeeWeekly">Úvazek / weekly</label>
+                    <input id="newEmployeeWeekly" type="text" placeholder="např. plný úvazek" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="newEmployeeLeaveDays">Dovolená dny</label>
+                    <input id="newEmployeeLeaveDays" type="number" min="0" step="1" value="20" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="newEmployeeLeaveHours">Dovolená hodiny</label>
+                    <input id="newEmployeeLeaveHours" type="number" min="0" step="1" value="160" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="newEmployeeActive">Aktivní</label>
+                    <select id="newEmployeeActive">
+                      <option value="true">ano</option>
+                      <option value="false">ne</option>
+                    </select>
+                  </div>
+
+                  <div class="actions" style="margin-top:14px;">
+                    <button id="createEmployeeBtn" class="btn-success" type="button">Přidat zaměstnance</button>
+                    <button id="cancelEditEmployeeBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
+                  </div>
+
+                  <div id="createEmployeeMessage" class="message warn" style="margin-top:14px;">Vyplň údaje a ulož.</div>
                 </div>
-
-                <div class="stat">
-                  <div class="stat-label">Dovolená</div>
-                  <div id="dashOnLeave" class="stat-value">0</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-admin">
-              <div class="card">
-                <div class="section-title">
-                  <h2>Kdo je dnes v práci a kde</h2>
-                  <span class="pill pill-admin">admin</span>
-                </div>
-                <div id="adminActiveWrap" class="empty-box">Načítám…</div>
-              </div>
-
-              <div class="card">
-                <div class="section-title">
-                  <h2>Dnešní docházka všech</h2>
-                  <span class="pill pill-admin">live přehled</span>
-                </div>
-                <div id="adminTodayWrap" class="empty-box">Načítám…</div>
-              </div>
-            </div>
-
-            <div class="grid grid-admin">
-              <div class="card">
-                <div class="section-title">
-                  <h2>Přehled dovolené</h2>
-                  <span class="small">jen admin</span>
-                </div>
-                <div id="adminLeaveWrap" class="empty-box">Načítám…</div>
-              </div>
-
-              <div class="card">
-                <div class="section-title">
-                  <h2>Zapsat dovolenou zaměstnanci</h2>
-                  <span class="small">jen admin</span>
-                </div>
-
-                <div>
-                  <label for="adminLeaveEmployee">Zaměstnanec</label>
-                  <select id="adminLeaveEmployee"></select>
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="adminLeaveDate">Datum dovolené</label>
-                  <input id="adminLeaveDate" type="date" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="adminLeaveHours">Počet hodin</label>
-                  <input id="adminLeaveHours" type="number" min="1" step="1" value="8" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="adminLeaveNote">Poznámka</label>
-                  <textarea id="adminLeaveNote"></textarea>
-                </div>
-
-                <div class="actions" style="margin-top:14px;">
-                  <button id="adminCreateLeaveBtn" class="btn-success" type="button">Zapsat dovolenou</button>
-                </div>
-
-                <div id="adminLeaveMessage" class="message warn" style="margin-top:14px;">Vyber zaměstnance, datum a hodiny.</div>
-              </div>
-            </div>
-
-            <div class="grid grid-admin">
-              <div class="card">
-                <div class="section-title">
-                  <h2>Export pro účetní</h2>
-                  <span class="small">souhrn po zaměstnancích</span>
-                </div>
-
-                <div>
-                  <label for="exportMonth">Měsíc</label>
-                  <input id="exportMonth" type="month" />
-                </div>
-
-                <div class="actions" style="margin-top:14px;">
-                  <button id="exportMonthBtn" class="btn-success" type="button">Export pro účetní</button>
-                </div>
-
-                <div id="exportMessage" class="message warn" style="margin-top:14px;">Vyber měsíc a klikni na export.</div>
-              </div>
-
-              <div class="card">
-                <div class="section-title">
-                  <h2 id="attendanceFormTitle">Upravit / vložit docházku</h2>
-                  <span class="small">jen admin</span>
-                </div>
-
-                <div style="margin-bottom:12px;">
-                  <label for="editAttendanceEmployee">Zaměstnanec</label>
-                  <select id="editAttendanceEmployee"></select>
-                </div>
-
-                <div>
-                  <label for="editAttendanceDate">Datum</label>
-                  <input id="editAttendanceDate" type="date" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="editAttendanceOffice">Místo</label>
-                  <select id="editAttendanceOffice">
-                    <option value="Osoblaha">Osoblaha</option>
-                    <option value="Hlinka">Hlinka</option>
-                    <option value="Slezské Pavlovice">Slezské Pavlovice</option>
-                    <option value="Hlavní kancelář">Hlavní kancelář</option>
-                    <option value="home office">home office</option>
-                    <option value="kancelář dle potřeby">kancelář dle potřeby</option>
-                  </select>
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="editAttendanceType">Typ</label>
-                  <select id="editAttendanceType">
-                    <option value="práce">práce</option>
-                    <option value="home office">home office</option>
-                    <option value="služební cesta">služební cesta</option>
-                  </select>
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="editAttendanceTimeFrom">Od</label>
-                  <input id="editAttendanceTimeFrom" type="time" step="1" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="editAttendanceTimeTo">Do</label>
-                  <input id="editAttendanceTimeTo" type="time" step="1" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="editAttendanceBreakMinutes">Přestávka (minuty)</label>
-                  <input id="editAttendanceBreakMinutes" type="number" min="0" step="1" />
-                </div>
-
-                <div class="actions" style="margin-top:14px;">
-                  <button id="insertAttendanceBtn" class="btn-success" type="button">Vložit ručně</button>
-                  <button id="saveAttendanceEditBtn" class="btn-primary" type="button">Uložit opravu</button>
-                  <button id="cancelAttendanceEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
-                </div>
-
-                <div id="attendanceEditMessage" class="message warn" style="margin-top:14px;">Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.</div>
-              </div>
-            </div>
-
-            <div class="grid grid-admin">
-              <div class="card">
-                <div class="section-title">
-                  <h2 id="employeeFormTitle">Nový zaměstnanec</h2>
-                  <span class="small">jen admin</span>
-                </div>
-
-                <div>
-                  <label for="newEmployeeName">Jméno</label>
-                  <input id="newEmployeeName" type="text" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="newEmployeeEmail">E-mail</label>
-                  <input id="newEmployeeEmail" type="email" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="newEmployeeRole">Role</label>
-                  <select id="newEmployeeRole">
-                    <option value="employee">employee</option>
-                    <option value="admin">admin</option>
-                  </select>
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="newEmployeeOffices">Offices</label>
-                  <input id="newEmployeeOffices" type="text" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="newEmployeeWeekly">Úvazek / weekly</label>
-                  <input id="newEmployeeWeekly" type="text" placeholder="např. plný úvazek" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="newEmployeeLeaveDays">Dovolená dny</label>
-                  <input id="newEmployeeLeaveDays" type="number" min="0" step="1" value="20" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="newEmployeeLeaveHours">Dovolená hodiny</label>
-                  <input id="newEmployeeLeaveHours" type="number" min="0" step="1" value="160" />
-                </div>
-
-                <div style="margin-top:12px;">
-                  <label for="newEmployeeActive">Aktivní</label>
-                  <select id="newEmployeeActive">
-                    <option value="true">ano</option>
-                    <option value="false">ne</option>
-                  </select>
-                </div>
-
-                <div class="actions" style="margin-top:14px;">
-                  <button id="createEmployeeBtn" class="btn-success" type="button">Přidat zaměstnance</button>
-                  <button id="cancelEditEmployeeBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
-                </div>
-
-                <div id="createEmployeeMessage" class="message warn" style="margin-top:14px;">Vyplň údaje a ulož.</div>
-              </div>
-
-              <div class="card employees-card">
-                <div class="section-title">
-                  <h2>Zaměstnanci</h2>
-                  <span class="small">přehled zaměstnanců</span>
-                </div>
-                <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
       </div>
     </div>
 
