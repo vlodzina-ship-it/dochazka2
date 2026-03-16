@@ -860,6 +860,14 @@
 
                 <div class="card">
                   <div class="section-title">
+                    <h2>⚠️ Kontrola chyb docházky</h2>
+                    <span class="small">otevřené směny a podezřelé záznamy</span>
+                  </div>
+                  <div id="attendanceIssuesWrap" class="empty-box">Načítám kontroly…</div>
+                </div>
+
+                <div class="card">
+                  <div class="section-title">
                     <h2>Přehled dovolené</h2>
                     <span class="small">jen admin</span>
                   </div>
@@ -1222,6 +1230,7 @@
     const adminActiveWrapEl = document.getElementById("adminActiveWrap");
     const adminTodayWrapEl = document.getElementById("adminTodayWrap");
     const adminLeaveWrapEl = document.getElementById("adminLeaveWrap");
+    const attendanceIssuesWrapEl = document.getElementById("attendanceIssuesWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
     const employeeSearchInputEl = document.getElementById("employeeSearchInput");
     const employeeRoleFilterEl = document.getElementById("employeeRoleFilter");
@@ -1783,6 +1792,97 @@
         .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "cs"));
     }
 
+    function buildAttendanceIssues(rows) {
+      const issues = [];
+
+      for (const row of rows || []) {
+        const employeeName = row.employee_name || "Neznámý zaměstnanec";
+        const dateText = row.date || "bez data";
+        const start = parseRowDateTime(row.date, row.time_from);
+        const end = parseRowDateTime(row.date, row.time_to);
+        const rawMinutes = start && end && end > start ? Math.round((end.getTime() - start.getTime()) / 60000) : 0;
+        const breakMinutes = Number(row.break_minutes || 0);
+
+        if (!row.time_to) {
+          issues.push({
+            severity: "err",
+            employee_name: employeeName,
+            date: dateText,
+            issue: "Otevřená směna",
+            detail: `Chybí čas odchodu. Od: ${row.time_from || "—"}`
+          });
+        }
+
+        if (rawMinutes > 12 * 60) {
+          issues.push({
+            severity: "err",
+            employee_name: employeeName,
+            date: dateText,
+            issue: "Směna delší než 12 hodin",
+            detail: `Délka směny ${formatWorkedMinutes(rawMinutes)}.`
+          });
+        }
+
+        if (rawMinutes >= 6 * 60 && breakMinutes <= 0) {
+          issues.push({
+            severity: "warn",
+            employee_name: employeeName,
+            date: dateText,
+            issue: "Chybí přestávka",
+            detail: `Směna je ${formatWorkedMinutes(rawMinutes)}, ale přestávka je 0 min.`
+          });
+        }
+      }
+
+      const groupedByEmployeeDate = new Map();
+      for (const row of rows || []) {
+        const key = `${row.employee_name || "?"}__${row.date || "?"}`;
+        groupedByEmployeeDate.set(key, (groupedByEmployeeDate.get(key) || 0) + 1);
+      }
+
+      for (const [key, count] of groupedByEmployeeDate.entries()) {
+        if (count > 1) {
+          const [employee_name, date] = key.split("__");
+          issues.push({
+            severity: "warn",
+            employee_name,
+            date,
+            issue: "Více záznamů v jednom dni",
+            detail: `Počet záznamů za den: ${count}. Zkontroluj, jestli nejde o duplicitní příchod.`
+          });
+        }
+      }
+
+      return issues.sort((a, b) => {
+        if (a.severity !== b.severity) return a.severity === "err" ? -1 : 1;
+        return String(b.date).localeCompare(String(a.date));
+      });
+    }
+
+    function renderAttendanceIssues(rows) {
+      const issues = buildAttendanceIssues(rows);
+      if (!issues.length) {
+        attendanceIssuesWrapEl.innerHTML = `<div class="empty-box">Nenalezeny žádné zjevné chyby v docházce.</div>`;
+        return;
+      }
+
+      attendanceIssuesWrapEl.innerHTML = renderSimpleTable(
+        [
+          {
+            label: "Priorita",
+            render: r => r.severity === "err"
+              ? `<span class="pill pill-inactive">chyba</span>`
+              : `<span class="pill pill-warn">pozor</span>`
+          },
+          { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name) },
+          { label: "Datum", render: r => escapeHtml(r.date) },
+          { label: "Problém", render: r => escapeHtml(r.issue) },
+          { label: "Detail", render: r => escapeHtml(r.detail) }
+        ],
+        issues
+      );
+    }
+
     function renderEmployeesTable() {
       filteredAdminEmployeesData = getFilteredEmployees();
       employeesWrapEl.innerHTML = renderSimpleTable(
@@ -1959,6 +2059,7 @@
       historyDaysValueEl.textContent = "0";
       adminActiveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminTodayWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
+      attendanceIssuesWrapEl.innerHTML = `<div class="empty-box">Načítám kontroly…</div>`;
       adminLeaveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminHistoryWrapEl.innerHTML = `<div class="empty-box">Vyber zaměstnance a měsíc.</div>`;
       setMessage(adminHistorySummaryEl, "Vyber zaměstnance a měsíc.", "warn");
@@ -2510,6 +2611,8 @@
         ],
         adminTodayAttendanceData
       );
+
+      renderAttendanceIssues(adminTodayAttendanceData);
 
       adminLeaveWrapEl.innerHTML = renderSimpleTable(
         [
