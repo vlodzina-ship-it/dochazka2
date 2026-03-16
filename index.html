@@ -743,6 +743,27 @@
             </div>
           </div>
 
+          <div id="timeSummaryCard" class="card">
+            <div class="section-title">
+              <h2>Souhrn hodin</h2>
+              <span id="timeSummaryLabel" class="small">dnes a aktuální měsíc</span>
+            </div>
+            <div class="grid grid-stats">
+              <div class="stat">
+                <div class="stat-label">Celkem dnes</div>
+                <div id="todayWorkedValue" class="stat-value">00:00</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Celkem měsíc</div>
+                <div id="monthWorkedSummaryValue" class="stat-value">00:00</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Přesčasy</div>
+                <div id="overtimeValue" class="stat-value">00:00</div>
+              </div>
+            </div>
+          </div>
+
           <div id="myAttendanceCard" class="card">
             <div class="section-title">
               <h2>Moje poslední docházka</h2>
@@ -1100,6 +1121,7 @@
 
     const employeeOnlyBlockEl = document.getElementById("employeeOnlyBlock");
     const myAttendanceCardEl = document.getElementById("myAttendanceCard");
+    const timeSummaryCardEl = document.getElementById("timeSummaryCard");
     const myAttendanceHistoryCardEl = document.getElementById("myAttendanceHistoryCard");
     const myMonthlySummaryCardEl = document.getElementById("myMonthlySummaryCard");
 
@@ -1140,6 +1162,10 @@
     const monthlyWorkedValueEl = document.getElementById("monthlyWorkedValue");
     const monthlyWorkDaysValueEl = document.getElementById("monthlyWorkDaysValue");
     const monthlyLeaveDaysValueEl = document.getElementById("monthlyLeaveDaysValue");
+    const timeSummaryLabelEl = document.getElementById("timeSummaryLabel");
+    const todayWorkedValueEl = document.getElementById("todayWorkedValue");
+    const monthWorkedSummaryValueEl = document.getElementById("monthWorkedSummaryValue");
+    const overtimeValueEl = document.getElementById("overtimeValue");
 
     const historyMonthEl = document.getElementById("historyMonth");
     const loadHistoryBtn = document.getElementById("loadHistoryBtn");
@@ -1385,6 +1411,10 @@
         historyRecordsValueEl.textContent = "0";
         historyWorkedValueEl.textContent = "00:00";
         historyDaysValueEl.textContent = "0";
+      todayWorkedValueEl.textContent = "00:00";
+      monthWorkedSummaryValueEl.textContent = "00:00";
+      overtimeValueEl.textContent = "00:00";
+      timeSummaryLabelEl.textContent = "dnes a aktuální měsíc";
         return;
       }
 
@@ -1486,9 +1516,56 @@
       );
     }
 
+    function getTodayWorkedMinutes(rows) {
+      const today = todayStr();
+      return (rows || []).filter((row) => row?.date === today).reduce((sum, row) => sum + getWorkedMinutes(row), 0);
+    }
+
+    function getExpectedMonthlyMinutes(employee, monthStr) {
+      const normalizedWeekly = normalizeText(employee?.weekly || "");
+      const uniqueWorkDays = new Set(
+        getAttendanceRowsForMonth(myAttendanceRows, monthStr)
+          .filter((row) => {
+            const type = normalizeText(row.type);
+            return type !== "dovolena" && type !== "vacation" && type !== "leave";
+          })
+          .map((row) => row.date)
+      ).size;
+
+      if (!uniqueWorkDays) return 0;
+      if (normalizedWeekly.includes("polovicni") || normalizedWeekly.includes("poloviční") || normalizedWeekly.includes("0.5")) return uniqueWorkDays * 4 * 60;
+      if (normalizedWeekly.includes("zkraceny") || normalizedWeekly.includes("zkrácený") || normalizedWeekly.includes("6h")) return uniqueWorkDays * 6 * 60;
+      return uniqueWorkDays * 8 * 60;
+    }
+
+    function renderTimeSummary() {
+      if (!currentEmployee || isAdmin) {
+        timeSummaryCardEl.classList.add("hidden");
+        timeSummaryLabelEl.textContent = "dnes a aktuální měsíc";
+        todayWorkedValueEl.textContent = "00:00";
+        monthWorkedSummaryValueEl.textContent = "00:00";
+        overtimeValueEl.textContent = "00:00";
+        return;
+      }
+
+      timeSummaryCardEl.classList.remove("hidden");
+      const month = currentMonthStr();
+      const monthlyRows = getAttendanceRowsForMonth(myAttendanceRows, month);
+      const todayWorkedMinutes = getTodayWorkedMinutes(myAttendanceRows);
+      const monthWorkedMinutes = monthlyRows.reduce((sum, row) => sum + getWorkedMinutes(row), 0);
+      const expectedMonthlyMinutes = getExpectedMonthlyMinutes(currentEmployee, month);
+      const overtimeMinutes = Math.max(0, monthWorkedMinutes - expectedMonthlyMinutes);
+
+      timeSummaryLabelEl.textContent = formatMonthLabel(month);
+      todayWorkedValueEl.textContent = formatWorkedMinutes(todayWorkedMinutes);
+      monthWorkedSummaryValueEl.textContent = formatWorkedMinutes(monthWorkedMinutes);
+      overtimeValueEl.textContent = formatWorkedMinutes(overtimeMinutes);
+    }
+
     function renderMonthlySummary() {
       if (!currentEmployee || isAdmin) {
         myMonthlySummaryCardEl.classList.add("hidden");
+        timeSummaryCardEl.classList.add("hidden");
         monthlySummaryLabelEl.textContent = "aktuální měsíc";
         monthlyWorkedValueEl.textContent = "—";
         monthlyWorkDaysValueEl.textContent = "—";
@@ -1497,6 +1574,7 @@
       }
 
       myMonthlySummaryCardEl.classList.remove("hidden");
+      timeSummaryCardEl.classList.remove("hidden");
       const summary = getMonthlySummary(myAttendanceRows);
       monthlySummaryLabelEl.textContent = formatMonthLabel(summary.month);
       monthlyWorkedValueEl.textContent = formatWorkedMinutes(summary.totalWorkedMinutes);
@@ -1895,7 +1973,8 @@
         myAttendanceRows = [];
         myOpenShift = null;
         renderMyAttendance();
-        renderMonthlySummary();
+      renderMonthlySummary();
+      renderTimeSummary();
         return;
       }
 
