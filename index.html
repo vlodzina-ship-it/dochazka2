@@ -2360,13 +2360,16 @@
         setMessage(exportMessageEl, "Vyber měsíc.", "err");
         return;
       }
-      setMessage(exportMessageEl, "Generuji export…", "warn");
+
+      setMessage(exportMessageEl, "Generuji export pro účetní…", "warn");
+
       const { data, error } = await supabaseClient.rpc("get_admin_month_summary", { p_month });
       if (error) {
         setMessage(exportMessageEl, "Chyba exportu: " + error.message, "err");
         return;
       }
-      const rows = (data || []).map(row => ({
+
+      const summaryRows = (data || []).map(row => ({
         "Zaměstnanec": row.employee_name || "",
         "E-mail": row.employee_email || "",
         "Měsíc": p_month,
@@ -2374,11 +2377,84 @@
         "Dovolená hodin": Number(row.leave_hours || 0),
         "Dovolená dnů": Number(row.leave_days || 0)
       }));
+
+      const employeeRows = (adminEmployeesData || []).map(row => ({
+        "ID": row.id ?? "",
+        "Jméno": row.name || "",
+        "E-mail": row.email || "",
+        "Role": row.role || "",
+        "Aktivní": row.active !== false ? "ano" : "ne",
+        "Offices": row.offices || "",
+        "Weekly": row.weekly || "",
+        "Dovolená dny": row.leave_days ?? "",
+        "Dovolená hodiny": row.leave_hours ?? ""
+      }));
+
+      const exportEmployees = (adminEmployeesData || []).filter(e => !(e.role === "admin" || e.is_admin === true));
+      const attendanceResults = await Promise.all(
+        exportEmployees.map(async (employee) => {
+          const result = await supabaseClient.rpc("get_attendance_by_month", {
+            p_employee_id: employee.id,
+            p_month
+          });
+          return {
+            employee,
+            rows: result.data || [],
+            error: result.error || null
+          };
+        })
+      );
+
+      const attendanceRows = [];
+      const attendanceErrors = [];
+
+      for (const result of attendanceResults) {
+        if (result.error) {
+          attendanceErrors.push(`${result.employee.name || result.employee.email || result.employee.id}: ${result.error.message}`);
+          continue;
+        }
+
+        for (const row of result.rows) {
+          attendanceRows.push({
+            "Zaměstnanec": result.employee.name || "",
+            "E-mail": result.employee.email || "",
+            "Datum": row.date || "",
+            "Od": row.time_from || "",
+            "Do": row.time_to || "",
+            "Přestávka (min)": getAutoBreakMinutes(row),
+            "Odpracováno": formatWorkedMinutes(getWorkedMinutes(row)),
+            "Typ": row.type || "",
+            "Místo": row.office || ""
+          });
+        }
+      }
+
+      attendanceRows.sort((a, b) => {
+        if (a["Zaměstnanec"] !== b["Zaměstnanec"]) {
+          return String(a["Zaměstnanec"]).localeCompare(String(b["Zaměstnanec"]), "cs");
+        }
+        return String(b["Datum"]).localeCompare(String(a["Datum"]));
+      });
+
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(rows);
-      XLSX.utils.book_append_sheet(wb, ws, "Souhrn");
-      XLSX.writeFile(wb, `dochazka_${p_month}.xlsx`);
-      setMessage(exportMessageEl, `Export hotový: dochazka_${p_month}.xlsx`, "ok");
+
+      const wsSummary = XLSX.utils.json_to_sheet(summaryRows.length ? summaryRows : [{ "Zaměstnanec": "", "E-mail": "", "Měsíc": p_month, "Odpracováno hodin": 0, "Dovolená hodin": 0, "Dovolená dnů": 0 }]);
+      const wsEmployees = XLSX.utils.json_to_sheet(employeeRows.length ? employeeRows : [{ "ID": "", "Jméno": "", "E-mail": "", "Role": "", "Aktivní": "", "Offices": "", "Weekly": "", "Dovolená dny": "", "Dovolená hodiny": "" }]);
+      const wsAttendance = XLSX.utils.json_to_sheet(attendanceRows.length ? attendanceRows : [{ "Zaměstnanec": "", "E-mail": "", "Datum": "", "Od": "", "Do": "", "Přestávka (min)": "", "Odpracováno": "", "Typ": "", "Místo": "" }]);
+
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Souhrn");
+      XLSX.utils.book_append_sheet(wb, wsEmployees, "Zaměstnanci");
+      XLSX.utils.book_append_sheet(wb, wsAttendance, "Docházka");
+
+      const filename = `dochazka_${p_month}.xlsx`;
+      XLSX.writeFile(wb, filename);
+
+      if (attendanceErrors.length) {
+        setMessage(exportMessageEl, `Export hotový: ${filename}
+Některé záznamy docházky se nepodařilo načíst: ${attendanceErrors.join(" | ")}`, "warn");
+      } else {
+        setMessage(exportMessageEl, `Export hotový: ${filename} (listy: Souhrn, Zaměstnanci, Docházka)`, "ok");
+      }
     }
 
     async function createOrUpdateEmployee() {
