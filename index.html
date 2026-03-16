@@ -120,6 +120,10 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .grid-form-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     label {
       display: block;
       margin-bottom: 5px;
@@ -383,7 +387,8 @@
     @media (max-width: 1060px) {
       .grid-main,
       .grid-stats,
-      .grid-admin {
+      .grid-admin,
+      .grid-form-2 {
         grid-template-columns: 1fr;
       }
 
@@ -597,6 +602,64 @@
             </div>
 
             <div class="card">
+              <div class="section-title">
+                <h2>Ruční zápis docházky</h2>
+                <span class="small">pro doplnění zpětně</span>
+              </div>
+
+              <div class="grid grid-form-2">
+                <div>
+                  <label for="manualAttendanceDate">Datum</label>
+                  <input id="manualAttendanceDate" type="date" />
+                </div>
+
+                <div>
+                  <label for="manualAttendanceOffice">Místo práce</label>
+                  <select id="manualAttendanceOffice">
+                    <option value="Osoblaha">Osoblaha</option>
+                    <option value="Hlinka">Hlinka</option>
+                    <option value="Slezské Pavlovice">Slezské Pavlovice</option>
+                    <option value="Hlavní kancelář">Hlavní kancelář</option>
+                    <option value="home office">home office</option>
+                    <option value="kancelář dle potřeby">kancelář dle potřeby</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="manualAttendanceType">Typ</label>
+                  <select id="manualAttendanceType">
+                    <option value="práce">práce</option>
+                    <option value="home office">home office</option>
+                    <option value="služební cesta">služební cesta</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="manualAttendanceBreakMinutes">Přestávka (minuty)</label>
+                  <input id="manualAttendanceBreakMinutes" type="number" min="0" step="1" value="30" />
+                </div>
+
+                <div>
+                  <label for="manualAttendanceTimeFrom">Čas od</label>
+                  <input id="manualAttendanceTimeFrom" type="time" step="1" />
+                </div>
+
+                <div>
+                  <label for="manualAttendanceTimeTo">Čas do</label>
+                  <input id="manualAttendanceTimeTo" type="time" step="1" />
+                </div>
+              </div>
+
+              <div class="actions" style="margin-top:14px;">
+                <button id="createManualAttendanceBtn" class="btn-success" type="button">Zapsat ručně</button>
+              </div>
+
+              <div id="manualAttendanceMessage" class="message warn" style="margin-top:14px;">
+                Vyplň datum a čas. Hodí se pro zpětné doplnění docházky.
+              </div>
+            </div>
+
+            <div class="card">
               <h2>Zapsat dovolenou</h2>
 
               <div>
@@ -770,7 +833,7 @@
 
               <div class="card">
                 <div class="section-title">
-                  <h2 id="attendanceFormTitle">Upravit docházku</h2>
+                  <h2 id="attendanceFormTitle">Upravit / vložit docházku</h2>
                   <span class="small">jen admin</span>
                 </div>
 
@@ -821,11 +884,14 @@
                 </div>
 
                 <div class="actions" style="margin-top:14px;">
+                  <button id="insertAttendanceBtn" class="btn-success" type="button">Vložit ručně</button>
                   <button id="saveAttendanceEditBtn" class="btn-primary" type="button">Uložit opravu</button>
                   <button id="cancelAttendanceEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
                 </div>
 
-                <div id="attendanceEditMessage" class="message warn" style="margin-top:14px;">Klikni v tabulce docházky na Upravit.</div>
+                <div id="attendanceEditMessage" class="message warn" style="margin-top:14px;">
+                  Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.
+                </div>
               </div>
             </div>
 
@@ -936,6 +1002,7 @@
     const loginMessageEl = document.getElementById("loginMessage");
     const passwordResetMessageEl = document.getElementById("passwordResetMessage");
     const attendanceMessageEl = document.getElementById("attendanceMessage");
+    const manualAttendanceMessageEl = document.getElementById("manualAttendanceMessage");
     const myLeaveMessageEl = document.getElementById("myLeaveMessage");
     const adminLeaveMessageEl = document.getElementById("adminLeaveMessage");
     const exportMessageEl = document.getElementById("exportMessage");
@@ -965,6 +1032,14 @@
     const employeeOfficesInfoEl = document.getElementById("employeeOfficesInfo");
     const checkInBtn = document.getElementById("checkInBtn");
     const checkOutBtn = document.getElementById("checkOutBtn");
+
+    const manualAttendanceDateEl = document.getElementById("manualAttendanceDate");
+    const manualAttendanceOfficeEl = document.getElementById("manualAttendanceOffice");
+    const manualAttendanceTypeEl = document.getElementById("manualAttendanceType");
+    const manualAttendanceBreakMinutesEl = document.getElementById("manualAttendanceBreakMinutes");
+    const manualAttendanceTimeFromEl = document.getElementById("manualAttendanceTimeFrom");
+    const manualAttendanceTimeToEl = document.getElementById("manualAttendanceTimeTo");
+    const createManualAttendanceBtn = document.getElementById("createManualAttendanceBtn");
 
     const myLeaveDateEl = document.getElementById("myLeaveDate");
     const myLeaveHoursEl = document.getElementById("myLeaveHours");
@@ -1001,6 +1076,7 @@
     const editAttendanceTimeFromEl = document.getElementById("editAttendanceTimeFrom");
     const editAttendanceTimeToEl = document.getElementById("editAttendanceTimeTo");
     const editAttendanceBreakMinutesEl = document.getElementById("editAttendanceBreakMinutes");
+    const insertAttendanceBtn = document.getElementById("insertAttendanceBtn");
     const saveAttendanceEditBtn = document.getElementById("saveAttendanceEditBtn");
     const cancelAttendanceEditBtn = document.getElementById("cancelAttendanceEditBtn");
 
@@ -1301,18 +1377,32 @@
 
     function resetAttendanceEditForm() {
       editAttendanceId = null;
-      attendanceFormTitleEl.textContent = "Upravit docházku";
+      attendanceFormTitleEl.textContent = "Upravit / vložit docházku";
       if (editAttendanceEmployeeEl.options.length > 0) {
         editAttendanceEmployeeEl.selectedIndex = 0;
       }
-      editAttendanceDateEl.value = "";
+      editAttendanceDateEl.value = todayStr();
       editAttendanceOfficeEl.value = "Osoblaha";
       editAttendanceTypeEl.value = "práce";
       editAttendanceTimeFromEl.value = "";
       editAttendanceTimeToEl.value = "";
       editAttendanceBreakMinutesEl.value = "30";
       cancelAttendanceEditBtn.classList.add("hidden");
-      setMessage(attendanceEditMessageEl, "Klikni v tabulce docházky na Upravit.", "warn");
+      setMessage(
+        attendanceEditMessageEl,
+        "Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.",
+        "warn"
+      );
+    }
+
+    function resetManualAttendanceForm() {
+      manualAttendanceDateEl.value = todayStr();
+      manualAttendanceOfficeEl.value = officeEl.value || "Osoblaha";
+      manualAttendanceTypeEl.value = attendanceTypeEl.value || "práce";
+      manualAttendanceBreakMinutesEl.value = breakMinutesEl.value || "30";
+      manualAttendanceTimeFromEl.value = "";
+      manualAttendanceTimeToEl.value = "";
+      setMessage(manualAttendanceMessageEl, "Vyplň datum a čas. Hodí se pro zpětné doplnění docházky.", "warn");
     }
 
     function fillAttendanceFormForEdit(row) {
@@ -1385,22 +1475,14 @@
       exportMonthEl.value = currentMonthStr();
       sessionTextEl.textContent = "Nikdo není přihlášen.";
 
-      editAttendanceId = null;
-      attendanceFormTitleEl.textContent = "Upravit docházku";
-      editAttendanceDateEl.value = "";
-      editAttendanceOfficeEl.value = "Osoblaha";
-      editAttendanceTypeEl.value = "práce";
-      editAttendanceTimeFromEl.value = "";
-      editAttendanceTimeToEl.value = "";
-      editAttendanceBreakMinutesEl.value = "30";
-      cancelAttendanceEditBtn.classList.add("hidden");
+      resetAttendanceEditForm();
+      resetManualAttendanceForm();
 
       setMessage(attendanceMessageEl, "Přihlas se a načti docházku.", "warn");
       setMessage(myLeaveMessageEl, "Vyber datum a počet hodin.", "warn");
       setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a hodiny.", "warn");
       setMessage(exportMessageEl, "Vyber měsíc a klikni na export.", "warn");
       setMessage(passwordResetMessageEl, "Zadej nové heslo.", "warn");
-      setMessage(attendanceEditMessageEl, "Klikni v tabulce docházky na Upravit.", "warn");
 
       debugLog("renderLoggedOut");
     }
@@ -1502,6 +1584,10 @@
 
       employeeOfficesInfoEl.value = currentEmployee.offices || "";
       updateRoleVisibility();
+
+      if (!isAdmin) {
+        manualAttendanceOfficeEl.value = currentEmployee.offices?.split(",")[0]?.trim() || manualAttendanceOfficeEl.value;
+      }
     }
 
     async function loadMyAttendance() {
@@ -1623,6 +1709,44 @@
 
       await loadAllData();
       setMessage(attendanceMessageEl, "Odchod zapsán.", "ok");
+    }
+
+    async function createMyManualAttendance() {
+      const p_date = manualAttendanceDateEl.value;
+      const p_office = manualAttendanceOfficeEl.value;
+      const p_type = manualAttendanceTypeEl.value;
+      const p_time_from = manualAttendanceTimeFromEl.value;
+      const p_time_to = manualAttendanceTimeToEl.value;
+      const p_break_minutes = Number(manualAttendanceBreakMinutesEl.value || 0);
+
+      if (!p_date || !p_office || !p_type || !p_time_from) {
+        setMessage(manualAttendanceMessageEl, "Vyplň datum, místo, typ a čas od.", "err");
+        return;
+      }
+
+      setMessage(manualAttendanceMessageEl, "Zapisuji ruční docházku…", "warn");
+
+      const { error } = await supabaseClient.rpc("create_my_attendance_manual", {
+        p_date,
+        p_office,
+        p_type,
+        p_time_from,
+        p_time_to,
+        p_break_minutes
+      });
+
+      if (error) {
+        setMessage(
+          manualAttendanceMessageEl,
+          "Chyba ručního zápisu: " + error.message + " (zkontroluj, že v Supabase existuje RPC create_my_attendance_manual)",
+          "err"
+        );
+        return;
+      }
+
+      resetManualAttendanceForm();
+      await loadAllData();
+      setMessage(manualAttendanceMessageEl, "Docházka byla ručně zapsána.", "ok");
     }
 
     async function createMyLeave() {
@@ -1787,9 +1911,49 @@
       setMessage(createEmployeeMessageEl, "Zaměstnanec byl vytvořen.", "ok");
     }
 
+    async function insertAttendanceManual() {
+      const p_employee_id = Number(editAttendanceEmployeeEl.value || 0);
+      const p_date = editAttendanceDateEl.value;
+      const p_office = editAttendanceOfficeEl.value;
+      const p_type = editAttendanceTypeEl.value;
+      const p_time_from = editAttendanceTimeFromEl.value;
+      const p_time_to = editAttendanceTimeToEl.value;
+      const p_break_minutes = Number(editAttendanceBreakMinutesEl.value || 0);
+
+      if (!p_employee_id || !p_date || !p_office || !p_type || !p_time_from) {
+        setMessage(attendanceEditMessageEl, "Vyber zaměstnance a vyplň datum, místo, typ a čas od.", "err");
+        return;
+      }
+
+      setMessage(attendanceEditMessageEl, "Vkládám nový záznam docházky…", "warn");
+
+      const { error } = await supabaseClient.rpc("admin_insert_attendance", {
+        p_employee_id,
+        p_date,
+        p_office,
+        p_type,
+        p_time_from,
+        p_time_to,
+        p_break_minutes
+      });
+
+      if (error) {
+        setMessage(
+          attendanceEditMessageEl,
+          "Chyba při vložení docházky: " + error.message,
+          "err"
+        );
+        return;
+      }
+
+      resetAttendanceEditForm();
+      await loadAllData();
+      setMessage(attendanceEditMessageEl, "Nový záznam docházky byl vložen.", "ok");
+    }
+
     async function saveAttendanceEdit() {
       if (!editAttendanceId) {
-        setMessage(attendanceEditMessageEl, "Nejdřív vyber řádek docházky tlačítkem Upravit.", "err");
+        setMessage(attendanceEditMessageEl, "Pro úpravu nejdřív vyber řádek tlačítkem Upravit. Pro nový záznam použij Vložit ručně.", "err");
         return;
       }
 
@@ -1992,11 +2156,13 @@
     saveNewPasswordBtn.addEventListener("click", saveNewPassword);
     checkInBtn.addEventListener("click", doCheckIn);
     checkOutBtn.addEventListener("click", doCheckOut);
+    createManualAttendanceBtn.addEventListener("click", createMyManualAttendance);
     createMyLeaveBtn.addEventListener("click", createMyLeave);
     adminCreateLeaveBtn.addEventListener("click", adminCreateLeave);
     exportMonthBtn.addEventListener("click", exportMonthSummary);
     createEmployeeBtn.addEventListener("click", createOrUpdateEmployee);
     cancelEditEmployeeBtn.addEventListener("click", resetEmployeeForm);
+    insertAttendanceBtn.addEventListener("click", insertAttendanceManual);
     saveAttendanceEditBtn.addEventListener("click", saveAttendanceEdit);
     cancelAttendanceEditBtn.addEventListener("click", resetAttendanceEditForm);
 
@@ -2058,6 +2224,7 @@
       exportMonthEl.value = currentMonthStr();
       myLeaveDateEl.value = todayStr();
       adminLeaveDateEl.value = todayStr();
+      manualAttendanceDateEl.value = todayStr();
 
       const hash = window.location.hash || "";
       const search = window.location.search || "";
