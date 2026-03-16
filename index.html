@@ -250,6 +250,18 @@
       color: #8a6508;
     }
 
+    .pill-active {
+      background: rgba(30, 157, 100, 0.14);
+      border: 1px solid rgba(30, 157, 100, 0.28);
+      color: #146c46;
+    }
+
+    .pill-inactive {
+      background: rgba(214, 82, 82, 0.14);
+      border: 1px solid rgba(214, 82, 82, 0.28);
+      color: #9f2f2f;
+    }
+
     .type-badge {
       display: inline-block;
       padding: 4px 8px;
@@ -352,12 +364,31 @@
       min-height: unset;
     }
 
+    .employees-table-wrap th:nth-child(1),
+    .employees-table-wrap td:nth-child(1),
     .employees-table-wrap th:nth-child(2),
     .employees-table-wrap td:nth-child(2),
-    .employees-table-wrap th:nth-child(3),
-    .employees-table-wrap td:nth-child(3) {
+    .employees-table-wrap th:nth-child(5),
+    .employees-table-wrap td:nth-child(5) {
       white-space: normal;
       word-break: break-word;
+    }
+
+    .employees-table-wrap tbody tr:hover td {
+      background: rgba(88, 124, 255, 0.05);
+    }
+
+    .employees-toolbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.2fr) 160px 160px;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: end;
+    }
+
+    .employees-toolbar .toolbar-field {
+      display: grid;
+      gap: 5px;
     }
 
     th, td {
@@ -438,6 +469,7 @@
       input, select, textarea, button { font-size: 16px; }
       table { min-width: 620px; }
       th, td { padding: 6px; font-size: 12px; }
+      .employees-toolbar { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -772,6 +804,30 @@
                     <h2>Zaměstnanci</h2>
                     <span class="small">přehled zaměstnanců</span>
                   </div>
+
+                  <div class="employees-toolbar">
+                    <div class="toolbar-field">
+                      <label for="employeeSearchInput">Hledat</label>
+                      <input id="employeeSearchInput" type="text" placeholder="jméno, e-mail, kancelář" />
+                    </div>
+                    <div class="toolbar-field">
+                      <label for="employeeRoleFilter">Role</label>
+                      <select id="employeeRoleFilter">
+                        <option value="all">všechny</option>
+                        <option value="employee">employee</option>
+                        <option value="admin">admin</option>
+                      </select>
+                    </div>
+                    <div class="toolbar-field">
+                      <label for="employeeActiveFilter">Stav</label>
+                      <select id="employeeActiveFilter">
+                        <option value="all">všichni</option>
+                        <option value="active">aktivní</option>
+                        <option value="inactive">neaktivní</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
                 </div>
               </div>
@@ -1040,6 +1096,9 @@
     const adminTodayWrapEl = document.getElementById("adminTodayWrap");
     const adminLeaveWrapEl = document.getElementById("adminLeaveWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
+    const employeeSearchInputEl = document.getElementById("employeeSearchInput");
+    const employeeRoleFilterEl = document.getElementById("employeeRoleFilter");
+    const employeeActiveFilterEl = document.getElementById("employeeActiveFilter");
 
     const dashTotalEmployeesEl = document.getElementById("dashTotalEmployees");
     const dashAtWorkEl = document.getElementById("dashAtWork");
@@ -1088,6 +1147,7 @@
     let isAdmin = false;
 
     let adminEmployeesData = [];
+    let filteredAdminEmployeesData = [];
     let adminTodayAttendanceData = [];
     let adminLeaveData = [];
     let editEmployeeId = null;
@@ -1319,6 +1379,60 @@
       `;
     }
 
+    function renderRoleBadge(role) {
+      const normalized = normalizeText(role);
+      if (normalized === "admin") {
+        return `<span class="pill pill-admin">admin</span>`;
+      }
+      return `<span class="pill pill-employee">employee</span>`;
+    }
+
+    function renderActiveBadge(active) {
+      return active
+        ? `<span class="pill pill-active">aktivní</span>`
+        : `<span class="pill pill-inactive">neaktivní</span>`;
+    }
+
+    function getFilteredEmployees() {
+      const search = normalizeText(employeeSearchInputEl?.value || "");
+      const roleFilter = employeeRoleFilterEl?.value || "all";
+      const activeFilter = employeeActiveFilterEl?.value || "all";
+
+      return [...adminEmployeesData]
+        .filter((employee) => {
+          if (roleFilter !== "all" && String(employee.role || "") !== roleFilter) return false;
+          if (activeFilter === "active" && !(employee.active !== false)) return false;
+          if (activeFilter === "inactive" && employee.active !== false) return false;
+          if (!search) return true;
+
+          const haystack = normalizeText([
+            employee.name,
+            employee.email,
+            employee.offices,
+            employee.role
+          ].join(" "));
+
+          return haystack.includes(search);
+        })
+        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "cs"));
+    }
+
+    function renderEmployeesTable() {
+      filteredAdminEmployeesData = getFilteredEmployees();
+
+      employeesWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "Jméno", render: r => escapeHtml(r.name || "") },
+          { label: "E-mail", render: r => escapeHtml(r.email || "") },
+          { label: "Role", render: r => renderRoleBadge(r.role || "employee") },
+          { label: "Stav", render: r => renderActiveBadge(r.active !== false) },
+          { label: "Offices", render: r => escapeHtml(r.offices || "—") },
+          { label: "Akce", render: r => `<button type="button" class="btn-secondary edit-employee-btn" data-id="${r.id}">Upravit</button>` }
+        ],
+        filteredAdminEmployeesData
+      ).replace('<div class="table-wrap">', '<div class="table-wrap employees-table-wrap">');
+    }
+
     function resetEmployeeForm() {
       editEmployeeId = null;
       employeeFormTitleEl.textContent = "Nový zaměstnanec";
@@ -1487,6 +1601,9 @@
       adminTodayWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminLeaveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       employeesWrapEl.innerHTML = `<div class="empty-box">Načítám zaměstnance…</div>`;
+      if (employeeSearchInputEl) employeeSearchInputEl.value = "";
+      if (employeeRoleFilterEl) employeeRoleFilterEl.value = "all";
+      if (employeeActiveFilterEl) employeeActiveFilterEl.value = "all";
       adminLeaveEmployeeEl.innerHTML = "";
       editAttendanceEmployeeEl.innerHTML = "";
       exportMonthEl.value = currentMonthStr();
@@ -2110,17 +2227,7 @@
         adminLeaveData
       );
 
-      employeesWrapEl.innerHTML = renderSimpleTable(
-        [
-          { label: "Jméno", render: r => escapeHtml(r.name || "") },
-          { label: "E-mail", render: r => escapeHtml(r.email || "") },
-          { label: "Role", render: r => escapeHtml(r.role || "") },
-          { label: "Aktivní", render: r => escapeHtml(String(!!r.active)) },
-          { label: "Offices", render: r => escapeHtml(r.offices || "—") },
-          { label: "Akce", render: r => `<button type="button" class="btn-secondary edit-employee-btn" data-id="${r.id}">Upravit</button>` }
-        ],
-        adminEmployeesData
-      ).replace('<div class="table-wrap">', '<div class="table-wrap employees-table-wrap">');
+      renderEmployeesTable();
     }
 
     async function loadAllData() {
@@ -2175,6 +2282,9 @@
     adminCreateLeaveBtn.addEventListener("click", adminCreateLeave);
     exportMonthBtn.addEventListener("click", exportMonthSummary);
     createEmployeeBtn.addEventListener("click", createOrUpdateEmployee);
+    employeeSearchInputEl?.addEventListener("input", renderEmployeesTable);
+    employeeRoleFilterEl?.addEventListener("change", renderEmployeesTable);
+    employeeActiveFilterEl?.addEventListener("change", renderEmployeesTable);
     cancelEditEmployeeBtn.addEventListener("click", resetEmployeeForm);
     insertAttendanceBtn.addEventListener("click", insertAttendanceManual);
     saveAttendanceEditBtn.addEventListener("click", saveAttendanceEdit);
