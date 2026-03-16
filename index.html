@@ -471,7 +471,34 @@
       th, td { padding: 6px; font-size: 12px; }
       .employees-toolbar { grid-template-columns: 1fr; }
     }
-  </style>
+  
+    /* Employees table visual improvements */
+    .employees-table-wrap table thead th {
+      background: #e9eefc;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .employees-table-wrap tbody tr:nth-child(even) td {
+      background: rgba(0,0,0,0.015);
+    }
+
+    .employees-table-wrap tbody tr:hover td {
+      background: rgba(88,124,255,0.08);
+    }
+
+    .employees-table-wrap .btn-secondary {
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+
+    .employees-table-wrap .btn-secondary:hover {
+      background: #587cff;
+      color: #fff;
+    }
+
+</style>
 </head>
 <body>
   <div class="container">
