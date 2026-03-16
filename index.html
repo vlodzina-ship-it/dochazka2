@@ -960,6 +960,26 @@
 
                 <div class="card">
                   <div class="section-title">
+                    <h2>Uzávěrka měsíce</h2>
+                    <span class="small">zamčení minulých období</span>
+                  </div>
+
+                  <div>
+                    <label for="lockMonth">Měsíc</label>
+                    <input id="lockMonth" type="month" />
+                  </div>
+
+                  <div class="actions" style="margin-top:14px;">
+                    <button id="checkLockBtn" class="btn-secondary" type="button">Zjistit stav</button>
+                    <button id="lockMonthBtn" class="btn-danger" type="button">Zamknout</button>
+                    <button id="unlockMonthBtn" class="btn-success" type="button">Odemknout</button>
+                  </div>
+
+                  <div id="lockMonthMessage" class="message warn" style="margin-top:14px;">Vyber měsíc a zjisti stav uzávěrky.</div>
+                </div>
+
+                <div class="card">
+                  <div class="section-title">
                     <h2>Export pro účetní</h2>
                     <span class="small">souhrn po zaměstnancích</span>
                   </div>
@@ -1224,6 +1244,12 @@
     const adminLoadHistoryBtn = document.getElementById("adminLoadHistoryBtn");
     const adminHistoryWrapEl = document.getElementById("adminHistoryWrap");
 
+    const lockMonthEl = document.getElementById("lockMonth");
+    const checkLockBtn = document.getElementById("checkLockBtn");
+    const lockMonthBtn = document.getElementById("lockMonthBtn");
+    const unlockMonthBtn = document.getElementById("unlockMonthBtn");
+    const lockMonthMessageEl = document.getElementById("lockMonthMessage");
+
     const exportMonthEl = document.getElementById("exportMonth");
     const exportMonthBtn = document.getElementById("exportMonthBtn");
 
@@ -1303,6 +1329,15 @@
       return `${yyyy}-${mm}`;
     }
 
+    function previousMonthStr() {
+      const d = new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth() - 1);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      return `${yyyy}-${mm}`;
+    }
+
     function fmtNumber(value) {
       if (value === null || value === undefined || value === "") return "0";
       const num = Number(value);
@@ -1355,6 +1390,10 @@
       if (!monthStr || !monthStr.includes("-")) return "aktuální měsíc";
       const [year, month] = monthStr.split("-");
       return `${month}.${year}`;
+    }
+
+    function monthFromDateStr(dateStr) {
+      return String(dateStr || "").slice(0, 7);
     }
 
     function normalizeText(value) {
@@ -1479,6 +1518,65 @@
       if (error) throw error;
       myAttendanceHistoryRows = Array.isArray(data) ? data : [];
       renderAttendanceHistory();
+    }
+
+    async function getMonthLockStatus(monthStr) {
+      const { data, error } = await supabaseClient.rpc("is_attendance_month_locked", {
+        p_month: monthStr
+      });
+      if (error) throw error;
+      return !!data;
+    }
+
+    async function ensureMonthUnlockedOrThrow(dateStr) {
+      const monthStr = monthFromDateStr(dateStr);
+      if (!monthStr) return;
+      const isLocked = await getMonthLockStatus(monthStr);
+      if (isLocked) {
+        throw new Error(`Měsíc ${formatMonthLabel(monthStr)} je uzamčený.`);
+      }
+    }
+
+    async function loadAttendanceLockStatus() {
+      if (!isAdmin) return;
+      const monthStr = lockMonthEl.value;
+      if (!monthStr) {
+        setMessage(lockMonthMessageEl, "Vyber měsíc.", "err");
+        return;
+      }
+      try {
+        const isLocked = await getMonthLockStatus(monthStr);
+        setMessage(
+          lockMonthMessageEl,
+          isLocked ? `Měsíc ${formatMonthLabel(monthStr)} je zamčený.` : `Měsíc ${formatMonthLabel(monthStr)} není zamčený.`,
+          isLocked ? "err" : "ok"
+        );
+      } catch (error) {
+        setMessage(lockMonthMessageEl, "Chyba načítání uzávěrky: " + error.message, "err");
+      }
+    }
+
+    async function setAttendanceLockState(locked) {
+      if (!isAdmin) return;
+      const monthStr = lockMonthEl.value;
+      if (!monthStr) {
+        setMessage(lockMonthMessageEl, "Vyber měsíc.", "err");
+        return;
+      }
+      try {
+        const { error } = await supabaseClient.rpc("set_attendance_month_lock", {
+          p_month: monthStr,
+          p_locked: locked
+        });
+        if (error) throw error;
+        setMessage(
+          lockMonthMessageEl,
+          locked ? `Měsíc ${formatMonthLabel(monthStr)} byl zamčen.` : `Měsíc ${formatMonthLabel(monthStr)} byl odemčen.`,
+          locked ? "err" : "ok"
+        );
+      } catch (error) {
+        setMessage(lockMonthMessageEl, "Chyba při změně uzávěrky: " + error.message, "err");
+      }
     }
 
     async function loadAdminAttendanceHistory() {
@@ -1871,6 +1969,7 @@
       adminLeaveEmployeeEl.innerHTML = "";
       adminHistoryEmployeeEl.innerHTML = "";
       editAttendanceEmployeeEl.innerHTML = "";
+      lockMonthEl.value = previousMonthStr();
       exportMonthEl.value = currentMonthStr();
       if (adminHistoryMonthEl) adminHistoryMonthEl.value = currentMonthStr();
       sessionTextEl.textContent = isPasswordRecoveryFlow ? "Probíhá reset hesla." : "Nikdo není přihlášen.";
@@ -1881,6 +1980,7 @@
       setMessage(myLeaveMessageEl, "Vyber datum a počet hodin.", "warn");
       setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a hodiny.", "warn");
       setMessage(exportMessageEl, "Vyber měsíc a klikni na export.", "warn");
+      setMessage(lockMonthMessageEl, "Vyber měsíc a zjisti stav uzávěrky.", "warn");
       setMessage(passwordResetMessageEl, "Zadej nové heslo.", "warn");
     }
 
@@ -2107,6 +2207,13 @@
         return;
       }
 
+      try {
+        await ensureMonthUnlockedOrThrow(p_date);
+      } catch (error) {
+        setMessage(manualAttendanceMessageEl, error.message, "err");
+        return;
+      }
+
       setMessage(manualAttendanceMessageEl, "Zapisuji ruční docházku…", "warn");
       const { error } = await supabaseClient.rpc("create_my_attendance_manual", {
         p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes
@@ -2128,6 +2235,13 @@
         setMessage(myLeaveMessageEl, "Vyber datum a počet hodin.", "err");
         return;
       }
+      try {
+        await ensureMonthUnlockedOrThrow(p_date);
+      } catch (error) {
+        setMessage(myLeaveMessageEl, error.message, "err");
+        return;
+      }
+
       setMessage(myLeaveMessageEl, "Zapisuji dovolenou…", "warn");
       const { error } = await supabaseClient.rpc("create_my_leave", { p_date, p_hours, p_note });
       if (error) {
@@ -2148,6 +2262,13 @@
       const p_note = adminLeaveNoteEl.value.trim();
       if (!p_employee_id || !p_date || !p_hours) {
         setMessage(adminLeaveMessageEl, "Vyber zaměstnance, datum a počet hodin.", "err");
+        return;
+      }
+
+      try {
+        await ensureMonthUnlockedOrThrow(p_date);
+      } catch (error) {
+        setMessage(adminLeaveMessageEl, error.message, "err");
         return;
       }
 
@@ -2263,6 +2384,13 @@
         return;
       }
 
+      try {
+        await ensureMonthUnlockedOrThrow(p_date);
+      } catch (error) {
+        setMessage(attendanceEditMessageEl, error.message, "err");
+        return;
+      }
+
       setMessage(attendanceEditMessageEl, "Vkládám nový záznam docházky…", "warn");
       const { error } = await supabaseClient.rpc("admin_insert_attendance", {
         p_employee_id, p_date, p_office, p_type, p_time_from, p_time_to, p_break_minutes
@@ -2289,6 +2417,13 @@
       const p_break_minutes = Number(editAttendanceBreakMinutesEl.value || 0);
       if (!p_date || !p_office || !p_type || !p_time_from) {
         setMessage(attendanceEditMessageEl, "Vyplň datum, místo, typ a čas od.", "err");
+        return;
+      }
+
+      try {
+        await ensureMonthUnlockedOrThrow(p_date);
+      } catch (error) {
+        setMessage(attendanceEditMessageEl, error.message, "err");
         return;
       }
 
@@ -2432,6 +2567,9 @@
     refreshBtn.addEventListener("click", loadAllData);
     loadHistoryBtn?.addEventListener("click", loadAttendanceHistory);
     adminLoadHistoryBtn?.addEventListener("click", loadAdminAttendanceHistory);
+    checkLockBtn?.addEventListener("click", loadAttendanceLockStatus);
+    lockMonthBtn?.addEventListener("click", () => setAttendanceLockState(true));
+    unlockMonthBtn?.addEventListener("click", () => setAttendanceLockState(false));
     saveNewPasswordBtn.addEventListener("click", saveNewPassword);
     checkInBtn.addEventListener("click", doCheckIn);
     checkOutBtn.addEventListener("click", doCheckOut);
