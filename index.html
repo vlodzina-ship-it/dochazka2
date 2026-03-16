@@ -30,10 +30,7 @@
     }
 
     * { box-sizing: border-box; }
-
-    html {
-      scroll-behavior: smooth;
-    }
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
@@ -85,9 +82,7 @@
       font-weight: 700;
     }
 
-    .muted {
-      color: var(--muted);
-    }
+    .muted { color: var(--muted); }
 
     .card {
       background: var(--panel);
@@ -97,15 +92,8 @@
       box-shadow: 0 2px 10px rgba(40, 60, 120, 0.03);
     }
 
-    .stack {
-      display: grid;
-      gap: 12px;
-    }
-
-    .grid {
-      display: grid;
-      gap: 12px;
-    }
+    .stack { display: grid; gap: 12px; }
+    .grid { display: grid; gap: 12px; }
 
     .grid-main {
       grid-template-columns: 300px minmax(0, 1fr);
@@ -132,9 +120,7 @@
       font-weight: 700;
     }
 
-    input, select, textarea, button {
-      font: inherit;
-    }
+    input, select, textarea, button { font: inherit; }
 
     input, select, textarea {
       width: 100%;
@@ -173,13 +159,10 @@
 
     .btn-primary { background: var(--primary); }
     .btn-primary:hover { background: var(--primary-hover); }
-
     .btn-secondary { background: var(--secondary); }
     .btn-secondary:hover { background: var(--secondary-hover); }
-
     .btn-success { background: var(--success); }
     .btn-success:hover { background: var(--success-hover); }
-
     .btn-danger { background: var(--danger); }
     .btn-danger:hover { background: var(--danger-hover); }
 
@@ -379,9 +362,7 @@
     }
 
     @media (max-width: 1280px) {
-      .grid-main {
-        grid-template-columns: 280px minmax(0, 1fr);
-      }
+      .grid-main { grid-template-columns: 280px minmax(0, 1fr); }
     }
 
     @media (max-width: 1060px) {
@@ -392,61 +373,27 @@
         grid-template-columns: 1fr;
       }
 
-      .topbar {
-        position: static;
-      }
-
-      .brand {
-        font-size: 20px;
-      }
-
-      .stat-value {
-        font-size: 20px;
-      }
-
-      table {
-        min-width: 660px;
-      }
+      .topbar { position: static; }
+      .brand { font-size: 20px; }
+      .stat-value { font-size: 20px; }
+      table { min-width: 660px; }
     }
 
     @media (max-width: 640px) {
-      body {
-        font-size: 13px;
-      }
-
-      .container {
-        padding: 8px 8px 16px;
-      }
-
-      .card {
-        padding: 10px;
-      }
-
-      .topbar {
-        padding: 10px;
-      }
+      body { font-size: 13px; }
+      .container { padding: 8px 8px 16px; }
+      .card { padding: 10px; }
+      .topbar { padding: 10px; }
 
       .actions {
         flex-direction: column;
         align-items: stretch;
       }
 
-      .actions button {
-        width: 100%;
-      }
-
-      input, select, textarea, button {
-        font-size: 16px;
-      }
-
-      table {
-        min-width: 620px;
-      }
-
-      th, td {
-        padding: 6px;
-        font-size: 12px;
-      }
+      .actions button { width: 100%; }
+      input, select, textarea, button { font-size: 16px; }
+      table { min-width: 620px; }
+      th, td { padding: 6px; font-size: 12px; }
     }
   </style>
 </head>
@@ -479,24 +426,23 @@
     <div id="passwordResetView" class="login-wrap hidden">
       <div class="card">
         <h1>Nastavení nového hesla</h1>
+        <p class="muted">Odkaz byl rozpoznán jako reset hesla. Nejprve nastav nové heslo, až potom se vrať do aplikace.</p>
 
         <div>
           <label for="newPassword">Nové heslo</label>
-          <input id="newPassword" type="password" />
+          <input id="newPassword" type="password" autocomplete="new-password" />
         </div>
 
         <div style="margin-top:14px;">
           <label for="newPassword2">Potvrzení hesla</label>
-          <input id="newPassword2" type="password" />
+          <input id="newPassword2" type="password" autocomplete="new-password" />
         </div>
 
         <div class="actions" style="margin-top:16px;">
           <button id="saveNewPasswordBtn" class="btn-success" type="button">Uložit nové heslo</button>
         </div>
 
-        <div id="passwordResetMessage" class="message warn" style="margin-top:16px;">
-          Zadej nové heslo.
-        </div>
+        <div id="passwordResetMessage" class="message warn" style="margin-top:16px;">Zadej nové heslo.</div>
       </div>
     </div>
 
@@ -654,9 +600,7 @@
                 <button id="createManualAttendanceBtn" class="btn-success" type="button">Zapsat ručně</button>
               </div>
 
-              <div id="manualAttendanceMessage" class="message warn" style="margin-top:14px;">
-                Vyplň datum a čas. Hodí se pro zpětné doplnění docházky.
-              </div>
+              <div id="manualAttendanceMessage" class="message warn" style="margin-top:14px;">Vyplň datum a čas. Hodí se pro zpětné doplnění docházky.</div>
             </div>
 
             <div class="card">
@@ -889,9 +833,7 @@
                   <button id="cancelAttendanceEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
                 </div>
 
-                <div id="attendanceEditMessage" class="message warn" style="margin-top:14px;">
-                  Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.
-                </div>
+                <div id="attendanceEditMessage" class="message warn" style="margin-top:14px;">Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.</div>
               </div>
             </div>
 
@@ -1105,6 +1047,9 @@
     let editEmployeeId = null;
     let editAttendanceId = null;
 
+    let isPasswordRecoveryFlow = false;
+    let passwordWasJustChanged = false;
+
     function debugLog(...args) {
       console.log(...args);
     }
@@ -1234,19 +1179,11 @@
         return `<span class="type-badge type-home-office">${safeText}</span>`;
       }
 
-      if (
-        normalized === "sluzebni cesta" ||
-        normalized === "business trip" ||
-        normalized === "trip"
-      ) {
+      if (normalized === "sluzebni cesta" || normalized === "business trip" || normalized === "trip") {
         return `<span class="type-badge type-business-trip">${safeText}</span>`;
       }
 
-      if (
-        normalized === "dovolena" ||
-        normalized === "vacation" ||
-        normalized === "leave"
-      ) {
+      if (normalized === "dovolena" || normalized === "vacation" || normalized === "leave") {
         return `<span class="type-badge type-vacation">${safeText}</span>`;
       }
 
@@ -1388,11 +1325,7 @@
       editAttendanceTimeToEl.value = "";
       editAttendanceBreakMinutesEl.value = "30";
       cancelAttendanceEditBtn.classList.add("hidden");
-      setMessage(
-        attendanceEditMessageEl,
-        "Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.",
-        "warn"
-      );
+      setMessage(attendanceEditMessageEl, "Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.", "warn");
     }
 
     function resetManualAttendanceForm() {
@@ -1432,10 +1365,48 @@
       dashOnLeaveEl.textContent = "0";
     }
 
-    function renderLoggedOut() {
+    function showLoginView() {
       loginView.classList.remove("hidden");
       passwordResetView.classList.add("hidden");
       appView.classList.add("hidden");
+    }
+
+    function showRecoveryView() {
+      loginView.classList.add("hidden");
+      appView.classList.add("hidden");
+      passwordResetView.classList.remove("hidden");
+    }
+
+    function showAppView() {
+      loginView.classList.add("hidden");
+      passwordResetView.classList.add("hidden");
+      appView.classList.remove("hidden");
+    }
+
+    function cleanRecoveryUrl() {
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+
+    function detectRecoveryModeFromUrl() {
+      const hash = window.location.hash || "";
+      const search = window.location.search || "";
+      return (
+        hash.includes("type=recovery") ||
+        hash.includes("type=PASSWORD_RECOVERY") ||
+        search.includes("type=recovery") ||
+        search.includes("type=PASSWORD_RECOVERY") ||
+        hash.includes("access_token=") ||
+        search.includes("access_token=")
+      );
+    }
+
+    function renderLoggedOut() {
+      if (isPasswordRecoveryFlow) {
+        showRecoveryView();
+      } else {
+        showLoginView();
+      }
 
       currentUser = null;
       currentEmployee = null;
@@ -1473,7 +1444,7 @@
       adminLeaveEmployeeEl.innerHTML = "";
       editAttendanceEmployeeEl.innerHTML = "";
       exportMonthEl.value = currentMonthStr();
-      sessionTextEl.textContent = "Nikdo není přihlášen.";
+      sessionTextEl.textContent = isPasswordRecoveryFlow ? "Probíhá reset hesla." : "Nikdo není přihlášen.";
 
       resetAttendanceEditForm();
       resetManualAttendanceForm();
@@ -1488,6 +1459,12 @@
     }
 
     async function signIn() {
+      if (isPasswordRecoveryFlow) {
+        showRecoveryView();
+        setMessage(loginMessageEl, "Právě probíhá reset hesla. Nejprve nastav nové heslo.", "warn");
+        return;
+      }
+
       const email = emailEl.value.trim();
       const password = passwordEl.value;
 
@@ -1515,6 +1492,12 @@
         console.error("Logout chyba:", error.message);
         return;
       }
+
+      if (!passwordWasJustChanged) {
+        isPasswordRecoveryFlow = false;
+      }
+
+      cleanRecoveryUrl();
       renderLoggedOut();
     }
 
@@ -1534,20 +1517,25 @@
 
       setMessage(passwordResetMessageEl, "Ukládám nové heslo…", "warn");
 
-      const { error } = await supabaseClient.auth.updateUser({
-        password: p1
-      });
+      const { error } = await supabaseClient.auth.updateUser({ password: p1 });
 
       if (error) {
         setMessage(passwordResetMessageEl, "Chyba: " + error.message, "err");
         return;
       }
 
-      setMessage(passwordResetMessageEl, "Heslo bylo změněno.", "ok");
+      passwordWasJustChanged = true;
+      isPasswordRecoveryFlow = false;
+      setMessage(passwordResetMessageEl, "Heslo bylo změněno. Probíhá návrat na přihlášení…", "ok");
 
-      setTimeout(() => {
-        window.location.href = window.location.origin + window.location.pathname;
-      }, 1500);
+      newPasswordEl.value = "";
+      newPassword2El.value = "";
+
+      cleanRecoveryUrl();
+      await supabaseClient.auth.signOut();
+      passwordWasJustChanged = false;
+      renderLoggedOut();
+      setMessage(loginMessageEl, "Heslo bylo změněno. Teď se přihlas novým heslem.", "ok");
     }
 
     async function loadProfile() {
@@ -1736,11 +1724,7 @@
       });
 
       if (error) {
-        setMessage(
-          manualAttendanceMessageEl,
-          "Chyba ručního zápisu: " + error.message + " (zkontroluj, že v Supabase existuje RPC create_my_attendance_manual)",
-          "err"
-        );
+        setMessage(manualAttendanceMessageEl, "Chyba ručního zápisu: " + error.message + " (zkontroluj, že v Supabase existuje RPC create_my_attendance_manual)", "err");
         return;
       }
 
@@ -1938,11 +1922,7 @@
       });
 
       if (error) {
-        setMessage(
-          attendanceEditMessageEl,
-          "Chyba při vložení docházky: " + error.message,
-          "err"
-        );
+        setMessage(attendanceEditMessageEl, "Chyba při vložení docházky: " + error.message, "err");
         return;
       }
 
@@ -2011,7 +1991,6 @@
       }
 
       const d = data[0];
-
       dashTotalEmployeesEl.textContent = d.total_employees ?? 0;
       dashAtWorkEl.textContent = d.at_work_count ?? 0;
       dashHomeOfficeEl.textContent = d.home_office_count ?? 0;
@@ -2067,10 +2046,7 @@
           { label: "Do", render: r => escapeHtml(r.time_to || "—") },
           { label: "Přestávka", render: r => escapeHtml((r.break_minutes ?? 0) + " min") },
           { label: "Odpracováno", render: r => escapeHtml(formatWorkedMinutes(getWorkedMinutes(r))) },
-          {
-            label: "Akce",
-            render: r => `<button type="button" class="btn-secondary edit-attendance-btn" data-id="${r.id}">Upravit</button>`
-          }
+          { label: "Akce", render: r => `<button type="button" class="btn-secondary edit-attendance-btn" data-id="${r.id}">Upravit</button>` }
         ],
         adminTodayAttendanceData
       );
@@ -2100,10 +2076,7 @@
           { label: "Weekly", render: r => escapeHtml(r.weekly || "—") },
           { label: "Dovolená dny", render: r => escapeHtml(r.leave_days ?? "—") },
           { label: "Dovolená hodiny", render: r => escapeHtml(r.leave_hours ?? "—") },
-          {
-            label: "Akce",
-            render: r => `<button type="button" class="btn-secondary edit-employee-btn" data-id="${r.id}">Upravit</button>`
-          }
+          { label: "Akce", render: r => `<button type="button" class="btn-secondary edit-employee-btn" data-id="${r.id}">Upravit</button>` }
         ],
         adminEmployeesData
       );
@@ -2119,11 +2092,7 @@
         await loadAdminDashboard();
 
         if (!isAdmin) {
-          setMessage(
-            attendanceMessageEl,
-            myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.",
-            "ok"
-          );
+          setMessage(attendanceMessageEl, myOpenShift ? "Máš otevřenou směnu." : "Nemáš otevřenou směnu.", "ok");
         }
       } catch (error) {
         debugLog("loadAllData ERROR", error);
@@ -2142,10 +2111,14 @@
         return;
       }
 
+      if (isPasswordRecoveryFlow) {
+        showRecoveryView();
+        setMessage(passwordResetMessageEl, "Reset link je aktivní. Nastav nové heslo.", "warn");
+        return;
+      }
+
       currentUser = data.session.user;
-      loginView.classList.add("hidden");
-      passwordResetView.classList.add("hidden");
-      appView.classList.remove("hidden");
+      showAppView();
       sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
       await loadAllData();
     }
@@ -2197,20 +2170,24 @@
     });
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
+      debugLog("onAuthStateChange", event, session?.user?.email || null);
+
       if (event === "PASSWORD_RECOVERY") {
-        loginView.classList.add("hidden");
-        appView.classList.add("hidden");
-        passwordResetView.classList.remove("hidden");
+        isPasswordRecoveryFlow = true;
+        showRecoveryView();
+        setMessage(passwordResetMessageEl, "Reset link rozpoznán. Nastav nové heslo.", "warn");
+        return;
+      }
+
+      if (isPasswordRecoveryFlow && !passwordWasJustChanged) {
+        showRecoveryView();
         return;
       }
 
       if (session?.user) {
         currentUser = session.user;
-        loginView.classList.add("hidden");
-        passwordResetView.classList.add("hidden");
-        appView.classList.remove("hidden");
+        showAppView();
         sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
-
         setTimeout(() => {
           loadAllData();
         }, 0);
@@ -2220,22 +2197,17 @@
     });
 
     (async function bootstrap() {
-      renderLoggedOut();
       exportMonthEl.value = currentMonthStr();
       myLeaveDateEl.value = todayStr();
       adminLeaveDateEl.value = todayStr();
       manualAttendanceDateEl.value = todayStr();
 
-      const hash = window.location.hash || "";
-      const search = window.location.search || "";
-      const recoveryMode =
-        hash.includes("type=recovery") ||
-        search.includes("type=recovery");
+      isPasswordRecoveryFlow = detectRecoveryModeFromUrl();
+      renderLoggedOut();
 
-      if (recoveryMode) {
-        loginView.classList.add("hidden");
-        appView.classList.add("hidden");
-        passwordResetView.classList.remove("hidden");
+      if (isPasswordRecoveryFlow) {
+        showRecoveryView();
+        setMessage(passwordResetMessageEl, "Odkaz pro reset hesla byl rozpoznán. Nastav nové heslo.", "warn");
         return;
       }
 
