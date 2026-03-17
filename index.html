@@ -609,7 +609,7 @@
                   <option value="Osoblaha">Osoblaha</option>
                   <option value="Hlinka">Hlinka</option>
                   <option value="Slezské Pavlovice">Slezské Pavlovice</option>
-                  <option value="Dívčí Hrad">Dívčí Hrad</option>
+                  <option value="Hlavní kancelář">Hlavní kancelář</option>
                   <option value="home office">home office</option>
                   <option value="kancelář dle potřeby">kancelář dle potřeby</option>
                 </select>
@@ -661,7 +661,7 @@
                     <option value="Osoblaha">Osoblaha</option>
                     <option value="Hlinka">Hlinka</option>
                     <option value="Slezské Pavlovice">Slezské Pavlovice</option>
-                    <option value="Dívčí Hrad">Dívčí Hrad</option>
+                    <option value="Hlavní kancelář">Hlavní kancelář</option>
                     <option value="home office">home office</option>
                     <option value="kancelář dle potřeby">kancelář dle potřeby</option>
                   </select>
@@ -965,6 +965,40 @@
 
                 <div class="card">
                   <div class="section-title">
+                    <h2>Místa výkonu práce</h2>
+                    <span class="small">správa číselníku míst</span>
+                  </div>
+
+                  <div>
+                    <label for="officeName">Název místa</label>
+                    <input id="officeName" type="text" placeholder="např. Dívčí Hrad" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="officeSortOrder">Pořadí</label>
+                    <input id="officeSortOrder" type="number" min="0" step="1" value="0" />
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label for="officeActive">Aktivní</label>
+                    <select id="officeActive">
+                      <option value="true">ano</option>
+                      <option value="false">ne</option>
+                    </select>
+                  </div>
+
+                  <div class="actions" style="margin-top:14px;">
+                    <button id="saveOfficeBtn" class="btn-success" type="button">Uložit místo</button>
+                    <button id="cancelOfficeEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
+                  </div>
+
+                  <div id="officeMessage" class="message warn" style="margin-top:14px;">Přidej nové místo nebo uprav existující.</div>
+
+                  <div id="officesWrap" class="empty-box" style="margin-top:14px;">Načítám místa…</div>
+                </div>
+
+                <div class="card">
+                  <div class="section-title">
                     <h2>Zapsat dovolenou zaměstnanci</h2>
                     <span class="small">jen admin</span>
                   </div>
@@ -1056,7 +1090,7 @@
                       <option value="Osoblaha">Osoblaha</option>
                       <option value="Hlinka">Hlinka</option>
                       <option value="Slezské Pavlovice">Slezské Pavlovice</option>
-                      <option value="Dívčí Hrad">Dívčí Hrad</option>
+                      <option value="Hlavní kancelář">Hlavní kancelář</option>
                       <option value="home office">home office</option>
                       <option value="kancelář dle potřeby">kancelář dle potřeby</option>
                     </select>
@@ -1279,6 +1313,13 @@
     const dashOnLeaveEl = document.getElementById("dashOnLeave");
 
     const adminLeaveEmployeeEl = document.getElementById("adminLeaveEmployee");
+    const officeNameEl = document.getElementById("officeName");
+    const officeSortOrderEl = document.getElementById("officeSortOrder");
+    const officeActiveEl = document.getElementById("officeActive");
+    const saveOfficeBtn = document.getElementById("saveOfficeBtn");
+    const cancelOfficeEditBtn = document.getElementById("cancelOfficeEditBtn");
+    const officeMessageEl = document.getElementById("officeMessage");
+    const officesWrapEl = document.getElementById("officesWrap");
     const adminLeaveDateEl = document.getElementById("adminLeaveDate");
     const adminLeaveHoursEl = document.getElementById("adminLeaveHours");
     const adminLeaveNoteEl = document.getElementById("adminLeaveNote");
@@ -1337,6 +1378,8 @@
     let editAttendanceId = null;
     let currentTodayFilter = "all";
     let auditRows = [];
+    let officesData = [];
+    let editOfficeId = null;
 
     let isPasswordRecoveryFlow = false;
     let passwordWasJustChanged = false;
@@ -1934,6 +1977,122 @@
       ).replace('<div class="table-wrap">', '<div class="table-wrap employees-table-wrap">');
     }
 
+    function resetOfficeForm() {
+      editOfficeId = null;
+      officeNameEl.value = "";
+      officeSortOrderEl.value = "0";
+      officeActiveEl.value = "true";
+      saveOfficeBtn.textContent = "Uložit místo";
+      saveOfficeBtn.className = "btn-success";
+      cancelOfficeEditBtn.classList.add("hidden");
+      setMessage(officeMessageEl, "Přidej nové místo nebo uprav existující.", "warn");
+    }
+
+    function fillOfficeFormForEdit(officeRow) {
+      editOfficeId = officeRow.id;
+      officeNameEl.value = officeRow.name || "";
+      officeSortOrderEl.value = String(officeRow.sort_order ?? 0);
+      officeActiveEl.value = String(officeRow.active !== false);
+      saveOfficeBtn.textContent = "Uložit změny";
+      saveOfficeBtn.className = "btn-primary";
+      cancelOfficeEditBtn.classList.remove("hidden");
+      setMessage(officeMessageEl, `Upravuješ místo ID ${officeRow.id}: ${officeRow.name}`, "warn");
+    }
+
+    function buildOfficeOptions(includeInactive = false) {
+      return (officesData || [])
+        .filter(row => includeInactive || row.active !== false)
+        .sort((a, b) => {
+          const orderDiff = Number(a.sort_order || 0) - Number(b.sort_order || 0);
+          if (orderDiff !== 0) return orderDiff;
+          return String(a.name || "").localeCompare(String(b.name || ""), "cs");
+        });
+    }
+
+    function fillOfficeSelect(selectEl, selectedValue = "") {
+      if (!selectEl) return;
+      const options = buildOfficeOptions(false);
+      selectEl.innerHTML = "";
+      for (const officeRow of options) {
+        const option = document.createElement("option");
+        option.value = officeRow.name;
+        option.textContent = officeRow.name;
+        selectEl.appendChild(option);
+      }
+      if (selectedValue && [...selectEl.options].some(opt => opt.value === selectedValue)) {
+        selectEl.value = selectedValue;
+      }
+    }
+
+    function renderOfficesAdminTable() {
+      officesWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "ID", render: r => escapeHtml(r.id) },
+          { label: "Název", render: r => escapeHtml(r.name || "") },
+          { label: "Pořadí", render: r => escapeHtml(r.sort_order ?? 0) },
+          { label: "Stav", render: r => r.active !== false ? `<span class="pill pill-active">aktivní</span>` : `<span class="pill pill-inactive">neaktivní</span>` },
+          { label: "Akce", render: r => `<button type="button" class="btn-secondary edit-office-btn" data-id="${r.id}">Upravit</button>` }
+        ],
+        buildOfficeOptions(true)
+      );
+    }
+
+    async function loadOffices() {
+      const { data, error } = await supabaseClient.rpc("get_offices");
+      if (error) throw error;
+      officesData = Array.isArray(data) ? data : [];
+
+      const currentOffice = officeEl.value;
+      const currentManualOffice = manualAttendanceOfficeEl.value;
+      const currentEditOffice = editAttendanceOfficeEl.value;
+
+      fillOfficeSelect(officeEl, currentOffice);
+      fillOfficeSelect(manualAttendanceOfficeEl, currentManualOffice);
+      fillOfficeSelect(editAttendanceOfficeEl, currentEditOffice);
+      renderOfficesAdminTable();
+    }
+
+    async function saveOffice() {
+      if (!isAdmin) return;
+      const p_name = officeNameEl.value.trim();
+      const p_sort_order = Number(officeSortOrderEl.value || 0);
+      const p_active = officeActiveEl.value === "true";
+
+      if (!p_name) {
+        setMessage(officeMessageEl, "Vyplň název místa.", "err");
+        return;
+      }
+
+      if (editOfficeId) {
+        const { error } = await supabaseClient.rpc("admin_update_office", {
+          p_id: editOfficeId,
+          p_name,
+          p_sort_order,
+          p_active
+        });
+        if (error) {
+          setMessage(officeMessageEl, "Chyba při úpravě místa: " + error.message, "err");
+          return;
+        }
+        await loadOffices();
+        resetOfficeForm();
+        setMessage(officeMessageEl, "Místo bylo upraveno.", "ok");
+        return;
+      }
+
+      const { error } = await supabaseClient.rpc("admin_create_office", {
+        p_name,
+        p_sort_order
+      });
+      if (error) {
+        setMessage(officeMessageEl, "Chyba při vytváření místa: " + error.message, "err");
+        return;
+      }
+      await loadOffices();
+      resetOfficeForm();
+      setMessage(officeMessageEl, "Místo bylo vytvořeno.", "ok");
+    }
+
     function resetEmployeeForm() {
       editEmployeeId = null;
       employeeFormTitleEl.textContent = "Nový zaměstnanec";
@@ -2074,6 +2233,7 @@
       updateRoleVisibility();
 
       profileBoxEl.innerHTML = "Přihlas se.";
+      officesData = [];
       rolePillEl.textContent = "bez role";
       rolePillEl.className = "pill pill-warn";
       openShiftValueEl.textContent = "—";
@@ -2714,6 +2874,7 @@ Některé záznamy docházky se nepodařilo načíst: ${attendanceErrors.join(" 
       try {
         await loadProfile();
         renderProfile();
+        await loadOffices();
         await loadMyAttendance();
         await loadAttendanceHistory();
         await loadMyLeaveSummary();
@@ -2748,6 +2909,8 @@ Některé záznamy docházky se nepodařilo načíst: ${attendanceErrors.join(" 
     loadHistoryBtn?.addEventListener("click", loadAttendanceHistory);
     loadAuditBtn?.addEventListener("click", loadAttendanceAudit);
     adminLoadHistoryBtn?.addEventListener("click", loadAdminAttendanceHistory);
+    saveOfficeBtn?.addEventListener("click", saveOffice);
+    cancelOfficeEditBtn?.addEventListener("click", resetOfficeForm);
     checkLockBtn?.addEventListener("click", loadAttendanceLockStatus);
     lockMonthBtn?.addEventListener("click", () => setAttendanceLockState(true));
     unlockMonthBtn?.addEventListener("click", () => setAttendanceLockState(false));
@@ -2772,6 +2935,15 @@ Některé záznamy docházky se nepodařilo načíst: ${attendanceErrors.join(" 
         currentTodayFilter = btn.dataset.filter || "all";
         renderAdminTodayTable();
       });
+    });
+
+    officesWrapEl?.addEventListener("click", (e) => {
+      const btn = e.target.closest(".edit-office-btn");
+      if (!btn) return;
+      const id = Number(btn.dataset.id);
+      const officeRow = officesData.find(x => Number(x.id) === id);
+      if (!officeRow) return;
+      fillOfficeFormForEdit(officeRow);
     });
 
     employeesWrapEl.addEventListener("click", (e) => {
