@@ -871,6 +871,25 @@
 
                 <div class="card">
                   <div class="section-title">
+                    <h2>Audit log docházky</h2>
+                    <span class="small">kdo co upravil</span>
+                  </div>
+
+                  <div class="grid grid-form-2" style="margin-bottom:12px; align-items:end;">
+                    <div>
+                      <label for="auditMonth">Měsíc</label>
+                      <input id="auditMonth" type="month" />
+                    </div>
+                    <div class="actions" style="margin-top:0;">
+                      <button id="loadAuditBtn" class="btn-secondary" type="button">Načíst audit</button>
+                    </div>
+                  </div>
+
+                  <div id="auditWrap" class="empty-box">Vyber měsíc a načti audit log.</div>
+                </div>
+
+                <div class="card">
+                  <div class="section-title">
                     <h2>⚠️ Kontrola chyb docházky</h2>
                     <span class="small">otevřené směny a podezřelé záznamy</span>
                   </div>
@@ -1243,6 +1262,9 @@
     const adminActiveWrapEl = document.getElementById("adminActiveWrap");
     const adminTodayWrapEl = document.getElementById("adminTodayWrap");
     const attendanceIssuesWrapEl = document.getElementById("attendanceIssuesWrap");
+    const auditMonthEl = document.getElementById("auditMonth");
+    const loadAuditBtn = document.getElementById("loadAuditBtn");
+    const auditWrapEl = document.getElementById("auditWrap");
     const adminLeaveWrapEl = document.getElementById("adminLeaveWrap");
     const employeesWrapEl = document.getElementById("employeesWrap");
     const employeeSearchInputEl = document.getElementById("employeeSearchInput");
@@ -1314,6 +1336,7 @@
     let editEmployeeId = null;
     let editAttendanceId = null;
     let currentTodayFilter = "all";
+    let auditRows = [];
 
     let isPasswordRecoveryFlow = false;
     let passwordWasJustChanged = false;
@@ -1674,6 +1697,39 @@
         filteredTodayRows
       );
       updateTodayFilterButtons();
+    }
+
+    async function loadAttendanceAudit() {
+      if (!isAdmin) return;
+      const month = auditMonthEl.value;
+      if (!month) {
+        auditWrapEl.innerHTML = `<div class="empty-box">Vyber měsíc.</div>`;
+        return;
+      }
+
+      const { data, error } = await supabaseClient.rpc("get_attendance_audit_by_month", {
+        p_month: month
+      });
+
+      if (error) {
+        auditWrapEl.innerHTML = `<div class="empty-box">Chyba načítání auditu: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      auditRows = Array.isArray(data) ? data : [];
+
+      auditWrapEl.innerHTML = renderSimpleTable(
+        [
+          { label: "Kdy", render: r => escapeHtml(r.changed_at || r.created_at || "—") },
+          { label: "Admin", render: r => escapeHtml(r.changed_by_name || r.actor_name || r.changed_by_email || "—") },
+          { label: "Zaměstnanec", render: r => escapeHtml(r.employee_name || "—") },
+          { label: "Datum", render: r => escapeHtml(r.attendance_date || r.date || "—") },
+          { label: "Akce", render: r => escapeHtml(r.action_type || r.action || "—") },
+          { label: "Před", render: r => escapeHtml(r.old_value || r.before_value || "—") },
+          { label: "Po", render: r => escapeHtml(r.new_value || r.after_value || "—") }
+        ],
+        auditRows
+      );
     }
 
     function buildAttendanceIssues(rows) {
@@ -2038,6 +2094,7 @@
       myAttendanceWrapEl.innerHTML = `<div class="empty-box">Zatím žádné záznamy.</div>`;
       myAttendanceHistoryWrapEl.innerHTML = `<div class="empty-box">Vyber měsíc a načti historii docházky.</div>`;
       if (historyMonthEl) historyMonthEl.value = currentMonthStr();
+      if (auditMonthEl) auditMonthEl.value = currentMonthStr();
       historySummaryLabelEl.textContent = "vybraný měsíc";
       historyRecordsValueEl.textContent = "0";
       historyWorkedValueEl.textContent = "00:00";
@@ -2045,6 +2102,7 @@
       adminActiveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminTodayWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       attendanceIssuesWrapEl.innerHTML = `<div class="empty-box">Načítám kontroly…</div>`;
+      auditWrapEl.innerHTML = `<div class="empty-box">Vyber měsíc a načti audit log.</div>`;
       adminLeaveWrapEl.innerHTML = `<div class="empty-box">Načítám…</div>`;
       adminHistoryWrapEl.innerHTML = `<div class="empty-box">Vyber zaměstnance a měsíc.</div>`;
       setMessage(adminHistorySummaryEl, "Vyber zaměstnance a měsíc.", "warn");
@@ -2649,6 +2707,7 @@ Některé záznamy docházky se nepodařilo načíst: ${attendanceErrors.join(" 
       renderEmployeesTable();
 
       if (adminHistoryMonthEl && !adminHistoryMonthEl.value) adminHistoryMonthEl.value = currentMonthStr();
+      if (auditMonthEl && !auditMonthEl.value) auditMonthEl.value = currentMonthStr();
     }
 
     async function loadAllData() {
@@ -2687,6 +2746,7 @@ Některé záznamy docházky se nepodařilo načíst: ${attendanceErrors.join(" 
     logoutBtn.addEventListener("click", signOut);
     refreshBtn.addEventListener("click", loadAllData);
     loadHistoryBtn?.addEventListener("click", loadAttendanceHistory);
+    loadAuditBtn?.addEventListener("click", loadAttendanceAudit);
     adminLoadHistoryBtn?.addEventListener("click", loadAdminAttendanceHistory);
     checkLockBtn?.addEventListener("click", loadAttendanceLockStatus);
     lockMonthBtn?.addEventListener("click", () => setAttendanceLockState(true));
