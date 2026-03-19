@@ -1889,7 +1889,44 @@ async function createMyManualAttendance(){
   if(error) return setMessage(manualAttendanceMessageEl,'Chyba ručního zápisu: '+error.message,'err');
   resetManualAttendanceForm();
   await loadAllData();
+  setMessage(manualAttendanceMessageEl,'Docházka byla ručně zapsána.','ok');<script>
+async function createMyManualAttendance(){
+  const officeRow=officesData.find(o=>String(o.id)===String(manualAttendanceOfficeEl.value||''));
+  const p_date=manualAttendanceDateEl.value,
+        p_office=officeRow?.name||'',
+        p_type=manualAttendanceTypeEl.value,
+        p_time_from=manualAttendanceTimeFromEl.value,
+        p_time_to=manualAttendanceTimeToEl.value || null,
+        p_break_minutes=Number(manualAttendanceBreakMinutesEl.value||0);
+
+  if(!p_date||!p_office||!p_type||!p_time_from) {
+    return setMessage(manualAttendanceMessageEl,'Vyplň datum, místo, typ a čas od.','err');
+  }
+
+  try{
+    await ensureMonthUnlockedOrThrow(p_date);
+  }catch(error){
+    return setMessage(manualAttendanceMessageEl,error.message,'err');
+  }
+
+  setMessage(manualAttendanceMessageEl,'Zapisuji ruční docházku…','warn');
+
+  const {error}=await supabaseClient.rpc('create_my_attendance_manual',{
+    p_date,
+    p_office,
+    p_type,
+    p_time_from,
+    p_time_to,
+    p_break_minutes
+  });
+
+  if(error) return setMessage(manualAttendanceMessageEl,'Chyba ručního zápisu: '+error.message,'err');
+
+  resetManualAttendanceForm();
+  await loadAllData();
   setMessage(manualAttendanceMessageEl,'Docházka byla ručně zapsána.','ok');
+}
+</script>
 }
 
 async function createMyLeave(){
