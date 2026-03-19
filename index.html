@@ -310,10 +310,16 @@
       .grid-main,
       .grid-2,
       .grid-3,
-      .grid-admin,
-      .grid-stats,
-      .grid-stats-5{
+      .grid-admin{
         grid-template-columns:1fr;
+      }
+
+      .grid-stats{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+
+      .grid-stats-5{
+        grid-template-columns:repeat(2,minmax(0,1fr));
       }
 
       .topbar{
@@ -321,16 +327,18 @@
       }
     }
 
-    @media (max-width:640px){
+    @media (max-width:768px){
       body{font-size:13px}
-
       .container{padding:10px}
-
       .card{padding:12px}
-
       .topbar{
         padding:12px;
         border-radius:16px;
+      }
+
+      .grid-stats,
+      .grid-stats-5{
+        grid-template-columns:1fr;
       }
 
       .actions{
@@ -350,16 +358,99 @@
         font-size:16px;
       }
 
-      table{
-        min-width:640px;
-      }
-
       .stat-value{
         font-size:22px;
       }
 
       .login-wrap{
         margin:24px auto;
+      }
+
+      .table-wrap{
+        overflow:visible;
+        border:0;
+        background:transparent;
+      }
+
+      .table-wrap table,
+      .table-wrap thead,
+      .table-wrap tbody,
+      .table-wrap th,
+      .table-wrap td,
+      .table-wrap tr{
+        display:block;
+        width:100%;
+      }
+
+      .table-wrap table{
+        min-width:0;
+        border-collapse:separate;
+      }
+
+      .table-wrap thead{
+        display:none;
+      }
+
+      .table-wrap tbody{
+        display:grid;
+        gap:12px;
+      }
+
+      .table-wrap tr{
+        background:#fff;
+        border:1px solid var(--line);
+        border-radius:14px;
+        padding:10px 12px;
+        box-shadow:var(--shadow);
+      }
+
+      .table-wrap td{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:12px;
+        padding:8px 0;
+        border-bottom:1px solid var(--line);
+        white-space:normal;
+        text-align:right;
+      }
+
+      .table-wrap td:last-child{
+        border-bottom:0;
+      }
+
+      .table-wrap td::before{
+        content:attr(data-label);
+        flex:0 0 42%;
+        text-align:left;
+        color:var(--muted);
+        font-weight:700;
+        word-break:break-word;
+      }
+
+      .table-wrap td > *{
+        max-width:100%;
+      }
+    }
+
+    @media (max-width:480px){
+      .brand{
+        font-size:20px;
+      }
+
+      .section-title{
+        align-items:flex-start;
+      }
+
+      .table-wrap td{
+        flex-direction:column;
+        align-items:stretch;
+        text-align:left;
+        gap:6px;
+      }
+
+      .table-wrap td::before{
+        flex:unset;
       }
     }
   </style>
@@ -934,7 +1025,7 @@ function renderLeaveStatusBadge(status){
 function renderSimpleTable(columns,rows){
   if(!rows||!rows.length) return `<div class="empty-box">Žádná data.</div>`;
   const thead=columns.map(c=>`<th>${escapeHtml(c.label)}</th>`).join('');
-  const tbody=rows.map(row=>`<tr>${columns.map(c=>`<td>${c.render?c.render(row):escapeHtml(row[c.key])}</td>`).join('')}</tr>`).join('');
+  const tbody=rows.map(row=>`<tr>${columns.map(c=>`<td data-label="${escapeHtml(c.label)}">${c.render?c.render(row):escapeHtml(row[c.key])}</td>`).join('')}</tr>`).join('');
   return `<div class="table-wrap"><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table></div>`;
 }
 
