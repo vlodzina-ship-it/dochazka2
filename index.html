@@ -7,117 +7,734 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    :root { --bg:#f5f6fa; --panel:#fff; --panel2:#f1f3f9; --border:#d9e0f0; --text:#1a1a1a; --muted:#6b7aa6; --primary:#587cff; --primary-hover:#476be9; --secondary:#3e4f7c; --secondary-hover:#4d6194; --success:#1e9d64; --success-hover:#187d4f; --danger:#d65252; --danger-hover:#bd4343; --warn:#d7a01b; --input:#fff; --shadow:0 8px 24px rgba(40,60,120,.08); }
-    *{box-sizing:border-box} html{scroll-behavior:smooth}
-    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);line-height:1.3;font-size:14px}
-    .container{width:100%;max-width:1720px;margin:0 auto;padding:10px 14px 18px}
-    h1,h2,h3{margin:0 0 8px 0;line-height:1.15} h1{font-size:22px} h2{font-size:18px} h3{font-size:16px}
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --text:#111827;
+      --line:#e5e7eb;
+      --primary:#2563eb;
+      --primary-2:#1d4ed8;
+      --success:#16a34a;
+      --danger:#dc2626;
+      --warn:#d97706;
+      --soft:#f3f4f6;
+      --shadow:0 10px 30px rgba(17,24,39,.06);
+      --radius:16px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      font-size:14px;
+      line-height:1.35;
+    }
+
+    .container{
+      max-width:1400px;
+      margin:0 auto;
+      padding:16px;
+    }
+
     .hidden{display:none!important}
-    .topbar{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;padding:10px 12px;background:rgba(245,246,250,.94);backdrop-filter:blur(8px);border:1px solid rgba(217,224,240,.9);border-radius:12px;box-shadow:var(--shadow)}
-    .brand{font-size:22px;font-weight:700}.muted{color:var(--muted)}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 2px 10px rgba(40,60,120,.03)}
-    .stack,.admin-main,.admin-side{display:grid;gap:12px}.grid{display:grid;gap:12px}
-    .grid-main{grid-template-columns:300px minmax(0,1fr);align-items:start}.grid-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .grid-admin,.admin-layout{grid-template-columns:minmax(0,1fr) minmax(360px,420px);align-items:start}.grid-form-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .grid-form-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    label{display:block;margin-bottom:5px;color:var(--muted);font-size:12px;font-weight:700}
-    input,select,textarea,button{font:inherit} input,select,textarea{width:100%;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;outline:none}
-    input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(88,124,255,.12)}
-    textarea{min-height:72px;resize:vertical} button{border:0;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;color:#fff;white-space:nowrap} button:disabled{opacity:.65;cursor:not-allowed}
-    .btn-primary{background:var(--primary)} .btn-primary:hover{background:var(--primary-hover)} .btn-secondary{background:var(--secondary)} .btn-secondary:hover{background:var(--secondary-hover)} .btn-success{background:var(--success)} .btn-success:hover{background:var(--success-hover)} .btn-danger{background:var(--danger)} .btn-danger:hover{background:var(--danger-hover)}
-    .today-filter-btn.active-filter{background:var(--primary)}
-    .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .message{padding:9px 11px;border-radius:8px;border:1px solid var(--border);white-space:pre-wrap;word-break:break-word;font-size:12px}.message.ok{background:rgba(30,157,100,.12);border-color:rgba(30,157,100,.35);color:#146c46}.message.warn{background:rgba(215,160,27,.12);border-color:rgba(215,160,27,.35);color:#8a6508}.message.err{background:rgba(214,82,82,.12);border-color:rgba(214,82,82,.35);color:#9f2f2f}
-    .profile-box{background:var(--panel2);border:1px dashed var(--border);border-radius:10px;padding:10px 11px;line-height:1.45;word-break:break-word}
-    .pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.pill-admin{background:rgba(88,124,255,.18);border:1px solid rgba(88,124,255,.32);color:#3554c9}.pill-employee{background:rgba(30,157,100,.18);border:1px solid rgba(30,157,100,.32);color:#146c46}.pill-warn{background:rgba(215,160,27,.18);border:1px solid rgba(215,160,27,.32);color:#8a6508}.pill-active{background:rgba(30,157,100,.14);border:1px solid rgba(30,157,100,.28);color:#146c46}.pill-inactive{background:rgba(214,82,82,.14);border:1px solid rgba(214,82,82,.28);color:#9f2f2f}
-    .type-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}.type-work{background:rgba(30,157,100,.18);border:1px solid rgba(30,157,100,.35);color:#146c46}.type-home-office{background:rgba(88,124,255,.18);border:1px solid rgba(88,124,255,.35);color:#3554c9}.type-business-trip{background:rgba(215,160,27,.18);border:1px solid rgba(215,160,27,.35);color:#8a6508}.type-vacation{background:rgba(160,92,255,.18);border:1px solid rgba(160,92,255,.35);color:#6d3fd1}.type-default{background:#eef2fb;border:1px solid var(--border);color:var(--text)}
-    .stat{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px;min-height:92px}.stat-label{color:var(--muted);font-size:12px;margin-bottom:5px}.stat-value{font-size:22px;font-weight:700;line-height:1.1}
-    .section-title{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}.small{font-size:12px;color:var(--muted)}
-    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px;background:var(--panel2);max-width:100%;width:100%;-webkit-overflow-scrolling:touch}
-    table{width:100%;border-collapse:collapse;min-width:720px}.employees-table-wrap table{min-width:760px}.employees-card{grid-column:1/-1}
-    .employees-toolbar{display:grid;grid-template-columns:minmax(220px,1.2fr) 160px 160px;gap:10px;margin-bottom:10px;align-items:end}.employees-toolbar .toolbar-field{display:grid;gap:5px}
-    th,td{padding:6px 7px;text-align:left;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px;line-height:1.2;white-space:nowrap} th{color:var(--muted);background:#eef2fb;position:sticky;top:0;z-index:1} tr:last-child td{border-bottom:0}
-    .empty-box{padding:11px;border:1px dashed var(--border);border-radius:10px;color:var(--muted);background:rgba(255,255,255,.5)} .mono{font-family:Consolas,Monaco,monospace;font-size:12px}.login-wrap{max-width:460px;margin:40px auto}
-    @media (max-width:1060px){.grid-main,.grid-stats,.grid-admin,.grid-form-2,.grid-form-3,.admin-layout{grid-template-columns:1fr}.topbar{position:static}.brand{font-size:20px}.stat-value{font-size:20px}table{min-width:660px}}
-    @media (max-width:640px){body{font-size:13px}.container{padding:8px 8px 16px}.card{padding:10px}.topbar{padding:10px}.actions{flex-direction:column;align-items:stretch}.actions button{width:100%}input,select,textarea,button{font-size:16px}table{min-width:620px}th,td{padding:6px;font-size:12px}.employees-toolbar{grid-template-columns:1fr}}
+    .stack{display:grid;gap:16px}
+    .grid{display:grid;gap:16px}
+    .grid-main{grid-template-columns:320px minmax(0,1fr)}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .grid-admin{grid-template-columns:minmax(0,1fr) 400px}
+    .grid-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .grid-stats-5{grid-template-columns:repeat(5,minmax(0,1fr))}
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:30;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      background:rgba(246,247,251,.92);
+      backdrop-filter:blur(10px);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px 16px;
+      margin-bottom:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .brand{
+      font-size:26px;
+      font-weight:700;
+      line-height:1.1;
+    }
+
+    .muted{color:var(--muted)}
+    .small{font-size:12px;color:var(--muted)}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+
+    h1,h2,h3{margin:0 0 10px}
+    h1{font-size:26px}
+    h2{font-size:19px}
+    h3{font-size:16px}
+
+    .section-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    label{
+      display:block;
+      margin-bottom:6px;
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+    }
+
+    input,select,textarea,button{
+      font:inherit;
+    }
+
+    input,select,textarea{
+      width:100%;
+      padding:11px 12px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+      color:var(--text);
+      outline:none;
+    }
+
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    textarea{
+      min-height:88px;
+      resize:vertical;
+    }
+
+    button{
+      border:0;
+      border-radius:12px;
+      padding:10px 14px;
+      cursor:pointer;
+      color:#fff;
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    button:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+    }
+
+    .btn-primary{background:var(--primary)}
+    .btn-primary:hover{background:var(--primary-2)}
+    .btn-secondary{background:#334155}
+    .btn-secondary:hover{background:#1f2937}
+    .btn-success{background:var(--success)}
+    .btn-success:hover{filter:brightness(.96)}
+    .btn-danger{background:var(--danger)}
+    .btn-danger:hover{filter:brightness(.96)}
+
+    .actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .message{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      font-size:12px;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    .message.ok{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.24);color:#166534}
+    .message.warn{background:rgba(217,119,6,.08);border-color:rgba(217,119,6,.24);color:#92400e}
+    .message.err{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.24);color:#991b1b}
+
+    .profile-box{
+      background:var(--soft);
+      border:1px dashed var(--line);
+      border-radius:14px;
+      padding:12px;
+      line-height:1.5;
+      word-break:break-word;
+    }
+
+    .pill{
+      display:inline-block;
+      padding:4px 9px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+    }
+
+    .pill-admin{background:rgba(37,99,235,.12);color:#1d4ed8;border:1px solid rgba(37,99,235,.22)}
+    .pill-employee{background:rgba(22,163,74,.10);color:#15803d;border:1px solid rgba(22,163,74,.22)}
+    .pill-warn{background:rgba(217,119,6,.10);color:#b45309;border:1px solid rgba(217,119,6,.22)}
+    .pill-active{background:rgba(22,163,74,.10);color:#15803d;border:1px solid rgba(22,163,74,.22)}
+    .pill-inactive{background:rgba(220,38,38,.10);color:#b91c1c;border:1px solid rgba(220,38,38,.22)}
+
+    .type-badge{
+      display:inline-block;
+      padding:4px 9px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+    }
+
+    .type-work{background:rgba(22,163,74,.10);color:#15803d;border:1px solid rgba(22,163,74,.22)}
+    .type-home-office{background:rgba(37,99,235,.10);color:#1d4ed8;border:1px solid rgba(37,99,235,.22)}
+    .type-business-trip{background:rgba(217,119,6,.10);color:#b45309;border:1px solid rgba(217,119,6,.22)}
+    .type-vacation{background:rgba(147,51,234,.10);color:#7e22ce;border:1px solid rgba(147,51,234,.22)}
+    .type-default{background:#eef2ff;color:#374151;border:1px solid var(--line)}
+
+    .stat{
+      background:var(--soft);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      min-height:95px;
+    }
+
+    .stat-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .stat-value{font-size:24px;font-weight:700;line-height:1.1}
+
+    .table-wrap{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:var(--soft);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:760px;
+    }
+
+    th,td{
+      padding:8px 9px;
+      text-align:left;
+      border-bottom:1px solid var(--line);
+      white-space:nowrap;
+      vertical-align:middle;
+      font-size:12px;
+    }
+
+    th{
+      background:#f8fafc;
+      color:var(--muted);
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    tr:last-child td{border-bottom:0}
+
+    .empty-box{
+      padding:14px;
+      border:1px dashed var(--line);
+      border-radius:14px;
+      background:rgba(255,255,255,.5);
+      color:var(--muted);
+    }
+
+    .mono{font-family:Consolas,Monaco,monospace;font-size:12px}
+    .login-wrap{max-width:460px;margin:48px auto}
+
+    @media (max-width:1100px){
+      .grid-main,.grid-2,.grid-3,.grid-admin,.grid-stats,.grid-stats-5{grid-template-columns:1fr}
+      .topbar{position:static}
+    }
+
+    @media (max-width:640px){
+      body{font-size:13px}
+      .container{padding:10px}
+      .card{padding:12px}
+      .actions{flex-direction:column;align-items:stretch}
+      .actions button{width:100%}
+      input,select,textarea,button{font-size:16px}
+      table{min-width:640px}
+    }
   </style>
 </head>
 <body>
 <div class="container">
-  <div id="loginView" class="login-wrap"><div class="card"><h1>Přihlášení do docházky</h1><p class="muted">Přihlášení přes Supabase Auth.</p><div><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" /></div><div style="margin-top:14px;"><label for="password">Heslo</label><input id="password" type="password" autocomplete="current-password" /></div><div class="actions" style="margin-top:16px;"><button id="loginBtn" class="btn-primary" type="button">Přihlásit</button></div><div id="loginMessage" class="message warn" style="margin-top:16px;">Čekám na přihlášení.</div></div></div>
-  <div id="passwordResetView" class="login-wrap hidden"><div class="card"><h1>Nastavení nového hesla</h1><p class="muted">Odkaz byl rozpoznán jako reset hesla. Nejprve nastav nové heslo, až potom se vrať do aplikace.</p><div><label for="newPassword">Nové heslo</label><input id="newPassword" type="password" autocomplete="new-password" /></div><div style="margin-top:14px;"><label for="newPassword2">Potvrzení hesla</label><input id="newPassword2" type="password" autocomplete="new-password" /></div><div class="actions" style="margin-top:16px;"><button id="saveNewPasswordBtn" class="btn-success" type="button">Uložit nové heslo</button></div><div id="passwordResetMessage" class="message warn" style="margin-top:16px;">Zadej nové heslo.</div></div></div>
+  <div id="loginView" class="login-wrap">
+    <div class="card">
+      <h1>Přihlášení do docházky</h1>
+      <p class="muted">Přihlášení přes Supabase Auth.</p>
+      <div>
+        <label for="email">E-mail</label>
+        <input id="email" type="email" autocomplete="username" />
+      </div>
+      <div style="margin-top:14px;">
+        <label for="password">Heslo</label>
+        <input id="password" type="password" autocomplete="current-password" />
+      </div>
+      <div class="actions" style="margin-top:16px;">
+        <button id="loginBtn" class="btn-primary" type="button">Přihlásit</button>
+      </div>
+      <div id="loginMessage" class="message warn" style="margin-top:16px;">Čekám na přihlášení.</div>
+    </div>
+  </div>
+
+  <div id="passwordResetView" class="login-wrap hidden">
+    <div class="card">
+      <h1>Nastavení nového hesla</h1>
+      <p class="muted">Nejprve nastav nové heslo, potom se vrať do aplikace.</p>
+      <div>
+        <label for="newPassword">Nové heslo</label>
+        <input id="newPassword" type="password" autocomplete="new-password" />
+      </div>
+      <div style="margin-top:14px;">
+        <label for="newPassword2">Potvrzení hesla</label>
+        <input id="newPassword2" type="password" autocomplete="new-password" />
+      </div>
+      <div class="actions" style="margin-top:16px;">
+        <button id="saveNewPasswordBtn" class="btn-success" type="button">Uložit nové heslo</button>
+      </div>
+      <div id="passwordResetMessage" class="message warn" style="margin-top:16px;">Zadej nové heslo.</div>
+    </div>
+  </div>
+
   <div id="appView" class="hidden">
-    <div class="topbar"><div><div class="brand">Docházka Osoblažský Cech</div><div id="sessionText" class="muted">Načítám session…</div></div><div class="actions"><button id="refreshBtn" class="btn-secondary" type="button">Načíst znovu</button><button id="logoutBtn" class="btn-danger" type="button">Odhlásit</button></div></div>
+    <div class="topbar">
+      <div>
+        <div class="brand">Docházka Osoblažský Cech</div>
+        <div id="sessionText" class="muted">Načítám session…</div>
+      </div>
+      <div class="actions">
+        <button id="refreshBtn" class="btn-secondary" type="button">Načíst znovu</button>
+        <button id="logoutBtn" class="btn-danger" type="button">Odhlásit</button>
+      </div>
+    </div>
+
     <div class="grid grid-main">
       <div class="stack">
-        <div class="card"><div class="section-title"><h2>Můj profil</h2><span id="rolePill" class="pill pill-warn">bez role</span></div><div id="profileBox" class="profile-box">Přihlas se.</div></div>
+        <div class="card">
+          <div class="section-title">
+            <h2>Můj profil</h2>
+            <span id="rolePill" class="pill pill-warn">bez role</span>
+          </div>
+          <div id="profileBox" class="profile-box">Přihlas se.</div>
+        </div>
 
         <div id="employeeOnlyBlock" class="stack">
-          <div class="card"><h2>Moje dnešní docházka</h2><div class="grid grid-stats"><div class="stat"><div class="stat-label">Otevřená směna</div><div id="openShiftValue" class="stat-value">—</div></div><div class="stat"><div class="stat-label">Dnešní příchod</div><div id="todayArrivalValue" class="stat-value">—</div></div><div class="stat"><div class="stat-label">Dnešní odchod</div><div id="todayDepartureValue" class="stat-value">—</div></div></div></div>
-
-          <div class="card"><h2>Moje dovolená</h2><div class="grid grid-stats"><div class="stat"><div class="stat-label">Nárok (hodiny)</div><div id="leaveTotalHoursValue" class="stat-value">—</div></div><div class="stat"><div class="stat-label">Vyčerpáno (hodiny)</div><div id="leaveUsedHoursValue" class="stat-value">—</div></div><div class="stat"><div class="stat-label">Zbývá (dny)</div><div id="leaveRemainingDaysValue" class="stat-value">—</div></div></div></div>
-
-          <div class="card"><h2>Příchod / Odchod</h2><div><label for="office">Místo práce</label><select id="office"></select></div><div style="margin-top:12px;"><label for="attendanceType">Typ</label><select id="attendanceType"><option value="práce">práce</option><option value="home office">home office</option><option value="služební cesta">služební cesta</option></select></div><div style="margin-top:12px;"><label for="breakMinutes">Přestávka (minuty)</label><input id="breakMinutes" type="number" min="0" step="1" value="30" /></div><div class="small" style="margin-top:6px;">Pokud směna nedosáhne 6 hodin, přestávka se do výpočtu nezapočítá.</div><div style="margin-top:12px;"><label for="employeeOfficesInfo">Moje přidělená kancelář / offices</label><input id="employeeOfficesInfo" type="text" disabled /></div><div class="actions" style="margin-top:14px;"><button id="checkInBtn" class="btn-success" type="button">Příchod</button><button id="checkOutBtn" class="btn-primary" type="button">Odchod</button></div><div id="attendanceMessage" class="message warn" style="margin-top:14px;">Přihlas se a načti docházku.</div></div>
-
-          <div class="card"><div class="section-title"><h2>Ruční zápis docházky</h2><span class="small">pro doplnění zpětně</span></div><div class="grid grid-form-2"><div><label for="manualAttendanceDate">Datum</label><input id="manualAttendanceDate" type="date" /></div><div><label for="manualAttendanceOffice">Místo práce</label><select id="manualAttendanceOffice"></select></div><div><label for="manualAttendanceType">Typ</label><select id="manualAttendanceType"><option value="práce">práce</option><option value="home office">home office</option><option value="služební cesta">služební cesta</option></select></div><div><label for="manualAttendanceBreakMinutes">Přestávka (minuty)</label><input id="manualAttendanceBreakMinutes" type="number" min="0" step="1" value="30" /></div><div><label for="manualAttendanceTimeFrom">Čas od</label><input id="manualAttendanceTimeFrom" type="time" step="1" /></div><div><label for="manualAttendanceTimeTo">Čas do</label><input id="manualAttendanceTimeTo" type="time" step="1" /></div></div><div class="actions" style="margin-top:14px;"><button id="createManualAttendanceBtn" class="btn-success" type="button">Zapsat ručně</button></div><div id="manualAttendanceMessage" class="message warn" style="margin-top:14px;">Vyplň datum a čas. Hodí se pro zpětné doplnění docházky.</div></div>
+          <div class="card">
+            <h2>Moje dnešní docházka</h2>
+            <div class="grid grid-stats">
+              <div class="stat"><div class="stat-label">Otevřená směna</div><div id="openShiftValue" class="stat-value">—</div></div>
+              <div class="stat"><div class="stat-label">Dnešní příchod</div><div id="todayArrivalValue" class="stat-value">—</div></div>
+              <div class="stat"><div class="stat-label">Dnešní odchod</div><div id="todayDepartureValue" class="stat-value">—</div></div>
+            </div>
+          </div>
 
           <div class="card">
-            <div class="section-title"><h2>Žádost o dovolenou</h2><span class="small">odešle se adminovi ke schválení</span></div>
-            <div class="grid grid-form-2">
+            <h2>Moje dovolená</h2>
+            <div class="grid grid-stats">
+              <div class="stat"><div class="stat-label">Nárok (hodiny)</div><div id="leaveTotalHoursValue" class="stat-value">—</div></div>
+              <div class="stat"><div class="stat-label">Vyčerpáno (hodiny)</div><div id="leaveUsedHoursValue" class="stat-value">—</div></div>
+              <div class="stat"><div class="stat-label">Zbývá (dny)</div><div id="leaveRemainingDaysValue" class="stat-value">—</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Příchod / Odchod</h2>
+            <div>
+              <label for="office">Místo práce</label>
+              <select id="office"></select>
+            </div>
+            <div style="margin-top:12px;">
+              <label for="attendanceType">Typ</label>
+              <select id="attendanceType">
+                <option value="práce">práce</option>
+                <option value="home office">home office</option>
+                <option value="služební cesta">služební cesta</option>
+              </select>
+            </div>
+            <div style="margin-top:12px;">
+              <label for="breakMinutes">Přestávka (minuty)</label>
+              <input id="breakMinutes" type="number" min="0" step="1" value="30" />
+            </div>
+            <div class="small" style="margin-top:6px;">Pokud směna nedosáhne 6 hodin, přestávka se do výpočtu nezapočítá.</div>
+            <div style="margin-top:12px;">
+              <label for="employeeOfficesInfo">Moje přidělená místa</label>
+              <input id="employeeOfficesInfo" type="text" disabled />
+            </div>
+            <div class="actions" style="margin-top:14px;">
+              <button id="checkInBtn" class="btn-success" type="button">Příchod</button>
+              <button id="checkOutBtn" class="btn-primary" type="button">Odchod</button>
+            </div>
+            <div id="attendanceMessage" class="message warn" style="margin-top:14px;">Přihlas se a načti docházku.</div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">
+              <h2>Ruční zápis docházky</h2>
+              <span class="small">pro doplnění zpětně</span>
+            </div>
+            <div class="grid grid-2">
+              <div><label for="manualAttendanceDate">Datum</label><input id="manualAttendanceDate" type="date" /></div>
+              <div><label for="manualAttendanceOffice">Místo práce</label><select id="manualAttendanceOffice"></select></div>
+              <div><label for="manualAttendanceType">Typ</label>
+                <select id="manualAttendanceType">
+                  <option value="práce">práce</option>
+                  <option value="home office">home office</option>
+                  <option value="služební cesta">služební cesta</option>
+                </select>
+              </div>
+              <div><label for="manualAttendanceBreakMinutes">Přestávka (minuty)</label><input id="manualAttendanceBreakMinutes" type="number" min="0" step="1" value="30" /></div>
+              <div><label for="manualAttendanceTimeFrom">Čas od</label><input id="manualAttendanceTimeFrom" type="time" step="1" /></div>
+              <div><label for="manualAttendanceTimeTo">Čas do</label><input id="manualAttendanceTimeTo" type="time" step="1" /></div>
+            </div>
+            <div class="actions" style="margin-top:14px;">
+              <button id="createManualAttendanceBtn" class="btn-success" type="button">Zapsat ručně</button>
+            </div>
+            <div id="manualAttendanceMessage" class="message warn" style="margin-top:14px;">Vyplň datum a čas. Hodí se pro zpětné doplnění docházky.</div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">
+              <h2>Žádost o dovolenou</h2>
+              <span class="small">odešle se adminovi ke schválení</span>
+            </div>
+            <div class="grid grid-2">
               <div><label for="myLeaveDateFrom">Datum od</label><input id="myLeaveDateFrom" type="date" /></div>
               <div><label for="myLeaveDateTo">Datum do</label><input id="myLeaveDateTo" type="date" /></div>
               <div><label for="myLeaveHours">Počet hodin za den</label><input id="myLeaveHours" type="number" min="1" step="1" value="8" /></div>
               <div><label for="myLeaveNote">Poznámka</label><textarea id="myLeaveNote"></textarea></div>
             </div>
-            <div class="actions" style="margin-top:14px;"><button id="createMyLeaveBtn" class="btn-success" type="button">Odeslat žádost</button></div>
+            <div class="actions" style="margin-top:14px;">
+              <button id="createMyLeaveBtn" class="btn-success" type="button">Odeslat žádost</button>
+            </div>
             <div id="myLeaveMessage" class="message warn" style="margin-top:14px;">Vyber datum od, datum do a počet hodin.</div>
           </div>
 
-          <div class="card"><div class="section-title"><h2>Moje žádosti o dovolenou</h2><span class="small">čeká / schváleno / zamítnuto / stornováno</span></div><div id="myLeaveRequestsWrap" class="empty-box">Načítám žádosti…</div></div>
+          <div class="card">
+            <div class="section-title">
+              <h2>Moje žádosti o dovolenou</h2>
+              <span class="small">čeká / schváleno / zamítnuto / stornováno</span>
+            </div>
+            <div id="myLeaveRequestsWrap" class="empty-box">Načítám žádosti…</div>
+          </div>
         </div>
       </div>
 
       <div class="stack">
-        <div id="myMonthlySummaryCard" class="card"><div class="section-title"><h2>Měsíční přehled</h2><span id="monthlySummaryLabel" class="small">aktuální měsíc</span></div><div class="grid grid-stats"><div class="stat"><div class="stat-label">Odpracováno za měsíc</div><div id="monthlyWorkedValue" class="stat-value">—</div></div><div class="stat"><div class="stat-label">Dny v práci</div><div id="monthlyWorkDaysValue" class="stat-value">—</div></div><div class="stat"><div class="stat-label">Dny dovolené</div><div id="monthlyLeaveDaysValue" class="stat-value">—</div></div></div></div>
+        <div id="myMonthlySummaryCard" class="card">
+          <div class="section-title">
+            <h2>Měsíční přehled</h2>
+            <span id="monthlySummaryLabel" class="small">aktuální měsíc</span>
+          </div>
+          <div class="grid grid-stats">
+            <div class="stat"><div class="stat-label">Odpracováno za měsíc</div><div id="monthlyWorkedValue" class="stat-value">—</div></div>
+            <div class="stat"><div class="stat-label">Dny v práci</div><div id="monthlyWorkDaysValue" class="stat-value">—</div></div>
+            <div class="stat"><div class="stat-label">Dny dovolené</div><div id="monthlyLeaveDaysValue" class="stat-value">—</div></div>
+          </div>
+        </div>
 
-        <div id="timeSummaryCard" class="card"><div class="section-title"><h2>Souhrn hodin</h2><span id="timeSummaryLabel" class="small">dnes a aktuální měsíc</span></div><div class="grid grid-stats"><div class="stat"><div class="stat-label">Celkem dnes</div><div id="todayWorkedValue" class="stat-value">00:00</div></div><div class="stat"><div class="stat-label">Celkem měsíc</div><div id="monthWorkedSummaryValue" class="stat-value">00:00</div></div><div class="stat"><div class="stat-label">Přesčasy</div><div id="overtimeValue" class="stat-value">00:00</div></div></div></div>
+        <div id="timeSummaryCard" class="card">
+          <div class="section-title">
+            <h2>Souhrn hodin</h2>
+            <span id="timeSummaryLabel" class="small">dnes a aktuální měsíc</span>
+          </div>
+          <div class="grid grid-stats">
+            <div class="stat"><div class="stat-label">Celkem dnes</div><div id="todayWorkedValue" class="stat-value">00:00</div></div>
+            <div class="stat"><div class="stat-label">Celkem měsíc</div><div id="monthWorkedSummaryValue" class="stat-value">00:00</div></div>
+            <div class="stat"><div class="stat-label">Přesčasy</div><div id="overtimeValue" class="stat-value">00:00</div></div>
+          </div>
+        </div>
 
-        <div id="myAttendanceCard" class="card"><div class="section-title"><h2>Moje poslední docházka</h2><span class="small">zaměstnanec vidí jen sebe, admin všechny</span></div><div id="myAttendanceWrap" class="empty-box">Zatím žádné záznamy.</div></div>
+        <div id="myAttendanceCard" class="card">
+          <div class="section-title">
+            <h2>Moje poslední docházka</h2>
+            <span class="small">zaměstnanec vidí jen sebe</span>
+          </div>
+          <div id="myAttendanceWrap" class="empty-box">Zatím žádné záznamy.</div>
+        </div>
 
-        <div id="myAttendanceHistoryCard" class="card"><div class="section-title"><h2>Historie docházky</h2><span id="historySummaryLabel" class="small">vybraný měsíc</span></div><div class="grid grid-form-2" style="margin-bottom:12px;align-items:end;"><div><label for="historyMonth">Měsíc</label><input id="historyMonth" type="month" /></div><div class="actions" style="margin-top:0;"><button id="loadHistoryBtn" class="btn-secondary" type="button">Načíst měsíc</button></div></div><div class="grid grid-stats" style="margin-bottom:12px;"><div class="stat"><div class="stat-label">Záznamy</div><div id="historyRecordsValue" class="stat-value">0</div></div><div class="stat"><div class="stat-label">Odpracováno</div><div id="historyWorkedValue" class="stat-value">00:00</div></div><div class="stat"><div class="stat-label">Dny v práci</div><div id="historyDaysValue" class="stat-value">0</div></div></div><div id="myAttendanceHistoryWrap" class="empty-box">Vyber měsíc a načti historii docházky.</div></div>
+        <div id="myAttendanceHistoryCard" class="card">
+          <div class="section-title">
+            <h2>Historie docházky</h2>
+            <span id="historySummaryLabel" class="small">vybraný měsíc</span>
+          </div>
+          <div class="grid grid-2" style="margin-bottom:12px;align-items:end;">
+            <div><label for="historyMonth">Měsíc</label><input id="historyMonth" type="month" /></div>
+            <div class="actions"><button id="loadHistoryBtn" class="btn-secondary" type="button">Načíst měsíc</button></div>
+          </div>
+          <div class="grid grid-stats" style="margin-bottom:12px;">
+            <div class="stat"><div class="stat-label">Záznamy</div><div id="historyRecordsValue" class="stat-value">0</div></div>
+            <div class="stat"><div class="stat-label">Odpracováno</div><div id="historyWorkedValue" class="stat-value">00:00</div></div>
+            <div class="stat"><div class="stat-label">Dny v práci</div><div id="historyDaysValue" class="stat-value">0</div></div>
+          </div>
+          <div id="myAttendanceHistoryWrap" class="empty-box">Vyber měsíc a načti historii docházky.</div>
+        </div>
 
         <div id="adminPanel" class="hidden">
-          <div class="admin-layout">
-            <div class="admin-main">
-              <div class="card"><div class="section-title"><h2>Dnešní přehled firmy</h2><span class="pill pill-admin">dashboard</span></div><div class="grid grid-stats"><div class="stat"><div class="stat-label">Celkem zaměstnanců</div><div id="dashTotalEmployees" class="stat-value">0</div></div><div class="stat"><div class="stat-label">V práci</div><div id="dashAtWork" class="stat-value">0</div></div><div class="stat"><div class="stat-label">Home office</div><div id="dashHomeOffice" class="stat-value">0</div></div><div class="stat"><div class="stat-label">Služební cesta</div><div id="dashBusinessTrip" class="stat-value">0</div></div><div class="stat"><div class="stat-label">Dovolená</div><div id="dashOnLeave" class="stat-value">0</div></div></div></div>
+          <div class="grid grid-admin">
+            <div class="stack">
+              <div class="card">
+                <div class="section-title">
+                  <h2>Dnešní přehled firmy</h2>
+                  <span class="pill pill-admin">dashboard</span>
+                </div>
+                <div class="grid grid-stats-5">
+                  <div class="stat"><div class="stat-label">Celkem zaměstnanců</div><div id="dashTotalEmployees" class="stat-value">0</div></div>
+                  <div class="stat"><div class="stat-label">V práci</div><div id="dashAtWork" class="stat-value">0</div></div>
+                  <div class="stat"><div class="stat-label">Home office</div><div id="dashHomeOffice" class="stat-value">0</div></div>
+                  <div class="stat"><div class="stat-label">Služební cesta</div><div id="dashBusinessTrip" class="stat-value">0</div></div>
+                  <div class="stat"><div class="stat-label">Dovolená</div><div id="dashOnLeave" class="stat-value">0</div></div>
+                </div>
+              </div>
 
-              <div class="card"><div class="section-title"><h2>Žádosti o dovolenou</h2><span class="small">admin správa všech žádostí</span></div><div id="adminLeaveRequestsWrap" class="empty-box">Načítám žádosti…</div></div>
+              <div class="card">
+                <div class="section-title">
+                  <h2>Žádosti o dovolenou</h2>
+                  <span class="small">admin správa všech žádostí</span>
+                </div>
+                <div id="adminLeaveRequestsWrap" class="empty-box">Načítám žádosti…</div>
+              </div>
 
-              <div class="grid grid-admin"><div class="card"><div class="section-title"><h2>Kdo je dnes v práci a kde</h2><span class="pill pill-admin">admin</span></div><div id="adminActiveWrap" class="empty-box">Načítám…</div></div><div class="card"><div class="section-title"><h2>Dnešní docházka všech</h2><span class="pill pill-admin">live přehled</span></div><div class="actions" style="margin-bottom:10px;flex-wrap:wrap;"><button class="btn-secondary today-filter-btn active-filter" data-filter="all" type="button">Všichni</button><button class="btn-secondary today-filter-btn" data-filter="work" type="button">V práci</button><button class="btn-secondary today-filter-btn" data-filter="home" type="button">Home office</button><button class="btn-secondary today-filter-btn" data-filter="trip" type="button">Služební cesta</button><button class="btn-secondary today-filter-btn" data-filter="leave" type="button">Dovolená</button></div><div id="adminTodayWrap" class="empty-box">Načítám…</div></div></div>
+              <div class="grid grid-2">
+                <div class="card">
+                  <div class="section-title">
+                    <h2>Kdo je dnes v práci a kde</h2>
+                    <span class="pill pill-admin">admin</span>
+                  </div>
+                  <div id="adminActiveWrap" class="empty-box">Načítám…</div>
+                </div>
 
-              <div class="card"><div class="section-title"><h2>Audit log docházky</h2><span class="small">kdo co upravil</span></div><div class="grid grid-form-2" style="margin-bottom:12px;align-items:end;"><div><label for="auditMonth">Měsíc</label><input id="auditMonth" type="month" /></div><div class="actions" style="margin-top:0;"><button id="loadAuditBtn" class="btn-secondary" type="button">Načíst audit</button></div></div><div id="auditWrap" class="empty-box">Vyber měsíc a načti audit log.</div></div>
+                <div class="card">
+                  <div class="section-title">
+                    <h2>Dnešní docházka všech</h2>
+                    <span class="pill pill-admin">live přehled</span>
+                  </div>
+                  <div class="actions" style="margin-bottom:10px;">
+                    <button class="btn-secondary today-filter-btn active-filter" data-filter="all" type="button">Všichni</button>
+                    <button class="btn-secondary today-filter-btn" data-filter="work" type="button">V práci</button>
+                    <button class="btn-secondary today-filter-btn" data-filter="home" type="button">Home office</button>
+                    <button class="btn-secondary today-filter-btn" data-filter="trip" type="button">Služební cesta</button>
+                    <button class="btn-secondary today-filter-btn" data-filter="leave" type="button">Dovolená</button>
+                  </div>
+                  <div id="adminTodayWrap" class="empty-box">Načítám…</div>
+                </div>
+              </div>
 
-              <div class="card"><div class="section-title"><h2>⚠️ Kontrola chyb docházky</h2><span class="small">otevřené směny a podezřelé záznamy</span></div><div id="attendanceIssuesWrap" class="empty-box">Načítám kontroly…</div></div>
+              <div class="card">
+                <div class="section-title">
+                  <h2>Audit log docházky</h2>
+                  <span class="small">kdo co upravil</span>
+                </div>
+                <div class="grid grid-2" style="margin-bottom:12px;align-items:end;">
+                  <div><label for="auditMonth">Měsíc</label><input id="auditMonth" type="month" /></div>
+                  <div class="actions"><button id="loadAuditBtn" class="btn-secondary" type="button">Načíst audit</button></div>
+                </div>
+                <div id="auditWrap" class="empty-box">Vyber měsíc a načti audit log.</div>
+              </div>
 
-              <div class="card"><div class="section-title"><h2>Přehled dovolené</h2><span class="small">jen admin</span></div><div id="adminLeaveWrap" class="empty-box">Načítám…</div></div>
+              <div class="card">
+                <div class="section-title">
+                  <h2>Kontrola chyb docházky</h2>
+                  <span class="small">otevřené směny a podezřelé záznamy</span>
+                </div>
+                <div id="attendanceIssuesWrap" class="empty-box">Načítám kontroly…</div>
+              </div>
 
-              <div class="card employees-card"><div class="section-title"><h2>Zaměstnanci</h2><span class="small">přehled zaměstnanců</span></div><div class="employees-toolbar"><div class="toolbar-field"><label for="employeeSearchInput">Hledat</label><input id="employeeSearchInput" type="text" placeholder="jméno, e-mail, kancelář" /></div><div class="toolbar-field"><label for="employeeRoleFilter">Role</label><select id="employeeRoleFilter"><option value="all">všechny</option><option value="employee">employee</option><option value="admin">admin</option></select></div><div class="toolbar-field"><label for="employeeActiveFilter">Stav</label><select id="employeeActiveFilter"><option value="all">všichni</option><option value="active">aktivní</option><option value="inactive">neaktivní</option></select></div></div><div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div></div>
+              <div class="card">
+                <div class="section-title">
+                  <h2>Přehled dovolené</h2>
+                  <span class="small">jen admin</span>
+                </div>
+                <div id="adminLeaveWrap" class="empty-box">Načítám…</div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">
+                  <h2>Zaměstnanci</h2>
+                  <span class="small">přehled zaměstnanců</span>
+                </div>
+                <div class="grid grid-3" style="margin-bottom:12px;">
+                  <div><label for="employeeSearchInput">Hledat</label><input id="employeeSearchInput" type="text" placeholder="jméno, e-mail, kancelář" /></div>
+                  <div><label for="employeeRoleFilter">Role</label>
+                    <select id="employeeRoleFilter">
+                      <option value="all">všechny</option>
+                      <option value="employee">employee</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </div>
+                  <div><label for="employeeActiveFilter">Stav</label>
+                    <select id="employeeActiveFilter">
+                      <option value="all">všichni</option>
+                      <option value="active">aktivní</option>
+                      <option value="inactive">neaktivní</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="employeesWrap" class="empty-box">Načítám zaměstnance…</div>
+              </div>
             </div>
 
-            <div class="admin-side">
-              <div class="card"><div class="section-title"><h2>Historie docházky (admin)</h2><span class="small">kontrola a opravy staré docházky</span></div><div class="grid grid-form-2" style="margin-bottom:12px;align-items:end;"><div><label for="adminHistoryEmployee">Zaměstnanec</label><select id="adminHistoryEmployee"></select></div><div><label for="adminHistoryMonth">Měsíc</label><input id="adminHistoryMonth" type="month" /></div></div><div class="actions" style="margin-bottom:12px;"><button id="adminLoadHistoryBtn" class="btn-secondary" type="button">Načíst docházku</button></div><div id="adminHistorySummary" class="message warn" style="margin-bottom:12px;">Vyber zaměstnance a měsíc.</div><div id="adminHistoryWrap" class="empty-box">Vyber zaměstnance a měsíc.</div></div>
+            <div class="stack">
+              <div class="card">
+                <div class="section-title">
+                  <h2>Historie docházky (admin)</h2>
+                  <span class="small">kontrola a opravy</span>
+                </div>
+                <div class="grid grid-2" style="margin-bottom:12px;align-items:end;">
+                  <div><label for="adminHistoryEmployee">Zaměstnanec</label><select id="adminHistoryEmployee"></select></div>
+                  <div><label for="adminHistoryMonth">Měsíc</label><input id="adminHistoryMonth" type="month" /></div>
+                </div>
+                <div class="actions" style="margin-bottom:12px;">
+                  <button id="adminLoadHistoryBtn" class="btn-secondary" type="button">Načíst docházku</button>
+                </div>
+                <div id="adminHistorySummary" class="message warn" style="margin-bottom:12px;">Vyber zaměstnance a měsíc.</div>
+                <div id="adminHistoryWrap" class="empty-box">Vyber zaměstnance a měsíc.</div>
+              </div>
 
-              <div class="card"><div class="section-title"><h2>Místa výkonu práce</h2><span class="small">správa číselníku míst</span></div><div><label for="officeName">Název místa</label><input id="officeName" type="text" placeholder="např. Dívčí Hrad" /></div><div style="margin-top:12px;"><label for="officeSortOrder">Pořadí</label><input id="officeSortOrder" type="number" min="0" step="1" value="0" /></div><div style="margin-top:12px;"><label for="officeActive">Aktivní</label><select id="officeActive"><option value="true">ano</option><option value="false">ne</option></select></div><div class="actions" style="margin-top:14px;"><button id="saveOfficeBtn" class="btn-success" type="button">Uložit místo</button><button id="cancelOfficeEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button></div><div id="officeMessage" class="message warn" style="margin-top:14px;">Přidej nové místo nebo uprav existující.</div><div id="officesWrap" class="empty-box" style="margin-top:14px;">Načítám místa…</div></div>
+              <div class="card">
+                <div class="section-title">
+                  <h2>Místa výkonu práce</h2>
+                  <span class="small">správa míst</span>
+                </div>
+                <div><label for="officeName">Název místa</label><input id="officeName" type="text" placeholder="např. Dívčí Hrad" /></div>
+                <div style="margin-top:12px;"><label for="officeSortOrder">Pořadí</label><input id="officeSortOrder" type="number" min="0" step="1" value="0" /></div>
+                <div style="margin-top:12px;"><label for="officeActive">Aktivní</label>
+                  <select id="officeActive">
+                    <option value="true">ano</option>
+                    <option value="false">ne</option>
+                  </select>
+                </div>
+                <div class="actions" style="margin-top:14px;">
+                  <button id="saveOfficeBtn" class="btn-success" type="button">Uložit místo</button>
+                  <button id="cancelOfficeEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
+                </div>
+                <div id="officeMessage" class="message warn" style="margin-top:14px;">Přidej nové místo nebo uprav existující.</div>
+                <div id="officesWrap" class="empty-box" style="margin-top:14px;">Načítám místa…</div>
+              </div>
 
-              <div class="card"><div class="section-title"><h2>Zapsat dovolenou zaměstnanci</h2><span class="small">jen admin</span></div><div><label for="adminLeaveEmployee">Zaměstnanec</label><select id="adminLeaveEmployee"></select></div><div style="margin-top:12px;"><label for="adminLeaveDate">Datum dovolené</label><input id="adminLeaveDate" type="date" /></div><div style="margin-top:12px;"><label for="adminLeaveHours">Počet hodin</label><input id="adminLeaveHours" type="number" min="1" step="1" value="8" /></div><div style="margin-top:12px;"><label for="adminLeaveNote">Poznámka</label><textarea id="adminLeaveNote"></textarea></div><div class="actions" style="margin-top:14px;"><button id="adminCreateLeaveBtn" class="btn-success" type="button">Zapsat dovolenou</button></div><div id="adminLeaveMessage" class="message warn" style="margin-top:14px;">Vyber zaměstnance, datum a hodiny.</div></div>
+              <div class="card">
+                <div class="section-title">
+                  <h2>Zapsat dovolenou zaměstnanci</h2>
+                  <span class="small">jen admin</span>
+                </div>
+                <div><label for="adminLeaveEmployee">Zaměstnanec</label><select id="adminLeaveEmployee"></select></div>
+                <div style="margin-top:12px;"><label for="adminLeaveDate">Datum dovolené</label><input id="adminLeaveDate" type="date" /></div>
+                <div style="margin-top:12px;"><label for="adminLeaveHours">Počet hodin</label><input id="adminLeaveHours" type="number" min="1" step="1" value="8" /></div>
+                <div style="margin-top:12px;"><label for="adminLeaveNote">Poznámka</label><textarea id="adminLeaveNote"></textarea></div>
+                <div class="actions" style="margin-top:14px;">
+                  <button id="adminCreateLeaveBtn" class="btn-success" type="button">Zapsat dovolenou</button>
+                </div>
+                <div id="adminLeaveMessage" class="message warn" style="margin-top:14px;">Vyber zaměstnance, datum a hodiny.</div>
+              </div>
 
-              <div class="card"><div class="section-title"><h2>Uzávěrka měsíce</h2><span class="small">zamčení minulých období</span></div><div><label for="lockMonth">Měsíc</label><input id="lockMonth" type="month" /></div><div class="actions" style="margin-top:14px;"><button id="checkLockBtn" class="btn-secondary" type="button">Zjistit stav</button><button id="lockMonthBtn" class="btn-danger" type="button">Zamknout</button><button id="unlockMonthBtn" class="btn-success" type="button">Odemknout</button></div><div id="lockMonthMessage" class="message warn" style="margin-top:14px;">Vyber měsíc a zjisti stav uzávěrky.</div></div>
+              <div class="card">
+                <div class="section-title">
+                  <h2>Uzávěrka měsíce</h2>
+                  <span class="small">zamčení období</span>
+                </div>
+                <div><label for="lockMonth">Měsíc</label><input id="lockMonth" type="month" /></div>
+                <div class="actions" style="margin-top:14px;">
+                  <button id="checkLockBtn" class="btn-secondary" type="button">Zjistit stav</button>
+                  <button id="lockMonthBtn" class="btn-danger" type="button">Zamknout</button>
+                  <button id="unlockMonthBtn" class="btn-success" type="button">Odemknout</button>
+                </div>
+                <div id="lockMonthMessage" class="message warn" style="margin-top:14px;">Vyber měsíc a zjisti stav uzávěrky.</div>
+              </div>
 
-              <div class="card"><div class="section-title"><h2>Export pro účetní</h2><span class="small">souhrn po zaměstnancích</span></div><div><label for="exportMonth">Měsíc</label><input id="exportMonth" type="month" /></div><div class="actions" style="margin-top:14px;"><button id="exportMonthBtn" class="btn-success" type="button">Export pro účetní</button></div><div id="exportMessage" class="message warn" style="margin-top:14px;">Vyber měsíc a klikni na export.</div></div>
+              <div class="card">
+                <div class="section-title">
+                  <h2>Export pro účetní</h2>
+                  <span class="small">souhrn po zaměstnancích</span>
+                </div>
+                <div><label for="exportMonth">Měsíc</label><input id="exportMonth" type="month" /></div>
+                <div class="actions" style="margin-top:14px;">
+                  <button id="exportMonthBtn" class="btn-success" type="button">Export pro účetní</button>
+                </div>
+                <div id="exportMessage" class="message warn" style="margin-top:14px;">Vyber měsíc a klikni na export.</div>
+              </div>
 
-              <div class="card"><div class="section-title"><h2 id="attendanceFormTitle">Upravit / vložit docházku</h2><span class="small">admin může opravovat i staré záznamy</span></div><div style="margin-bottom:12px;"><label for="editAttendanceEmployee">Zaměstnanec</label><select id="editAttendanceEmployee"></select></div><div><label for="editAttendanceDate">Datum</label><input id="editAttendanceDate" type="date" /></div><div style="margin-top:12px;"><label for="editAttendanceOffice">Místo</label><select id="editAttendanceOffice"></select></div><div style="margin-top:12px;"><label for="editAttendanceType">Typ</label><select id="editAttendanceType"><option value="práce">práce</option><option value="home office">home office</option><option value="služební cesta">služební cesta</option><option value="dovolená">dovolená</option></select></div><div style="margin-top:12px;"><label for="editAttendanceTimeFrom">Od</label><input id="editAttendanceTimeFrom" type="time" step="1" /></div><div style="margin-top:12px;"><label for="editAttendanceTimeTo">Do</label><input id="editAttendanceTimeTo" type="time" step="1" /></div><div style="margin-top:12px;"><label for="editAttendanceBreakMinutes">Přestávka (minuty)</label><input id="editAttendanceBreakMinutes" type="number" min="0" step="1" /></div><div class="small" style="margin-top:6px;">Pro dovolenou nech čas od/do prázdný a přestávku 0.</div><div class="actions" style="margin-top:14px;"><button id="insertAttendanceBtn" class="btn-success" type="button">Vložit ručně</button><button id="saveAttendanceEditBtn" class="btn-primary" type="button">Uložit opravu</button><button id="cancelAttendanceEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button></div><div id="attendanceEditMessage" class="message warn" style="margin-top:14px;">Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.</div></div>
+              <div class="card">
+                <div class="section-title">
+                  <h2 id="attendanceFormTitle">Upravit / vložit docházku</h2>
+                  <span class="small">admin může opravovat staré záznamy</span>
+                </div>
+                <div><label for="editAttendanceEmployee">Zaměstnanec</label><select id="editAttendanceEmployee"></select></div>
+                <div style="margin-top:12px;"><label for="editAttendanceDate">Datum</label><input id="editAttendanceDate" type="date" /></div>
+                <div style="margin-top:12px;"><label for="editAttendanceOffice">Místo</label><select id="editAttendanceOffice"></select></div>
+                <div style="margin-top:12px;"><label for="editAttendanceType">Typ</label>
+                  <select id="editAttendanceType">
+                    <option value="práce">práce</option>
+                    <option value="home office">home office</option>
+                    <option value="služební cesta">služební cesta</option>
+                    <option value="dovolená">dovolená</option>
+                  </select>
+                </div>
+                <div style="margin-top:12px;"><label for="editAttendanceTimeFrom">Od</label><input id="editAttendanceTimeFrom" type="time" step="1" /></div>
+                <div style="margin-top:12px;"><label for="editAttendanceTimeTo">Do</label><input id="editAttendanceTimeTo" type="time" step="1" /></div>
+                <div style="margin-top:12px;"><label for="editAttendanceBreakMinutes">Přestávka (minuty)</label><input id="editAttendanceBreakMinutes" type="number" min="0" step="1" /></div>
+                <div class="small" style="margin-top:6px;">Pro dovolenou nech čas od/do prázdný a přestávku 0.</div>
+                <div class="actions" style="margin-top:14px;">
+                  <button id="insertAttendanceBtn" class="btn-success" type="button">Vložit ručně</button>
+                  <button id="saveAttendanceEditBtn" class="btn-primary" type="button">Uložit opravu</button>
+                  <button id="cancelAttendanceEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
+                </div>
+                <div id="attendanceEditMessage" class="message warn" style="margin-top:14px;">Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.</div>
+              </div>
 
-              <div class="card"><div class="section-title"><h2 id="employeeFormTitle">Nový zaměstnanec</h2><span class="small">jen admin</span></div><div><label for="newEmployeeName">Jméno</label><input id="newEmployeeName" type="text" /></div><div style="margin-top:12px;"><label for="newEmployeeEmail">E-mail</label><input id="newEmployeeEmail" type="email" /></div><div style="margin-top:12px;"><label for="newEmployeeRole">Role</label><select id="newEmployeeRole"><option value="employee">employee</option><option value="admin">admin</option></select></div><div style="margin-top:12px;"><label for="newEmployeeOffices">Offices</label><input id="newEmployeeOffices" type="text" /></div><div style="margin-top:12px;"><label for="newEmployeeWeekly">Úvazek / weekly</label><input id="newEmployeeWeekly" type="text" placeholder="např. plný úvazek" /></div><div style="margin-top:12px;"><label for="newEmployeeLeaveDays">Dovolená dny</label><input id="newEmployeeLeaveDays" type="number" min="0" step="1" value="20" /></div><div style="margin-top:12px;"><label for="newEmployeeLeaveHours">Dovolená hodiny</label><input id="newEmployeeLeaveHours" type="number" min="0" step="1" value="160" /></div><div style="margin-top:12px;"><label for="newEmployeeActive">Aktivní</label><select id="newEmployeeActive"><option value="true">ano</option><option value="false">ne</option></select></div><div class="actions" style="margin-top:14px;"><button id="createEmployeeBtn" class="btn-success" type="button">Přidat zaměstnance</button><button id="cancelEditEmployeeBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button></div><div id="createEmployeeMessage" class="message warn" style="margin-top:14px;">Vyplň údaje a ulož.</div></div>
+              <div class="card">
+                <div class="section-title">
+                  <h2 id="employeeFormTitle">Nový zaměstnanec</h2>
+                  <span class="small">jen admin</span>
+                </div>
+                <div><label for="newEmployeeName">Jméno</label><input id="newEmployeeName" type="text" /></div>
+                <div style="margin-top:12px;"><label for="newEmployeeEmail">E-mail</label><input id="newEmployeeEmail" type="email" /></div>
+                <div style="margin-top:12px;"><label for="newEmployeeRole">Role</label>
+                  <select id="newEmployeeRole">
+                    <option value="employee">employee</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+                <div style="margin-top:12px;"><label for="newEmployeeOffices">Offices</label><input id="newEmployeeOffices" type="text" /></div>
+                <div style="margin-top:12px;"><label for="newEmployeeWeekly">Úvazek / weekly</label><input id="newEmployeeWeekly" type="text" placeholder="např. plný úvazek" /></div>
+                <div style="margin-top:12px;"><label for="newEmployeeLeaveDays">Dovolená dny</label><input id="newEmployeeLeaveDays" type="number" min="0" step="1" value="20" /></div>
+                <div style="margin-top:12px;"><label for="newEmployeeLeaveHours">Dovolená hodiny</label><input id="newEmployeeLeaveHours" type="number" min="0" step="1" value="160" /></div>
+                <div style="margin-top:12px;"><label for="newEmployeeActive">Aktivní</label>
+                  <select id="newEmployeeActive">
+                    <option value="true">ano</option>
+                    <option value="false">ne</option>
+                  </select>
+                </div>
+                <div class="actions" style="margin-top:14px;">
+                  <button id="createEmployeeBtn" class="btn-success" type="button">Přidat zaměstnance</button>
+                  <button id="cancelEditEmployeeBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
+                </div>
+                <div id="createEmployeeMessage" class="message warn" style="margin-top:14px;">Vyplň údaje a ulož.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -128,12 +745,71 @@
 
 <script>
 const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2amtrZGZ6enVkdG1scW9sYnprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNDE1MzgsImV4cCI6MjA4ODcxNzUzOH0.ff7uzeH5iq8nHRPl2SzL-BvxLLIj4RvaA4zSskZBYTE";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+const SUPABASE_KEY = "sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+});
 
 const $ = id => document.getElementById(id);
 
-const loginView=$("loginView"), passwordResetView=$("passwordResetView"), appView=$("appView"), employeeOnlyBlockEl=$("employeeOnlyBlock"), myAttendanceCardEl=$("myAttendanceCard"), myAttendanceHistoryCardEl=$("myAttendanceHistoryCard"), myMonthlySummaryCardEl=$("myMonthlySummaryCard"), timeSummaryCardEl=$("timeSummaryCard"), emailEl=$("email"), passwordEl=$("password"), loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), refreshBtn=$("refreshBtn"), newPasswordEl=$("newPassword"), newPassword2El=$("newPassword2"), saveNewPasswordBtn=$("saveNewPasswordBtn"), loginMessageEl=$("loginMessage"), passwordResetMessageEl=$("passwordResetMessage"), attendanceMessageEl=$("attendanceMessage"), manualAttendanceMessageEl=$("manualAttendanceMessage"), myLeaveMessageEl=$("myLeaveMessage"), adminLeaveMessageEl=$("adminLeaveMessage"), exportMessageEl=$("exportMessage"), createEmployeeMessageEl=$("createEmployeeMessage"), attendanceEditMessageEl=$("attendanceEditMessage"), adminHistorySummaryEl=$("adminHistorySummary"), lockMonthMessageEl=$("lockMonthMessage"), officeMessageEl=$("officeMessage"), sessionTextEl=$("sessionText"), rolePillEl=$("rolePill"), profileBoxEl=$("profileBox"), openShiftValueEl=$("openShiftValue"), todayArrivalValueEl=$("todayArrivalValue"), todayDepartureValueEl=$("todayDepartureValue"), leaveTotalHoursValueEl=$("leaveTotalHoursValue"), leaveUsedHoursValueEl=$("leaveUsedHoursValue"), leaveRemainingDaysValueEl=$("leaveRemainingDaysValue"), monthlySummaryLabelEl=$("monthlySummaryLabel"), monthlyWorkedValueEl=$("monthlyWorkedValue"), monthlyWorkDaysValueEl=$("monthlyWorkDaysValue"), monthlyLeaveDaysValueEl=$("monthlyLeaveDaysValue"), timeSummaryLabelEl=$("timeSummaryLabel"), todayWorkedValueEl=$("todayWorkedValue"), monthWorkedSummaryValueEl=$("monthWorkedSummaryValue"), overtimeValueEl=$("overtimeValue"), historyMonthEl=$("historyMonth"), loadHistoryBtn=$("loadHistoryBtn"), myAttendanceHistoryWrapEl=$("myAttendanceHistoryWrap"), historySummaryLabelEl=$("historySummaryLabel"), historyRecordsValueEl=$("historyRecordsValue"), historyWorkedValueEl=$("historyWorkedValue"), historyDaysValueEl=$("historyDaysValue"), officeEl=$("office"), attendanceTypeEl=$("attendanceType"), breakMinutesEl=$("breakMinutes"), employeeOfficesInfoEl=$("employeeOfficesInfo"), checkInBtn=$("checkInBtn"), checkOutBtn=$("checkOutBtn"), manualAttendanceDateEl=$("manualAttendanceDate"), manualAttendanceOfficeEl=$("manualAttendanceOffice"), manualAttendanceTypeEl=$("manualAttendanceType"), manualAttendanceBreakMinutesEl=$("manualAttendanceBreakMinutes"), manualAttendanceTimeFromEl=$("manualAttendanceTimeFrom"), manualAttendanceTimeToEl=$("manualAttendanceTimeTo"), createManualAttendanceBtn=$("createManualAttendanceBtn"), myLeaveDateFromEl=$("myLeaveDateFrom"), myLeaveDateToEl=$("myLeaveDateTo"), myLeaveHoursEl=$("myLeaveHours"), myLeaveNoteEl=$("myLeaveNote"), createMyLeaveBtn=$("createMyLeaveBtn"), myAttendanceWrapEl=$("myAttendanceWrap"), myLeaveRequestsWrapEl=$("myLeaveRequestsWrap"), adminPanelEl=$("adminPanel"), adminActiveWrapEl=$("adminActiveWrap"), adminTodayWrapEl=$("adminTodayWrap"), attendanceIssuesWrapEl=$("attendanceIssuesWrap"), adminLeaveWrapEl=$("adminLeaveWrap"), adminLeaveRequestsWrapEl=$("adminLeaveRequestsWrap"), employeesWrapEl=$("employeesWrap"), employeeSearchInputEl=$("employeeSearchInput"), employeeRoleFilterEl=$("employeeRoleFilter"), employeeActiveFilterEl=$("employeeActiveFilter"), dashTotalEmployeesEl=$("dashTotalEmployees"), dashAtWorkEl=$("dashAtWork"), dashHomeOfficeEl=$("dashHomeOffice"), dashBusinessTripEl=$("dashBusinessTrip"), dashOnLeaveEl=$("dashOnLeave"), adminLeaveEmployeeEl=$("adminLeaveEmployee"), officeNameEl=$("officeName"), officeSortOrderEl=$("officeSortOrder"), officeActiveEl=$("officeActive"), saveOfficeBtn=$("saveOfficeBtn"), cancelOfficeEditBtn=$("cancelOfficeEditBtn"), officesWrapEl=$("officesWrap"), adminLeaveDateEl=$("adminLeaveDate"), adminLeaveHoursEl=$("adminLeaveHours"), adminLeaveNoteEl=$("adminLeaveNote"), adminCreateLeaveBtn=$("adminCreateLeaveBtn"), adminHistoryEmployeeEl=$("adminHistoryEmployee"), adminHistoryMonthEl=$("adminHistoryMonth"), adminLoadHistoryBtn=$("adminLoadHistoryBtn"), adminHistoryWrapEl=$("adminHistoryWrap"), auditMonthEl=$("auditMonth"), loadAuditBtn=$("loadAuditBtn"), auditWrapEl=$("auditWrap"), lockMonthEl=$("lockMonth"), checkLockBtn=$("checkLockBtn"), lockMonthBtn=$("lockMonthBtn"), unlockMonthBtn=$("unlockMonthBtn"), exportMonthEl=$("exportMonth"), exportMonthBtn=$("exportMonthBtn"), attendanceFormTitleEl=$("attendanceFormTitle"), editAttendanceEmployeeEl=$("editAttendanceEmployee"), editAttendanceDateEl=$("editAttendanceDate"), editAttendanceOfficeEl=$("editAttendanceOffice"), editAttendanceTypeEl=$("editAttendanceType"), editAttendanceTimeFromEl=$("editAttendanceTimeFrom"), editAttendanceTimeToEl=$("editAttendanceTimeTo"), editAttendanceBreakMinutesEl=$("editAttendanceBreakMinutes"), insertAttendanceBtn=$("insertAttendanceBtn"), saveAttendanceEditBtn=$("saveAttendanceEditBtn"), cancelAttendanceEditBtn=$("cancelAttendanceEditBtn"), employeeFormTitleEl=$("employeeFormTitle"), newEmployeeNameEl=$("newEmployeeName"), newEmployeeEmailEl=$("newEmployeeEmail"), newEmployeeRoleEl=$("newEmployeeRole"), newEmployeeOfficesEl=$("newEmployeeOffices"), newEmployeeWeeklyEl=$("newEmployeeWeekly"), newEmployeeLeaveDaysEl=$("newEmployeeLeaveDays"), newEmployeeLeaveHoursEl=$("newEmployeeLeaveHours"), newEmployeeActiveEl=$("newEmployeeActive"), createEmployeeBtn=$("createEmployeeBtn"), cancelEditEmployeeBtn=$("cancelEditEmployeeBtn");
+const loginView=$("loginView"), passwordResetView=$("passwordResetView"), appView=$("appView"),
+employeeOnlyBlockEl=$("employeeOnlyBlock"), myAttendanceCardEl=$("myAttendanceCard"),
+myAttendanceHistoryCardEl=$("myAttendanceHistoryCard"), myMonthlySummaryCardEl=$("myMonthlySummaryCard"),
+timeSummaryCardEl=$("timeSummaryCard"), emailEl=$("email"), passwordEl=$("password"),
+loginBtn=$("loginBtn"), logoutBtn=$("logoutBtn"), refreshBtn=$("refreshBtn"),
+newPasswordEl=$("newPassword"), newPassword2El=$("newPassword2"),
+saveNewPasswordBtn=$("saveNewPasswordBtn"), loginMessageEl=$("loginMessage"),
+passwordResetMessageEl=$("passwordResetMessage"), attendanceMessageEl=$("attendanceMessage"),
+manualAttendanceMessageEl=$("manualAttendanceMessage"), myLeaveMessageEl=$("myLeaveMessage"),
+adminLeaveMessageEl=$("adminLeaveMessage"), exportMessageEl=$("exportMessage"),
+createEmployeeMessageEl=$("createEmployeeMessage"), attendanceEditMessageEl=$("attendanceEditMessage"),
+adminHistorySummaryEl=$("adminHistorySummary"), lockMonthMessageEl=$("lockMonthMessage"),
+officeMessageEl=$("officeMessage"), sessionTextEl=$("sessionText"), rolePillEl=$("rolePill"),
+profileBoxEl=$("profileBox"), openShiftValueEl=$("openShiftValue"), todayArrivalValueEl=$("todayArrivalValue"),
+todayDepartureValueEl=$("todayDepartureValue"), leaveTotalHoursValueEl=$("leaveTotalHoursValue"),
+leaveUsedHoursValueEl=$("leaveUsedHoursValue"), leaveRemainingDaysValueEl=$("leaveRemainingDaysValue"),
+monthlySummaryLabelEl=$("monthlySummaryLabel"), monthlyWorkedValueEl=$("monthlyWorkedValue"),
+monthlyWorkDaysValueEl=$("monthlyWorkDaysValue"), monthlyLeaveDaysValueEl=$("monthlyLeaveDaysValue"),
+timeSummaryLabelEl=$("timeSummaryLabel"), todayWorkedValueEl=$("todayWorkedValue"),
+monthWorkedSummaryValueEl=$("monthWorkedSummaryValue"), overtimeValueEl=$("overtimeValue"),
+historyMonthEl=$("historyMonth"), loadHistoryBtn=$("loadHistoryBtn"), myAttendanceHistoryWrapEl=$("myAttendanceHistoryWrap"),
+historySummaryLabelEl=$("historySummaryLabel"), historyRecordsValueEl=$("historyRecordsValue"),
+historyWorkedValueEl=$("historyWorkedValue"), historyDaysValueEl=$("historyDaysValue"),
+officeEl=$("office"), attendanceTypeEl=$("attendanceType"), breakMinutesEl=$("breakMinutes"),
+employeeOfficesInfoEl=$("employeeOfficesInfo"), checkInBtn=$("checkInBtn"), checkOutBtn=$("checkOutBtn"),
+manualAttendanceDateEl=$("manualAttendanceDate"), manualAttendanceOfficeEl=$("manualAttendanceOffice"),
+manualAttendanceTypeEl=$("manualAttendanceType"), manualAttendanceBreakMinutesEl=$("manualAttendanceBreakMinutes"),
+manualAttendanceTimeFromEl=$("manualAttendanceTimeFrom"), manualAttendanceTimeToEl=$("manualAttendanceTimeTo"),
+createManualAttendanceBtn=$("createManualAttendanceBtn"), myLeaveDateFromEl=$("myLeaveDateFrom"),
+myLeaveDateToEl=$("myLeaveDateTo"), myLeaveHoursEl=$("myLeaveHours"), myLeaveNoteEl=$("myLeaveNote"),
+createMyLeaveBtn=$("createMyLeaveBtn"), myAttendanceWrapEl=$("myAttendanceWrap"),
+myLeaveRequestsWrapEl=$("myLeaveRequestsWrap"), adminPanelEl=$("adminPanel"), adminActiveWrapEl=$("adminActiveWrap"),
+adminTodayWrapEl=$("adminTodayWrap"), attendanceIssuesWrapEl=$("attendanceIssuesWrap"),
+adminLeaveWrapEl=$("adminLeaveWrap"), adminLeaveRequestsWrapEl=$("adminLeaveRequestsWrap"),
+employeesWrapEl=$("employeesWrap"), employeeSearchInputEl=$("employeeSearchInput"),
+employeeRoleFilterEl=$("employeeRoleFilter"), employeeActiveFilterEl=$("employeeActiveFilter"),
+dashTotalEmployeesEl=$("dashTotalEmployees"), dashAtWorkEl=$("dashAtWork"),
+dashHomeOfficeEl=$("dashHomeOffice"), dashBusinessTripEl=$("dashBusinessTrip"), dashOnLeaveEl=$("dashOnLeave"),
+adminLeaveEmployeeEl=$("adminLeaveEmployee"), officeNameEl=$("officeName"),
+officeSortOrderEl=$("officeSortOrder"), officeActiveEl=$("officeActive"), saveOfficeBtn=$("saveOfficeBtn"),
+cancelOfficeEditBtn=$("cancelOfficeEditBtn"), officesWrapEl=$("officesWrap"), adminLeaveDateEl=$("adminLeaveDate"),
+adminLeaveHoursEl=$("adminLeaveHours"), adminLeaveNoteEl=$("adminLeaveNote"), adminCreateLeaveBtn=$("adminCreateLeaveBtn"),
+adminHistoryEmployeeEl=$("adminHistoryEmployee"), adminHistoryMonthEl=$("adminHistoryMonth"),
+adminLoadHistoryBtn=$("adminLoadHistoryBtn"), adminHistoryWrapEl=$("adminHistoryWrap"),
+auditMonthEl=$("auditMonth"), loadAuditBtn=$("loadAuditBtn"), auditWrapEl=$("auditWrap"),
+lockMonthEl=$("lockMonth"), checkLockBtn=$("checkLockBtn"), lockMonthBtn=$("lockMonthBtn"),
+unlockMonthBtn=$("unlockMonthBtn"), exportMonthEl=$("exportMonth"), exportMonthBtn=$("exportMonthBtn"),
+attendanceFormTitleEl=$("attendanceFormTitle"), editAttendanceEmployeeEl=$("editAttendanceEmployee"),
+editAttendanceDateEl=$("editAttendanceDate"), editAttendanceOfficeEl=$("editAttendanceOffice"),
+editAttendanceTypeEl=$("editAttendanceType"), editAttendanceTimeFromEl=$("editAttendanceTimeFrom"),
+editAttendanceTimeToEl=$("editAttendanceTimeTo"), editAttendanceBreakMinutesEl=$("editAttendanceBreakMinutes"),
+insertAttendanceBtn=$("insertAttendanceBtn"), saveAttendanceEditBtn=$("saveAttendanceEditBtn"),
+cancelAttendanceEditBtn=$("cancelAttendanceEditBtn"), employeeFormTitleEl=$("employeeFormTitle"),
+newEmployeeNameEl=$("newEmployeeName"), newEmployeeEmailEl=$("newEmployeeEmail"),
+newEmployeeRoleEl=$("newEmployeeRole"), newEmployeeOfficesEl=$("newEmployeeOffices"),
+newEmployeeWeeklyEl=$("newEmployeeWeekly"), newEmployeeLeaveDaysEl=$("newEmployeeLeaveDays"),
+newEmployeeLeaveHoursEl=$("newEmployeeLeaveHours"), newEmployeeActiveEl=$("newEmployeeActive"),
+createEmployeeBtn=$("createEmployeeBtn"), cancelEditEmployeeBtn=$("cancelEditEmployeeBtn");
 
 const todayFilterButtons = document.querySelectorAll('.today-filter-btn');
 
@@ -163,6 +839,7 @@ function renderAttendanceTypeBadge(type){
   if(n==='dovolena'||n==='vacation'||n==='leave') return `<span class="type-badge type-vacation">${safe}</span>`;
   return `<span class="type-badge type-default">${safe}</span>`;
 }
+
 function renderLeaveStatusBadge(status){
   const n=normalizeText(status);
   if(n==='pending'||n==='ceka'||n==='čeká') return `<span class="pill pill-warn">${escapeHtml(status||'pending')}</span>`;
@@ -171,15 +848,18 @@ function renderLeaveStatusBadge(status){
   if(n==='cancelled'||n==='storno'||n==='stornováno'||n==='stornovano') return `<span class="pill pill-inactive">${escapeHtml(status||'cancelled')}</span>`;
   return `<span class="pill pill-warn">${escapeHtml(status||'—')}</span>`;
 }
+
 function renderSimpleTable(columns,rows){
   if(!rows||!rows.length) return `<div class="empty-box">Žádná data.</div>`;
   const thead=columns.map(c=>`<th>${escapeHtml(c.label)}</th>`).join('');
   const tbody=rows.map(row=>`<tr>${columns.map(c=>`<td>${c.render?c.render(row):escapeHtml(row[c.key])}</td>`).join('')}</tr>`).join('');
   return `<div class="table-wrap"><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table></div>`;
 }
+
 function getAttendanceRowsForMonth(rows,monthStr){
   return (rows||[]).filter(r=>r?.date&&String(r.date).startsWith(monthStr)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || Number(b.id||0)-Number(a.id||0));
 }
+
 function getMonthlySummary(rows){
   const month=currentMonthStr();
   const workDays=new Set(), leaveDays=new Set();
@@ -193,10 +873,12 @@ function getMonthlySummary(rows){
   }
   return {month,totalWorkedMinutes,workDays:workDays.size,leaveDays:leaveDays.size};
 }
+
 function getTodayWorkedMinutes(rows){
   const today=todayStr();
   return (rows||[]).filter(r=>r?.date===today).reduce((sum,row)=>sum+getWorkedMinutes(row),0);
 }
+
 function getExpectedMonthlyMinutes(employee,monthStr){
   const normalizedWeekly=normalizeText(employee?.weekly||'');
   const uniqueWorkDays=new Set(getAttendanceRowsForMonth(myAttendanceRows,monthStr).filter(row=>{
@@ -208,13 +890,16 @@ function getExpectedMonthlyMinutes(employee,monthStr){
   if(normalizedWeekly.includes('zkraceny')||normalizedWeekly.includes('zkrácený')||normalizedWeekly.includes('6h')) return uniqueWorkDays*360;
   return uniqueWorkDays*480;
 }
+
 function buildOfficeOptions(includeInactive=false){
   return (officesData||[]).filter(r=>includeInactive||r.active!==false).sort((a,b)=>(Number(a.sort_order||0)-Number(b.sort_order||0))||String(a.name||'').localeCompare(String(b.name||''),'cs'));
 }
+
 function getOfficeIdByName(name){
   const match=(officesData||[]).find(r=>normalizeText(r.name)===normalizeText(name));
   return match?String(match.id):'';
 }
+
 function fillOfficeSelect(selectEl,selectedValue=''){
   if(!selectEl) return;
   const options=buildOfficeOptions(false);
@@ -250,6 +935,7 @@ function renderMonthlySummary(){
   monthlyWorkDaysValueEl.textContent=String(s.workDays);
   monthlyLeaveDaysValueEl.textContent=String(s.leaveDays);
 }
+
 function renderTimeSummary(){
   if(!currentEmployee||isAdmin){
     timeSummaryCardEl.classList.add('hidden');
@@ -271,6 +957,7 @@ function renderTimeSummary(){
   monthWorkedSummaryValueEl.textContent=formatWorkedMinutes(monthWorkedMinutes);
   overtimeValueEl.textContent=formatWorkedMinutes(overtimeMinutes);
 }
+
 function renderAttendanceHistory(){
   if(!currentEmployee||isAdmin){
     myAttendanceHistoryCardEl.classList.add('hidden');
@@ -304,6 +991,7 @@ function renderAttendanceHistory(){
     {label:'Přestávka',render:r=>escapeHtml(getAutoBreakMinutes(r)+' min')}
   ],rows);
 }
+
 async function loadAttendanceHistory(){
   if(!currentEmployee||isAdmin){ myAttendanceHistoryRows=[]; renderAttendanceHistory(); return; }
   const {data,error}=await supabaseClient.rpc('get_my_attendance_rows',{p_limit:366});
@@ -311,22 +999,26 @@ async function loadAttendanceHistory(){
   myAttendanceHistoryRows=Array.isArray(data)?data:[];
   renderAttendanceHistory();
 }
+
 async function getMonthLockStatus(monthStr){
   const {data,error}=await supabaseClient.rpc('is_attendance_month_locked',{p_month:monthStr});
   if(error) throw error;
   return !!data;
 }
+
 async function ensureMonthUnlockedOrThrow(dateStr){
   const monthStr=monthFromDateStr(dateStr);
   if(!monthStr) return;
   const isLocked=await getMonthLockStatus(monthStr);
   if(isLocked) throw new Error(`Měsíc ${formatMonthLabel(monthStr)} je uzamčený.`);
 }
+
 async function ensureRangeMonthsUnlockedOrThrow(dateFrom,dateTo){
   const startMonth=monthFromDateStr(dateFrom), endMonth=monthFromDateStr(dateTo);
   if(startMonth) await ensureMonthUnlockedOrThrow(dateFrom);
   if(endMonth && endMonth!==startMonth) await ensureMonthUnlockedOrThrow(dateTo);
 }
+
 async function loadAttendanceLockStatus(){
   if(!isAdmin) return;
   const monthStr=lockMonthEl.value;
@@ -338,6 +1030,7 @@ async function loadAttendanceLockStatus(){
     setMessage(lockMonthMessageEl,'Chyba načítání uzávěrky: '+error.message,'err');
   }
 }
+
 async function setAttendanceLockState(locked){
   if(!isAdmin) return;
   const monthStr=lockMonthEl.value;
@@ -362,7 +1055,11 @@ function filterTodayRows(rows){
     return true;
   });
 }
-function updateTodayFilterButtons(){ todayFilterButtons.forEach(btn=>btn.classList.toggle('active-filter',(btn.dataset.filter||'all')===currentTodayFilter)); }
+
+function updateTodayFilterButtons(){
+  todayFilterButtons.forEach(btn=>btn.classList.toggle('active-filter',(btn.dataset.filter||'all')===currentTodayFilter));
+}
+
 function renderAdminTodayTable(){
   const filtered=filterTodayRows(adminTodayAttendanceData);
   adminTodayWrapEl.innerHTML=renderSimpleTable([
@@ -396,6 +1093,7 @@ async function loadAttendanceAudit(){
     {label:'Po',render:r=>escapeHtml(r.new_value||r.after_value||'—')}
   ],auditRows);
 }
+
 function buildAttendanceIssues(rows){
   const issues=[];
   for(const row of rows||[]){
@@ -422,6 +1120,7 @@ function buildAttendanceIssues(rows){
   }
   return issues.sort((a,b)=>a.severity!==b.severity?(a.severity==='err'?-1:1):String(b.date).localeCompare(String(a.date)));
 }
+
 function renderAttendanceIssues(rows){
   const issues=buildAttendanceIssues(rows);
   if(!issues.length){ attendanceIssuesWrapEl.innerHTML=`<div class="empty-box">Nenalezeny žádné zjevné chyby v docházce.</div>`; return; }
@@ -487,6 +1186,7 @@ function updateRoleVisibility(){
     adminPanelEl.classList.add('hidden');
   }
 }
+
 function fillAdminLeaveEmployeeOptions(){
   adminLeaveEmployeeEl.innerHTML='';
   adminEmployeesData.filter(e=>!(e.role==='admin'||e.is_admin===true)).forEach(employee=>{
@@ -496,6 +1196,7 @@ function fillAdminLeaveEmployeeOptions(){
     adminLeaveEmployeeEl.appendChild(option);
   });
 }
+
 function fillAdminHistoryEmployeeOptions(){
   adminHistoryEmployeeEl.innerHTML='';
   adminEmployeesData.filter(e=>!(e.role==='admin'||e.is_admin===true)).forEach(employee=>{
@@ -505,6 +1206,7 @@ function fillAdminHistoryEmployeeOptions(){
     adminHistoryEmployeeEl.appendChild(option);
   });
 }
+
 function fillEditAttendanceEmployeeOptions(){
   editAttendanceEmployeeEl.innerHTML='';
   const filtered=adminEmployeesData.filter(e=>!(e.role==='admin'||e.is_admin===true));
@@ -522,8 +1224,10 @@ function fillEditAttendanceEmployeeOptions(){
     editAttendanceEmployeeEl.appendChild(option);
   });
 }
+
 function renderRoleBadge(role){ return normalizeText(role)==='admin'?`<span class="pill pill-admin">admin</span>`:`<span class="pill pill-employee">employee</span>`; }
 function renderActiveBadge(active){ return active?`<span class="pill pill-active">aktivní</span>`:`<span class="pill pill-inactive">neaktivní</span>`; }
+
 function getFilteredEmployees(){
   const search=normalizeText(employeeSearchInputEl?.value||'');
   const roleFilter=employeeRoleFilterEl?.value||'all';
@@ -537,6 +1241,7 @@ function getFilteredEmployees(){
     return haystack.includes(search);
   }).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'cs'));
 }
+
 function renderEmployeesTable(){
   filteredAdminEmployeesData=getFilteredEmployees();
   employeesWrapEl.innerHTML=renderSimpleTable([
@@ -546,8 +1251,9 @@ function renderEmployeesTable(){
     {label:'Stav',render:r=>renderActiveBadge(r.active!==false)},
     {label:'Offices',render:r=>escapeHtml(r.offices||'—')},
     {label:'Akce',render:r=>`<button type="button" class="btn-secondary edit-employee-btn" data-id="${r.id}">Upravit</button>`}
-  ],filteredAdminEmployeesData).replace('<div class="table-wrap">','<div class="table-wrap employees-table-wrap">');
+  ],filteredAdminEmployeesData);
 }
+
 function resetOfficeForm(){
   editOfficeId=null;
   officeNameEl.value='';
@@ -558,6 +1264,7 @@ function resetOfficeForm(){
   cancelOfficeEditBtn.classList.add('hidden');
   setMessage(officeMessageEl,'Přidej nové místo nebo uprav existující.','warn');
 }
+
 function fillOfficeFormForEdit(officeRow){
   editOfficeId=officeRow.id;
   officeNameEl.value=officeRow.name||'';
@@ -568,6 +1275,7 @@ function fillOfficeFormForEdit(officeRow){
   cancelOfficeEditBtn.classList.remove('hidden');
   setMessage(officeMessageEl,`Upravuješ místo ID ${officeRow.id}: ${officeRow.name}`,'warn');
 }
+
 function renderOfficesAdminTable(){
   officesWrapEl.innerHTML=renderSimpleTable([
     {label:'ID',render:r=>escapeHtml(r.id)},
@@ -577,6 +1285,7 @@ function renderOfficesAdminTable(){
     {label:'Akce',render:r=>`<button type="button" class="btn-secondary edit-office-btn" data-id="${r.id}">Upravit</button>`}
   ],buildOfficeOptions(true));
 }
+
 async function loadOffices(){
   const {data,error}=await supabaseClient.rpc('get_offices');
   if(error) throw error;
@@ -586,6 +1295,7 @@ async function loadOffices(){
   fillOfficeSelect(editAttendanceOfficeEl,editAttendanceOfficeEl.value);
   renderOfficesAdminTable();
 }
+
 async function saveOffice(){
   if(!isAdmin) return;
   const p_name=officeNameEl.value.trim();
@@ -605,6 +1315,7 @@ async function saveOffice(){
   resetOfficeForm();
   setMessage(officeMessageEl,'Místo bylo vytvořeno.','ok');
 }
+
 function resetEmployeeForm(){
   editEmployeeId=null;
   employeeFormTitleEl.textContent='Nový zaměstnanec';
@@ -621,6 +1332,7 @@ function resetEmployeeForm(){
   newEmployeeActiveEl.value='true';
   setMessage(createEmployeeMessageEl,'Vyplň údaje a ulož.','warn');
 }
+
 function fillEmployeeFormForEdit(employee){
   editEmployeeId=employee.id;
   employeeFormTitleEl.textContent='Upravit zaměstnance';
@@ -638,6 +1350,7 @@ function fillEmployeeFormForEdit(employee){
   setMessage(createEmployeeMessageEl,`Upravuješ zaměstnance ID ${employee.id}: ${employee.name}`,'warn');
   window.scrollTo({top:adminPanelEl.offsetTop,behavior:'smooth'});
 }
+
 function resetAttendanceEditForm(){
   editAttendanceId=null;
   attendanceFormTitleEl.textContent='Upravit / vložit docházku';
@@ -651,6 +1364,7 @@ function resetAttendanceEditForm(){
   cancelAttendanceEditBtn.classList.add('hidden');
   setMessage(attendanceEditMessageEl,'Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.','warn');
 }
+
 function resetManualAttendanceForm(){
   manualAttendanceDateEl.value=todayStr();
   manualAttendanceOfficeEl.value=officeEl.value || (manualAttendanceOfficeEl.options[0]?.value || '');
@@ -660,6 +1374,7 @@ function resetManualAttendanceForm(){
   manualAttendanceTimeToEl.value='';
   setMessage(manualAttendanceMessageEl,'Vyplň datum a čas. Hodí se pro zpětné doplnění docházky.','warn');
 }
+
 function resetLeaveRequestForm(){
   myLeaveDateFromEl.value=todayStr();
   myLeaveDateToEl.value=todayStr();
@@ -667,6 +1382,7 @@ function resetLeaveRequestForm(){
   myLeaveNoteEl.value='';
   setMessage(myLeaveMessageEl,'Vyber datum od, datum do a počet hodin.','warn');
 }
+
 function fillAttendanceFormForEdit(row){
   editAttendanceId=row.id;
   attendanceFormTitleEl.textContent=`Upravit docházku ID ${row.id}`;
@@ -681,6 +1397,7 @@ function fillAttendanceFormForEdit(row){
   setMessage(attendanceEditMessageEl,`Upravuješ docházku ID ${row.id}`,'warn');
   window.scrollTo({top:adminPanelEl.offsetTop,behavior:'smooth'});
 }
+
 function resetDashboard(){
   dashTotalEmployeesEl.textContent='0';
   dashAtWorkEl.textContent='0';
@@ -688,10 +1405,12 @@ function resetDashboard(){
   dashBusinessTripEl.textContent='0';
   dashOnLeaveEl.textContent='0';
 }
+
 function showLoginView(){ loginView.classList.remove('hidden'); passwordResetView.classList.add('hidden'); appView.classList.add('hidden'); }
 function showRecoveryView(){ loginView.classList.add('hidden'); appView.classList.add('hidden'); passwordResetView.classList.remove('hidden'); }
 function showAppView(){ loginView.classList.add('hidden'); passwordResetView.classList.add('hidden'); appView.classList.remove('hidden'); }
 function cleanRecoveryUrl(){ window.history.replaceState({},document.title,window.location.origin+window.location.pathname); }
+
 function detectRecoveryModeFromUrl(){
   const hash=window.location.hash||'';
   const search=window.location.search||'';
@@ -774,6 +1493,7 @@ async function signIn(){
   passwordEl.value='';
   setMessage(loginMessageEl,'Přihlášení proběhlo.','ok');
 }
+
 async function signOut(){
   const {error}=await supabaseClient.auth.signOut();
   if(error) return;
@@ -781,6 +1501,7 @@ async function signOut(){
   cleanRecoveryUrl();
   renderLoggedOut();
 }
+
 async function saveNewPassword(){
   const p1=newPasswordEl.value,p2=newPassword2El.value;
   if(!p1||p1.length<6) return setMessage(passwordResetMessageEl,'Heslo musí mít alespoň 6 znaků.','err');
@@ -799,12 +1520,14 @@ async function saveNewPassword(){
   renderLoggedOut();
   setMessage(loginMessageEl,'Heslo bylo změněno. Teď se přihlas novým heslem.','ok');
 }
+
 async function loadProfile(){
   const {data,error}=await supabaseClient.rpc('get_my_employee_profile');
   if(error) throw error;
   currentEmployee=Array.isArray(data)&&data.length?data[0]:null;
   isAdmin=!!(currentEmployee&&(currentEmployee.role==='admin'||currentEmployee.is_admin===true));
 }
+
 function renderProfile(){
   if(!currentEmployee){
     profileBoxEl.innerHTML=`Přihlášený účet není spárovaný s tabulkou <span class="mono">employees</span>.`;
@@ -831,6 +1554,7 @@ async function loadMyAttendance(){
   renderMonthlySummary();
   renderTimeSummary();
 }
+
 function renderMyAttendance(){
   if(!currentEmployee||isAdmin){
     openShiftValueEl.textContent='—';
@@ -864,6 +1588,7 @@ function renderMyAttendance(){
     {label:'Odpracováno',render:r=>escapeHtml(formatWorkedMinutes(getWorkedMinutes(r)))}
   ],myAttendanceRows);
 }
+
 async function loadMyLeaveSummary(){
   if(!currentEmployee||isAdmin){ myLeaveSummary=null; renderMyLeaveSummary(); return; }
   const {data,error}=await supabaseClient.rpc('get_my_leave_summary');
@@ -871,6 +1596,7 @@ async function loadMyLeaveSummary(){
   myLeaveSummary=Array.isArray(data)&&data.length?data[0]:null;
   renderMyLeaveSummary();
 }
+
 function renderMyLeaveSummary(){
   if(!myLeaveSummary||isAdmin){
     leaveTotalHoursValueEl.textContent='—';
@@ -890,6 +1616,7 @@ async function loadMyLeaveRequests(){
   myLeaveRequestsRows=Array.isArray(data)?data:[];
   renderMyLeaveRequests();
 }
+
 function renderMyLeaveRequests(){
   myLeaveRequestsWrapEl.innerHTML=renderSimpleTable([
     {label:'ID',render:r=>escapeHtml(r.id)},
@@ -909,6 +1636,7 @@ async function loadAdminLeaveRequests(){
   adminLeaveRequestsRows=Array.isArray(data)?data:[];
   renderAdminLeaveRequests();
 }
+
 function renderAdminLeaveRequests(){
   adminLeaveRequestsWrapEl.innerHTML=renderSimpleTable([
     {label:'ID',render:r=>escapeHtml(r.id)},
@@ -932,6 +1660,7 @@ function renderAdminLeaveRequests(){
     }}
   ],adminLeaveRequestsRows);
 }
+
 async function approveLeaveRequestById(id){
   const ok=window.confirm(`Schválit žádost #${id}?`);
   if(!ok) return;
@@ -940,6 +1669,7 @@ async function approveLeaveRequestById(id){
   await loadAllData();
   alert('Žádost byla schválena.');
 }
+
 async function rejectLeaveRequestById(id){
   const ok=window.confirm(`Zamítnout žádost #${id}?`);
   if(!ok) return;
@@ -948,6 +1678,7 @@ async function rejectLeaveRequestById(id){
   await loadAllData();
   alert('Žádost byla zamítnuta.');
 }
+
 async function cancelApprovedLeaveRequestById(id){
   const ok=window.confirm(`Stornovat schválenou žádost #${id}? Tím se smaže propsání do docházky i do přehledu dovolené.`);
   if(!ok) return;
@@ -965,6 +1696,7 @@ async function doCheckIn(){
   await loadAllData();
   setMessage(attendanceMessageEl,'Příchod zapsán.','ok');
 }
+
 async function doCheckOut(){
   const officeRow=officesData.find(o=>String(o.id)===String(officeEl.value||''));
   const officeText=officeRow?.name || '';
@@ -973,6 +1705,7 @@ async function doCheckOut(){
   await loadAllData();
   setMessage(attendanceMessageEl,'Odchod zapsán.','ok');
 }
+
 async function createMyManualAttendance(){
   const officeRow=officesData.find(o=>String(o.id)===String(manualAttendanceOfficeEl.value||''));
   const p_date=manualAttendanceDateEl.value,p_office=officeRow?.name||'',p_type=manualAttendanceTypeEl.value,p_time_from=manualAttendanceTimeFromEl.value,p_time_to=manualAttendanceTimeToEl.value,p_break_minutes=Number(manualAttendanceBreakMinutesEl.value||0);
@@ -985,6 +1718,7 @@ async function createMyManualAttendance(){
   await loadAllData();
   setMessage(manualAttendanceMessageEl,'Docházka byla ručně zapsána.','ok');
 }
+
 async function createMyLeave(){
   const p_date_from=myLeaveDateFromEl.value,p_date_to=myLeaveDateToEl.value,p_hours=Number(myLeaveHoursEl.value||0),p_note=myLeaveNoteEl.value.trim();
   if(!p_date_from||!p_date_to||!p_hours) return setMessage(myLeaveMessageEl,'Vyber datum od, datum do a počet hodin.','err');
@@ -997,6 +1731,7 @@ async function createMyLeave(){
   await loadAllData();
   setMessage(myLeaveMessageEl,'Žádost o dovolenou byla odeslána.','ok');
 }
+
 async function adminCreateLeave(){
   const p_employee_id=Number(adminLeaveEmployeeEl.value||0),p_date=adminLeaveDateEl.value,p_hours=Number(adminLeaveHoursEl.value||0),p_note=adminLeaveNoteEl.value.trim();
   if(!p_employee_id||!p_date||!p_hours) return setMessage(adminLeaveMessageEl,'Vyber zaměstnance, datum a počet hodin.','err');
@@ -1075,6 +1810,7 @@ async function createOrUpdateEmployee(){
   await loadAllData();
   setMessage(createEmployeeMessageEl,'Zaměstnanec byl vytvořen.','ok');
 }
+
 function normalizeAttendanceEditFields(){
   const type=normalizeText(editAttendanceTypeEl.value);
   if(type==='dovolena'||type==='leave'||type==='vacation'){
@@ -1083,6 +1819,7 @@ function normalizeAttendanceEditFields(){
     editAttendanceBreakMinutesEl.value='0';
   }
 }
+
 async function insertAttendanceManual(){
   normalizeAttendanceEditFields();
   const p_employee_id=Number(editAttendanceEmployeeEl.value||0), p_date=editAttendanceDateEl.value, p_office_id=Number(editAttendanceOfficeEl.value||0), p_type=editAttendanceTypeEl.value, p_time_from=editAttendanceTimeFromEl.value || null, p_time_to=editAttendanceTimeToEl.value || null, p_break_minutes=Number(editAttendanceBreakMinutesEl.value||0);
@@ -1097,6 +1834,7 @@ async function insertAttendanceManual(){
   if(adminHistoryEmployeeEl.value && adminHistoryMonthEl.value) await loadAdminAttendanceHistory();
   setMessage(attendanceEditMessageEl,'Nový záznam docházky byl vložen.','ok');
 }
+
 async function saveAttendanceEdit(){
   if(!editAttendanceId) return setMessage(attendanceEditMessageEl,'Pro úpravu nejdřív vyber řádek tlačítkem Upravit. Pro nový záznam použij Vložit ručně.','err');
   normalizeAttendanceEditFields();
@@ -1124,6 +1862,7 @@ async function loadAdminDashboard(){
   dashBusinessTripEl.textContent=d.business_trip_count??0;
   dashOnLeaveEl.textContent=d.on_leave_count??0;
 }
+
 async function loadAdminData(){
   if(!isAdmin){ adminPanelEl.classList.add('hidden'); return; }
   adminPanelEl.classList.remove('hidden');
@@ -1166,6 +1905,7 @@ async function loadAdminData(){
   if(!adminHistoryMonthEl.value) adminHistoryMonthEl.value=currentMonthStr();
   if(!auditMonthEl.value) auditMonthEl.value=currentMonthStr();
 }
+
 async function loadAllData(){
   try{
     await loadOffices();
@@ -1183,6 +1923,7 @@ async function loadAllData(){
     console.error(error);
   }
 }
+
 async function loadSession(){
   const {data,error}=await supabaseClient.auth.getSession();
   if(error||!data?.session?.user){ renderLoggedOut(); return; }
@@ -1233,24 +1974,28 @@ officesWrapEl?.addEventListener('click',e=>{
   const officeRow=officesData.find(x=>Number(x.id)===Number(btn.dataset.id));
   if(officeRow) fillOfficeFormForEdit(officeRow);
 });
+
 employeesWrapEl.addEventListener('click',e=>{
   const btn=e.target.closest('.edit-employee-btn');
   if(!btn) return;
   const employee=adminEmployeesData.find(x=>Number(x.id)===Number(btn.dataset.id));
   if(employee) fillEmployeeFormForEdit(employee);
 });
+
 adminTodayWrapEl.addEventListener('click',e=>{
   const btn=e.target.closest('.edit-attendance-btn');
   if(!btn) return;
   const row=adminTodayAttendanceData.find(x=>Number(x.id)===Number(btn.dataset.id));
   if(row) fillAttendanceFormForEdit(row);
 });
+
 adminHistoryWrapEl.addEventListener('click',e=>{
   const btn=e.target.closest('.admin-history-edit-btn');
   if(!btn) return;
   const row=adminHistoryRows.find(x=>Number(x.id)===Number(btn.dataset.id));
   if(row) fillAttendanceFormForEdit(row);
 });
+
 adminLeaveRequestsWrapEl.addEventListener('click',e=>{
   const approveBtn=e.target.closest('.approve-leave-btn');
   if(approveBtn) return approveLeaveRequestById(approveBtn.dataset.id);
@@ -1259,6 +2004,7 @@ adminLeaveRequestsWrapEl.addEventListener('click',e=>{
   const cancelBtn=e.target.closest('.cancel-leave-btn');
   if(cancelBtn) return cancelApprovedLeaveRequestById(cancelBtn.dataset.id);
 });
+
 passwordEl.addEventListener('keydown',e=>{ if(e.key==='Enter') signIn(); });
 newPassword2El.addEventListener('keydown',e=>{ if(e.key==='Enter') saveNewPassword(); });
 
