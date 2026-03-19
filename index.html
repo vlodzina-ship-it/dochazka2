@@ -783,6 +783,7 @@
                 <div class="actions" style="margin-top:14px;">
                   <button id="insertAttendanceBtn" class="btn-success" type="button">Vložit ručně</button>
                   <button id="saveAttendanceEditBtn" class="btn-primary" type="button">Uložit opravu</button>
+                  <button id="deleteAttendanceBtn" class="btn-danger hidden" type="button">Smazat vybranou docházku</button>
                   <button id="cancelAttendanceEditBtn" class="btn-secondary hidden" type="button">Zrušit editaci</button>
                 </div>
                 <div id="attendanceEditMessage" class="message warn" style="margin-top:14px;">Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.</div>
@@ -886,8 +887,8 @@ editAttendanceDateEl=$("editAttendanceDate"), editAttendanceOfficeEl=$("editAtte
 editAttendanceTypeEl=$("editAttendanceType"), editAttendanceTimeFromEl=$("editAttendanceTimeFrom"),
 editAttendanceTimeToEl=$("editAttendanceTimeTo"), editAttendanceBreakMinutesEl=$("editAttendanceBreakMinutes"),
 insertAttendanceBtn=$("insertAttendanceBtn"), saveAttendanceEditBtn=$("saveAttendanceEditBtn"),
-cancelAttendanceEditBtn=$("cancelAttendanceEditBtn"), employeeFormTitleEl=$("employeeFormTitle"),
-newEmployeeNameEl=$("newEmployeeName"), newEmployeeEmailEl=$("newEmployeeEmail"),
+deleteAttendanceBtn=$("deleteAttendanceBtn"), cancelAttendanceEditBtn=$("cancelAttendanceEditBtn"),
+employeeFormTitleEl=$("employeeFormTitle"), newEmployeeNameEl=$("newEmployeeName"), newEmployeeEmailEl=$("newEmployeeEmail"),
 newEmployeeRoleEl=$("newEmployeeRole"), newEmployeeOfficesEl=$("newEmployeeOffices"),
 newEmployeeWeeklyEl=$("newEmployeeWeekly"), newEmployeeLeaveDaysEl=$("newEmployeeLeaveDays"),
 newEmployeeLeaveHoursEl=$("newEmployeeLeaveHours"), newEmployeeActiveEl=$("newEmployeeActive"),
@@ -1443,6 +1444,7 @@ function resetAttendanceEditForm(){
   editAttendanceTimeFromEl.value='';
   editAttendanceTimeToEl.value='';
   editAttendanceBreakMinutesEl.value='30';
+  deleteAttendanceBtn.classList.add('hidden');
   cancelAttendanceEditBtn.classList.add('hidden');
   setMessage(attendanceEditMessageEl,'Pro nový záznam vyplň pole a klikni na Vložit ručně. Pro úpravu klikni v tabulce docházky na Upravit.','warn');
 }
@@ -1475,6 +1477,7 @@ function fillAttendanceFormForEdit(row){
   editAttendanceTimeFromEl.value=row.time_from||'';
   editAttendanceTimeToEl.value=row.time_to||'';
   editAttendanceBreakMinutesEl.value=row.break_minutes??30;
+  deleteAttendanceBtn.classList.remove('hidden');
   cancelAttendanceEditBtn.classList.remove('hidden');
   setMessage(attendanceEditMessageEl,`Upravuješ docházku ID ${row.id}`,'warn');
   window.scrollTo({top:adminPanelEl.offsetTop,behavior:'smooth'});
@@ -1957,6 +1960,19 @@ async function saveAttendanceEdit(){
   setMessage(attendanceEditMessageEl,'Docházka byla upravena.','ok');
 }
 
+async function deleteAttendanceRecord(){
+  if(!editAttendanceId) return setMessage(attendanceEditMessageEl,'Nejdřív vyber docházku k úpravě.','err');
+  const ok=window.confirm(`Opravdu chceš smazat docházku ID ${editAttendanceId}?`);
+  if(!ok) return;
+  setMessage(attendanceEditMessageEl,'Mažu docházku…','warn');
+  const {error}=await supabaseClient.rpc('admin_delete_attendance',{p_attendance_id:Number(editAttendanceId)});
+  if(error) return setMessage(attendanceEditMessageEl,'Chyba při mazání docházky: '+error.message,'err');
+  resetAttendanceEditForm();
+  await loadAllData();
+  if(adminHistoryEmployeeEl.value && adminHistoryMonthEl.value) await loadAdminAttendanceHistory();
+  setMessage(attendanceEditMessageEl,'Docházka byla smazána.','ok');
+}
+
 async function loadAdminDashboard(){
   if(!isAdmin){ resetDashboard(); return; }
   const {data,error}=await supabaseClient.rpc('get_admin_dashboard_summary');
@@ -2069,6 +2085,7 @@ employeeActiveFilterEl?.addEventListener('change',renderEmployeesTable);
 cancelEditEmployeeBtn.addEventListener('click',resetEmployeeForm);
 insertAttendanceBtn.addEventListener('click',insertAttendanceManual);
 saveAttendanceEditBtn.addEventListener('click',saveAttendanceEdit);
+deleteAttendanceBtn.addEventListener('click',deleteAttendanceRecord);
 cancelAttendanceEditBtn.addEventListener('click',resetAttendanceEditForm);
 editAttendanceTypeEl.addEventListener('change',normalizeAttendanceEditFields);
 
