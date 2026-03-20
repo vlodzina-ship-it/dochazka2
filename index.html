@@ -20,18 +20,19 @@
 
   <style>
     :root{
-      --bg:#eef3fb;
+      --bg:#eef4fb;
+      --bg-2:#f8fbff;
       --card:#ffffff;
       --muted:#64748b;
       --text:#0f172a;
-      --line:#dbe4f0;
+      --line:#dbe5f0;
       --primary:#2563eb;
       --primary-2:#1d4ed8;
       --success:#16a34a;
       --danger:#dc2626;
       --warn:#d97706;
       --soft:#f8fafc;
-      --shadow:0 12px 32px rgba(15,23,42,.08);
+      --shadow:0 12px 28px rgba(15,23,42,.07);
       --shadow-soft:0 6px 18px rgba(15,23,42,.05);
       --radius:18px;
     }
@@ -41,7 +42,7 @@
     body{
       margin:0;
       font-family:Arial,Helvetica,sans-serif;
-      background:linear-gradient(180deg,#eef3fb 0%,#f7f9fc 100%);
+      background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%);
       color:var(--text);
       font-size:14px;
       line-height:1.45;
@@ -49,22 +50,22 @@
     }
 
     .container{
-      max-width:1240px;
+      max-width:1160px;
       margin:0 auto;
-      padding:18px;
+      padding:14px;
     }
 
     .hidden{display:none!important}
-    .stack{display:grid;gap:16px}
-    .grid{display:grid;gap:16px}
-    .grid-main{grid-template-columns:320px minmax(0,1fr)}
+    .stack{display:grid;gap:14px}
+    .grid{display:grid;gap:14px}
+    .grid-main{grid-template-columns:300px minmax(0,1fr)}
     .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .grid-admin{grid-template-columns:minmax(0,1fr) 400px}
+    .grid-admin{grid-template-columns:minmax(0,1fr) 380px}
     .grid-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
     .grid-stats-5{grid-template-columns:repeat(5,minmax(0,1fr))}
     .grid-admin-top{grid-template-columns:1fr}
-    .grid-admin-main{grid-template-columns:minmax(0,1fr) 400px}
+    .grid-admin-main{grid-template-columns:minmax(0,1fr) 380px}
 
     .grid > *,
     .stack > *{
@@ -82,36 +83,37 @@
       flex-wrap:wrap;
       background:rgba(255,255,255,.88);
       backdrop-filter:blur(14px);
-      border:1px solid rgba(219,228,240,.95);
-      border-radius:22px;
-      padding:16px 18px;
-      margin-bottom:18px;
+      border:1px solid rgba(219,229,240,.95);
+      border-radius:20px;
+      padding:14px 16px;
+      margin-bottom:14px;
       box-shadow:var(--shadow);
     }
 
     .brand{
-      font-size:clamp(24px,3vw,30px);
+      font-size:clamp(22px,3vw,28px);
       font-weight:700;
-      line-height:1.1;
+      line-height:1.08;
       word-break:break-word;
       letter-spacing:-.02em;
     }
 
     .muted{color:var(--muted)}
     .small{font-size:12px;color:var(--muted)}
+    .hero-note{margin-bottom:14px}
 
     .card{
       background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius);
-      padding:18px;
+      padding:16px;
       box-shadow:var(--shadow-soft);
       overflow:hidden;
     }
 
     h1,h2,h3{margin:0 0 10px}
-    h1{font-size:30px; line-height:1.1}
-    h2{font-size:20px; line-height:1.2}
+    h1{font-size:28px; line-height:1.08}
+    h2{font-size:18px; line-height:1.2}
     h3{font-size:16px}
 
     .section-title{
@@ -120,17 +122,17 @@
       align-items:center;
       gap:12px;
       flex-wrap:wrap;
-      margin-bottom:14px;
+      margin-bottom:12px;
     }
 
     label{
       display:block;
       margin-bottom:6px;
-      font-size:12px;
+      font-size:11px;
       font-weight:700;
       color:var(--muted);
       text-transform:uppercase;
-      letter-spacing:.04em;
+      letter-spacing:.05em;
     }
 
     input,select,textarea,button{
@@ -139,14 +141,14 @@
 
     input,select,textarea{
       width:100%;
-      min-height:48px;
+      min-height:46px;
       padding:12px 14px;
       border:1px solid var(--line);
       border-radius:14px;
       background:#fff;
       color:var(--text);
       outline:none;
-      transition:.18s border-color,.18s box-shadow,.18s transform;
+      transition:.18s border-color,.18s box-shadow;
     }
 
     input:focus,select:focus,textarea:focus{
@@ -169,14 +171,11 @@
       font-weight:700;
       white-space:nowrap;
       max-width:100%;
-      transition:.18s transform,.18s filter,.18s box-shadow;
-      box-shadow:0 10px 20px rgba(15,23,42,.10);
+      transition:.18s transform,.18s filter;
+      box-shadow:0 10px 20px rgba(15,23,42,.08);
     }
 
-    button:hover{
-      transform:translateY(-1px);
-    }
-
+    button:hover{transform:translateY(-1px)}
     button:disabled{
       opacity:.6;
       cursor:not-allowed;
@@ -256,23 +255,22 @@
       background:linear-gradient(180deg,#f8fafc 0%,#ffffff 100%);
       border:1px solid var(--line);
       border-radius:16px;
-      padding:16px;
-      min-height:105px;
+      padding:14px;
+      min-height:96px;
       min-width:0;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
     }
 
     .stat-label{
-      font-size:12px;
+      font-size:11px;
       color:var(--muted);
       margin-bottom:8px;
       word-break:break-word;
       text-transform:uppercase;
-      letter-spacing:.04em;
+      letter-spacing:.05em;
     }
 
     .stat-value{
-      font-size:28px;
+      font-size:26px;
       font-weight:700;
       line-height:1.1;
       word-break:break-word;
@@ -296,7 +294,7 @@
     }
 
     th,td{
-      padding:10px 10px;
+      padding:10px;
       text-align:left;
       border-bottom:1px solid var(--line);
       white-space:nowrap;
@@ -321,7 +319,7 @@
       padding:16px;
       border:1px dashed var(--line);
       border-radius:16px;
-      background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(248,250,252,.95));
+      background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(248,250,252,.98));
       color:var(--muted);
       word-break:break-word;
     }
@@ -333,24 +331,32 @@
     }
 
     .login-wrap{
-      max-width:520px;
-      margin:42px auto;
+      max-width:500px;
+      margin:36px auto;
     }
 
     .today-filter-btn.active-filter{
       background:linear-gradient(180deg,var(--primary),var(--primary-2));
     }
 
-    .hero-note{
-      margin-bottom:16px;
-    }
-
-    .card-section{
+    .employee-quick-card .actions{
       display:grid;
-      gap:16px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
     }
 
-    @media (max-width:1100px){
+    .employee-quick-card .actions button{
+      width:100%;
+      min-height:56px;
+      font-size:16px;
+    }
+
+    .summary-mini{
+      display:grid;
+      gap:10px;
+    }
+
+    @media (max-width:1050px){
       .grid-main,
       .grid-2,
       .grid-3,
@@ -368,51 +374,40 @@
 
     @media (max-width:640px){
       body{font-size:13px}
-
       .container{padding:10px}
-
       .card{padding:14px}
-
       .topbar{
         padding:14px;
         border-radius:18px;
       }
-
-      .brand{
-        font-size:24px;
-      }
-
+      .brand{font-size:24px}
       .actions{
         flex-direction:column;
         align-items:stretch;
       }
-
       .actions button{
         width:100%;
       }
-
+      .employee-quick-card .actions{
+        grid-template-columns:1fr;
+      }
       .today-filter-btn{
         width:100%!important;
       }
-
       input,select,textarea,button{
         font-size:16px;
       }
-
       table{
         min-width:640px;
       }
-
       .stat-value{
-        font-size:24px;
+        font-size:22px;
       }
-
       .login-wrap{
-        margin:18px auto;
+        margin:16px auto;
       }
-
       h1{font-size:26px}
-      h2{font-size:18px}
+      h2{font-size:17px}
     }
   </style>
 </head>
@@ -483,26 +478,18 @@
         </div>
 
         <div id="employeeOnlyBlock" class="stack">
-          <div class="card">
-            <h2>Moje dnešní docházka</h2>
-            <div class="grid grid-stats">
+          <div class="card employee-quick-card">
+            <div class="section-title">
+              <h2>Příchod / Odchod</h2>
+              <span class="small">rychlá akce</span>
+            </div>
+
+            <div class="grid grid-stats" style="margin-bottom:14px;">
               <div class="stat"><div class="stat-label">Otevřená směna</div><div id="openShiftValue" class="stat-value">—</div></div>
               <div class="stat"><div class="stat-label">Dnešní příchod</div><div id="todayArrivalValue" class="stat-value">—</div></div>
               <div class="stat"><div class="stat-label">Dnešní odchod</div><div id="todayDepartureValue" class="stat-value">—</div></div>
             </div>
-          </div>
 
-          <div class="card">
-            <h2>Moje dovolená</h2>
-            <div class="grid grid-stats">
-              <div class="stat"><div class="stat-label">Nárok (hodiny)</div><div id="leaveTotalHoursValue" class="stat-value">—</div></div>
-              <div class="stat"><div class="stat-label">Vyčerpáno (hodiny)</div><div id="leaveUsedHoursValue" class="stat-value">—</div></div>
-              <div class="stat"><div class="stat-label">Zbývá (dny)</div><div id="leaveRemainingDaysValue" class="stat-value">—</div></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>Příchod / Odchod</h2>
             <div>
               <label for="office">Místo práce</label>
               <select id="office"></select>
@@ -529,6 +516,15 @@
               <button id="checkOutBtn" class="btn-primary" type="button">Odchod</button>
             </div>
             <div id="attendanceMessage" class="message warn" style="margin-top:14px;">Přihlas se a načti docházku.</div>
+          </div>
+
+          <div class="card">
+            <h2>Moje dovolená</h2>
+            <div class="grid grid-stats">
+              <div class="stat"><div class="stat-label">Nárok (hodiny)</div><div id="leaveTotalHoursValue" class="stat-value">—</div></div>
+              <div class="stat"><div class="stat-label">Vyčerpáno (hodiny)</div><div id="leaveUsedHoursValue" class="stat-value">—</div></div>
+              <div class="stat"><div class="stat-label">Zbývá (dny)</div><div id="leaveRemainingDaysValue" class="stat-value">—</div></div>
+            </div>
           </div>
 
           <div class="card">
