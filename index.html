@@ -4,6 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Docházka Osoblažský Cech</title>
+
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Docházka" />
+
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -369,6 +380,10 @@
 </head>
 <body>
 <div class="container">
+  <div id="offlineBanner" class="message err hidden" style="margin-bottom:16px;">
+    Jsi offline. Data ze Supabase teď nepůjdou načíst ani uložit.
+  </div>
+
   <div id="loginView" class="login-wrap">
     <div class="card">
       <h1>Přihlášení do docházky</h1>
@@ -897,7 +912,8 @@ employeeFormTitleEl=$("employeeFormTitle"), newEmployeeNameEl=$("newEmployeeName
 newEmployeeRoleEl=$("newEmployeeRole"), newEmployeeOfficesEl=$("newEmployeeOffices"),
 newEmployeeWeeklyEl=$("newEmployeeWeekly"), newEmployeeLeaveDaysEl=$("newEmployeeLeaveDays"),
 newEmployeeLeaveHoursEl=$("newEmployeeLeaveHours"), newEmployeeActiveEl=$("newEmployeeActive"),
-createEmployeeBtn=$("createEmployeeBtn"), cancelEditEmployeeBtn=$("cancelEditEmployeeBtn");
+createEmployeeBtn=$("createEmployeeBtn"), cancelEditEmployeeBtn=$("cancelEditEmployeeBtn"),
+offlineBannerEl=$("offlineBanner");
 
 const todayFilterButtons = document.querySelectorAll('.today-filter-btn');
 
@@ -917,6 +933,15 @@ function getWorkedMinutes(row){ const type=normalizeText(row.type); if(type==='d
 function formatWorkedMinutes(minutes){ const m=Math.max(0,Number(minutes||0)); return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 function formatMonthLabel(monthStr){ if(!monthStr||!monthStr.includes('-')) return 'aktuální měsíc'; const [y,m]=monthStr.split('-'); return `${m}.${y}`; }
 function monthFromDateStr(dateStr){ return String(dateStr||'').slice(0,7); }
+
+function updateOnlineStatus(){
+  if(!offlineBannerEl) return;
+  if(navigator.onLine){
+    offlineBannerEl.classList.add('hidden');
+  }else{
+    offlineBannerEl.classList.remove('hidden');
+  }
+}
 
 function renderAttendanceTypeBadge(type){
   const safe=escapeHtml(type||'—');
@@ -2136,6 +2161,9 @@ adminLeaveRequestsWrapEl.addEventListener('click',e=>{
 passwordEl.addEventListener('keydown',e=>{ if(e.key==='Enter') signIn(); });
 newPassword2El.addEventListener('keydown',e=>{ if(e.key==='Enter') saveNewPassword(); });
 
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
 supabaseClient.auth.onAuthStateChange((event,session)=>{
   if(event==='PASSWORD_RECOVERY'){
     isPasswordRecoveryFlow=true;
@@ -2167,6 +2195,19 @@ supabaseClient.auth.onAuthStateChange((event,session)=>{
   manualAttendanceDateEl.value=todayStr();
   isPasswordRecoveryFlow=detectRecoveryModeFromUrl();
   renderLoggedOut();
+  updateOnlineStatus();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+      try {
+        await navigator.serviceWorker.register('./sw.js');
+        console.log('Service Worker zaregistrován');
+      } catch (err) {
+        console.error('Chyba registrace Service Workeru:', err);
+      }
+    });
+  }
+
   if(isPasswordRecoveryFlow){
     showRecoveryView();
     setMessage(passwordResetMessageEl,'Odkaz pro reset hesla byl rozpoznán. Nastav nové heslo.','warn');
