@@ -248,6 +248,7 @@
     .type-work{background:rgba(22,163,74,.10);color:#15803d;border:1px solid rgba(22,163,74,.20)}
     .type-home-office{background:rgba(37,99,235,.10);color:#1d4ed8;border:1px solid rgba(37,99,235,.20)}
     .type-business-trip{background:rgba(217,119,6,.10);color:#b45309;border:1px solid rgba(217,119,6,.20)}
+    .type-doctor{background:rgba(236,72,153,.10);color:#be185d;border:1px solid rgba(236,72,153,.20)}
     .type-vacation{background:rgba(147,51,234,.10);color:#7e22ce;border:1px solid rgba(147,51,234,.20)}
     .type-default{background:#eef2ff;color:#374151;border:1px solid var(--line)}
 
@@ -500,6 +501,7 @@
                 <option value="práce">práce</option>
                 <option value="home office">home office</option>
                 <option value="služební cesta">služební cesta</option>
+                <option value="k lékaři">k lékaři</option>
               </select>
             </div>
             <div style="margin-top:12px;">
@@ -540,6 +542,7 @@
                   <option value="práce">práce</option>
                   <option value="home office">home office</option>
                   <option value="služební cesta">služební cesta</option>
+                  <option value="k lékaři">k lékaři</option>
                 </select>
               </div>
               <div><label for="manualAttendanceBreakMinutes">Přestávka (minuty)</label><input id="manualAttendanceBreakMinutes" type="number" min="0" step="1" value="30" /></div>
@@ -826,6 +829,7 @@
                       <option value="práce">práce</option>
                       <option value="home office">home office</option>
                       <option value="služební cesta">služební cesta</option>
+                      <option value="k lékaři">k lékaři</option>
                       <option value="dovolená">dovolená</option>
                     </select>
                   </div>
@@ -983,6 +987,7 @@ function renderAttendanceTypeBadge(type){
   if(n==='prace'||n==='work') return `<span class="type-badge type-work">${safe}</span>`;
   if(n==='home office'||n==='homeoffice') return `<span class="type-badge type-home-office">${safe}</span>`;
   if(n==='sluzebni cesta'||n==='business trip'||n==='trip') return `<span class="type-badge type-business-trip">${safe}</span>`;
+  if(n==='k lekari'||n==='lekar'||n==='doctor'||n==='medical') return `<span class="type-badge type-doctor">${safe}</span>`;
   if(n==='dovolena'||n==='vacation'||n==='leave') return `<span class="type-badge type-vacation">${safe}</span>`;
   return `<span class="type-badge type-default">${safe}</span>`;
 }
