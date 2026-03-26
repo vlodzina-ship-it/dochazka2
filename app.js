@@ -271,7 +271,7 @@ function renderLeaveStatusBadge(status) {
   if (n === "approved" || n === "schvaleno" || n === "schváleno") return `<span class="pill pill-active">${escapeHtml(status || "approved")}</span>`;
   if (n === "rejected" || n === "zamitnuto" || n === "zamítnuto") return `<span class="pill pill-inactive">${escapeHtml(status || "rejected")}</span>`;
   if (n === "cancelled" || n === "storno" || n === "stornováno" || n === "stornovano") return `<span class="pill pill-inactive">${escapeHtml(status || "cancelled")}</span>`;
-  return `<span class="pill pill-warn">${escapeHtml(status || "—')}</span>`;
+  return `<span class="pill pill-warn">${escapeHtml(status || "—")}</span>`;
 }
 function renderSimpleTable(columns, rows) {
   if (!rows || !rows.length) return `<div class="empty-box">Žádná data.</div>`;
