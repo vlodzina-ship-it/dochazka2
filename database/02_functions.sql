@@ -444,3 +444,293 @@ begin
   end if;
 end;
 $$;
+
+
+-- ==========================================
+-- FUNCTION: create_leave_request
+-- ==========================================
+
+create or replace function public.create_leave_request(
+  p_date_from date,
+  p_date_to date,
+  p_hours integer,
+  p_note text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_employee_id bigint;
+begin
+  v_employee_id := public.my_employee_id();
+
+  if v_employee_id is null then
+    raise exception 'Uživatel není spárován s employees';
+  end if;
+
+  if p_date_from is null or p_date_to is null then
+    raise exception 'Datum od a do je povinné';
+  end if;
+
+  if p_date_from > p_date_to then
+    raise exception 'Datum od nesmí být větší než datum do';
+  end if;
+
+  insert into public.leave_requests (
+    employee_id,
+    date_from,
+    date_to,
+    hours,
+    note,
+    status
+  )
+  values (
+    v_employee_id,
+    p_date_from,
+    p_date_to,
+    coalesce(p_hours, 8),
+    p_note,
+    'pending'
+  );
+end;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: approve_leave_request
+-- ==========================================
+
+create or replace function public.approve_leave_request(
+  p_request_id bigint
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_employee_id bigint;
+  v_date_from date;
+  v_date_to date;
+  v_hours integer;
+  v_note text;
+begin
+  if not public.is_current_admin() then
+    raise exception 'Pouze admin může schválit dovolenou';
+  end if;
+
+  select employee_id, date_from, date_to, hours, note
+    into v_employee_id, v_date_from, v_date_to, v_hours, v_note
+  from public.leave_requests
+  where id = p_request_id
+    and status = 'pending'
+  limit 1;
+
+  if v_employee_id is null then
+    raise exception 'Žádost nebyla nalezena nebo není ve stavu pending';
+  end if;
+
+  update public.leave_requests
+  set status = 'approved'
+  where id = p_request_id;
+
+  insert into public.leaves (
+    employee_id,
+    date_from,
+    date_to,
+    hours,
+    type,
+    note
+  )
+  values (
+    v_employee_id,
+    v_date_from,
+    v_date_to,
+    coalesce(v_hours, 8),
+    'vacation',
+    v_note
+  );
+end;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: reject_leave_request
+-- ==========================================
+
+create or replace function public.reject_leave_request(
+  p_request_id bigint
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_current_admin() then
+    raise exception 'Pouze admin může zamítnout dovolenou';
+  end if;
+
+  update public.leave_requests
+  set status = 'rejected'
+  where id = p_request_id
+    and status = 'pending';
+
+  if not found then
+    raise exception 'Žádost nebyla nalezena nebo není ve stavu pending';
+  end if;
+end;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: cancel_approved_leave_request
+-- ==========================================
+
+create or replace function public.cancel_approved_leave_request(
+  p_request_id bigint
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_employee_id bigint;
+  v_date_from date;
+  v_date_to date;
+begin
+  if not public.is_current_admin() then
+    raise exception 'Pouze admin může stornovat schválenou dovolenou';
+  end if;
+
+  select employee_id, date_from, date_to
+    into v_employee_id, v_date_from, v_date_to
+  from public.leave_requests
+  where id = p_request_id
+    and status = 'approved'
+  limit 1;
+
+  if v_employee_id is null then
+    raise exception 'Žádost nebyla nalezena nebo není schválená';
+  end if;
+
+  update public.leave_requests
+  set status = 'cancelled'
+  where id = p_request_id;
+
+  delete from public.leaves
+  where employee_id = v_employee_id
+    and date_from = v_date_from
+    and date_to = v_date_to;
+end;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: get_my_employee_profile
+-- ==========================================
+
+create or replace function public.get_my_employee_profile()
+returns table (
+  id bigint,
+  name text,
+  weekly text,
+  leave_days integer,
+  leave_hours integer,
+  offices text,
+  email text,
+  auth_user_id uuid,
+  is_admin boolean,
+  active boolean,
+  role text,
+  created_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    e.id,
+    e.name,
+    e.weekly,
+    e.leave_days,
+    e.leave_hours,
+    e.offices,
+    e.email,
+    e.auth_user_id,
+    e.is_admin,
+    e.active,
+    e.role,
+    e.created_at
+  from public.employees e
+  where e.auth_user_id = auth.uid()
+  limit 1;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: get_my_attendance_rows
+-- ==========================================
+
+create or replace function public.get_my_attendance_rows(
+  p_limit integer default 30
+)
+returns table (
+  id bigint,
+  employee_id bigint,
+  date date,
+  time_from time,
+  time_to time,
+  office text,
+  type text,
+  break_minutes integer,
+  created_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    a.id,
+    a.employee_id,
+    a.date,
+    a.time_from,
+    a.time_to,
+    a.office,
+    a.type,
+    a.break_minutes,
+    a.created_at
+  from public.attendance a
+  where a.employee_id = public.my_employee_id()
+  order by a.date desc, a.id desc
+  limit coalesce(p_limit, 30);
+$$;
+
+
+-- ==========================================
+-- FUNCTION: get_offices
+-- ==========================================
+
+create or replace function public.get_offices()
+returns table (
+  id bigint,
+  name text,
+  sort_order integer,
+  active boolean
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    o.id,
+    o.name,
+    o.sort_order,
+    o.active
+  from public.offices o
+  where o.active = true
+  order by o.sort_order asc, o.name asc;
+$$;
