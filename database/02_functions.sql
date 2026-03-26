@@ -734,3 +734,245 @@ as $$
   where o.active = true
   order by o.sort_order asc, o.name asc;
 $$;
+
+
+-- ==========================================
+-- FUNCTION: get_admin_employees
+-- ==========================================
+
+create or replace function public.get_admin_employees()
+returns table (
+  id bigint,
+  name text,
+  email text,
+  role text,
+  is_admin boolean,
+  active boolean,
+  offices text,
+  weekly text,
+  leave_days integer,
+  leave_hours integer
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    e.id,
+    e.name,
+    e.email,
+    e.role,
+    e.is_admin,
+    e.active,
+    e.offices,
+    e.weekly,
+    e.leave_days,
+    e.leave_hours
+  from public.employees e
+  where public.is_current_admin()
+  order by e.name asc;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: get_admin_today_attendance
+-- ==========================================
+
+create or replace function public.get_admin_today_attendance()
+returns table (
+  id bigint,
+  employee_id bigint,
+  employee_name text,
+  date date,
+  office text,
+  type text,
+  time_from time,
+  time_to time,
+  break_minutes integer
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    a.id,
+    a.employee_id,
+    e.name as employee_name,
+    a.date,
+    a.office,
+    a.type,
+    a.time_from,
+    a.time_to,
+    a.break_minutes
+  from public.attendance a
+  join public.employees e on e.id = a.employee_id
+  where public.is_current_admin()
+    and a.date = current_date
+  order by e.name asc, a.time_from asc nulls last;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: get_admin_today_locations
+-- ==========================================
+
+create or replace function public.get_admin_today_locations()
+returns table (
+  employee_id bigint,
+  employee_name text,
+  employee_email text,
+  office text,
+  type text,
+  time_from time
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    a.employee_id,
+    e.name as employee_name,
+    e.email as employee_email,
+    a.office,
+    a.type,
+    a.time_from
+  from public.attendance a
+  join public.employees e on e.id = a.employee_id
+  where public.is_current_admin()
+    and a.date = current_date
+    and a.time_to is null
+  order by e.name asc;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: get_admin_leave_summary
+-- ==========================================
+
+create or replace function public.get_admin_leave_summary()
+returns table (
+  employee_id bigint,
+  employee_name text,
+  employee_email text,
+  leave_days_total integer,
+  leave_hours_total integer,
+  leave_hours_used numeric,
+  leave_hours_remaining numeric,
+  leave_days_remaining numeric
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    e.id as employee_id,
+    e.name as employee_name,
+    e.email as employee_email,
+    e.leave_days as leave_days_total,
+    e.leave_hours as leave_hours_total,
+    coalesce(sum(l.hours), 0)::numeric as leave_hours_used,
+    (e.leave_hours - coalesce(sum(l.hours), 0))::numeric as leave_hours_remaining,
+    case
+      when coalesce(e.leave_hours, 0) = 0 then 0::numeric
+      else round((e.leave_days::numeric * (e.leave_hours - coalesce(sum(l.hours), 0))::numeric) / e.leave_hours::numeric, 2)
+    end as leave_days_remaining
+  from public.employees e
+  left join public.leaves l on l.employee_id = e.id
+  where public.is_current_admin()
+  group by e.id, e.name, e.email, e.leave_days, e.leave_hours
+  order by e.name asc;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: get_leave_requests
+-- ==========================================
+
+create or replace function public.get_leave_requests()
+returns table (
+  id bigint,
+  employee_id bigint,
+  employee_name text,
+  date_from date,
+  date_to date,
+  hours integer,
+  note text,
+  status text,
+  created_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    r.id,
+    r.employee_id,
+    e.name as employee_name,
+    r.date_from,
+    r.date_to,
+    r.hours,
+    r.note,
+    r.status,
+    r.created_at
+  from public.leave_requests r
+  join public.employees e on e.id = r.employee_id
+  where public.is_current_admin()
+  order by r.id desc;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: get_monthly_summary
+-- ==========================================
+
+create or replace function public.get_monthly_summary(
+  p_month text
+)
+returns table (
+  employee_id bigint,
+  employee_name text,
+  work_hours numeric,
+  vacation_hours numeric,
+  home_office_hours numeric,
+  sick_hours numeric,
+  business_trip_hours numeric,
+  total_hours numeric,
+  work_days integer
+)
+language sql
+security definer
+set search_path = public
+as $$
+  with attendance_calc as (
+    select
+      a.employee_id,
+      e.name as employee_name,
+      a.date,
+      lower(coalesce(a.type, '')) as type_normalized,
+      case
+        when a.time_from is not null and a.time_to is not null
+          then greatest(
+            extract(epoch from (a.time_to - a.time_from)) / 3600.0 - coalesce(a.break_minutes, 0) / 60.0,
+            0
+          )
+        else 0
+      end as worked_hours
+    from public.attendance a
+    join public.employees e on e.id = a.employee_id
+    where public.is_current_admin()
+      and to_char(a.date, 'YYYY-MM') = p_month
+  )
+  select
+    employee_id,
+    employee_name,
+    round(sum(case when type_normalized in ('práce', 'prace', 'work') then worked_hours else 0 end)::numeric, 2) as work_hours,
+    round(sum(case when type_normalized in ('dovolená', 'dovolena', 'vacation', 'leave') then coalesce(worked_hours, 0) else 0 end)::numeric, 2) as vacation_hours,
+    round(sum(case when type_normalized in ('home office', 'homeoffice') then worked_hours else 0 end)::numeric, 2) as home_office_hours,
+    round(sum(case when type_normalized in ('nemoc', 'sick') then worked_hours else 0 end)::numeric, 2) as sick_hours,
+    round(sum(case when type_normalized in ('služební cesta', 'sluzebni cesta', 'business trip', 'trip') then worked_hours else 0 end)::numeric, 2) as business_trip_hours,
+    round(sum(worked_hours)::numeric, 2) as total_hours,
+    count(distinct case when worked_hours > 0 then date end)::integer as work_days
+  from attendance_calc
+  group by employee_id, employee_name
+  order by employee_name asc;
+$$;
