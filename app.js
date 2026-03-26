@@ -222,6 +222,10 @@ function normalizeText(value) {
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ");
 }
+function isLeaveType(type) {
+  const t = normalizeText(type);
+  return t === "dovolena" || t === "leave" || t === "vacation";
+}
 function getAutoBreakMinutes(row) {
   const start = parseRowDateTime(row.date, row.time_from);
   const end = parseRowDateTime(row.date, row.time_to);
@@ -1155,6 +1159,45 @@ function renderMyAttendance() {
   );
 }
 
+function getTodayNonLeaveAttendanceRows(rows = myAttendanceRows) {
+  const today = todayStr();
+  return (rows || [])
+    .filter(r => r?.date === today && !isLeaveType(r.type))
+    .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+}
+function getLatestTodayAttendanceRow(rows = myAttendanceRows) {
+  const todayRows = getTodayNonLeaveAttendanceRows(rows);
+  return todayRows.length ? todayRows[0] : null;
+}
+async function refreshMyAttendanceForAction() {
+  await loadMyAttendance();
+}
+function getFriendlyAttendanceErrorMessage(actionLabel, error) {
+  const raw = String(error?.message || error?.details || error?.hint || error || "").trim();
+  const normalized = normalizeText(raw);
+  const code = String(error?.code || "").trim();
+
+  if (code === "23505" || normalized.includes("duplicate") || normalized.includes("unique")) {
+    return "Příchod pro dnešní den už je zapsaný.";
+  }
+  if (normalized.includes("already") && normalized.includes("clock") && normalized.includes("in")) {
+    return "Příchod pro dnešní den už je zapsaný.";
+  }
+  if (normalized.includes("open shift") || normalized.includes("otevren") || normalized.includes("otevřen")) {
+    return "Máš otevřenou směnu. Nejdřív zapiš odchod.";
+  }
+  if (normalized.includes("no open shift") || normalized.includes("not clocked in") || normalized.includes("neni otevrena") || normalized.includes("není otevřená")) {
+    return "Nemáš otevřenou směnu. Nejdřív zapiš příchod.";
+  }
+  if (normalized.includes("locked") || normalized.includes("zamcen") || normalized.includes("zamčen")) {
+    return "Tento měsíc je uzamčený a docházku už nelze měnit.";
+  }
+  if (raw) {
+    return `Chyba při ${actionLabel}: ${raw}`;
+  }
+  return `Chyba při ${actionLabel}.`;
+}
+
 async function loadMyLeaveSummary() {
   if (!currentEmployee || isAdmin) {
     myLeaveSummary = null;
@@ -1332,42 +1375,100 @@ async function cancelApprovedLeaveRequestById(id) {
 }
 
 async function doCheckIn() {
+  if (!currentEmployee || isAdmin) {
+    return setMessage(attendanceMessageEl, "Příchod může zapisovat jen přihlášený zaměstnanec.", "err");
+  }
+
   const officeRow = officesData.find(o => String(o.id) === String(officeEl.value || ""));
   const officeText = officeRow?.name || "";
+  const selectedType = attendanceTypeEl.value;
+  const selectedBreakMinutes = Number(breakMinutesEl.value || 0);
+
+  if (!officeText) {
+    return setMessage(attendanceMessageEl, "Vyber místo výkonu práce.", "err");
+  }
+  if (!selectedType) {
+    return setMessage(attendanceMessageEl, "Vyber typ docházky.", "err");
+  }
+
+  setMessage(attendanceMessageEl, "Ověřuji možnost zápisu příchodu…", "warn");
+
+  try {
+    await refreshMyAttendanceForAction();
+  } catch (error) {
+    return setMessage(attendanceMessageEl, "Nepodařilo se ověřit aktuální stav docházky: " + (error?.message || String(error)), "err");
+  }
+
+  if (myOpenShift) {
+    return setMessage(attendanceMessageEl, `Máš otevřenou směnu od ${myOpenShift.time_from || "—"}. Nejdřív zapiš odchod.`, "err");
+  }
+
+  const todayRows = getTodayNonLeaveAttendanceRows();
+  if (todayRows.length > 0) {
+    const latestToday = getLatestTodayAttendanceRow();
+    const detail = latestToday?.time_to
+      ? `Dnešní docházka už existuje (${latestToday.time_from || "—"}–${latestToday.time_to || "—"}).`
+      : `Dnešní příchod už existuje od ${latestToday?.time_from || "—"}.`;
+    return setMessage(attendanceMessageEl, `${detail} Druhý příchod ve stejný den není povolen.`, "err");
+  }
+
   let error = null;
   try {
     const res = await supabaseClient.rpc("rpc_check_in", {
       p_office: officeText,
-      p_type: attendanceTypeEl.value,
-      p_break_minutes: Number(breakMinutesEl.value || 0)
+      p_type: selectedType,
+      p_break_minutes: selectedBreakMinutes
     });
     error = res.error;
   } catch (e) {
     error = e;
   }
+
   if (error) {
-    return setMessage(attendanceMessageEl, "Chyba při zápisu příchodu: " + error.message, "err");
+    return setMessage(attendanceMessageEl, getFriendlyAttendanceErrorMessage("zápisu příchodu", error), "err");
   }
+
   await loadAllData();
   setMessage(attendanceMessageEl, "Příchod zapsán.", "ok");
 }
 async function doCheckOut() {
+  if (!currentEmployee || isAdmin) {
+    return setMessage(attendanceMessageEl, "Odchod může zapisovat jen přihlášený zaměstnanec.", "err");
+  }
+
   const officeRow = officesData.find(o => String(o.id) === String(officeEl.value || ""));
   const officeText = officeRow?.name || "";
+  const selectedType = attendanceTypeEl.value;
+  const selectedBreakMinutes = Number(breakMinutesEl.value || 0);
+
+  setMessage(attendanceMessageEl, "Ověřuji otevřenou směnu…", "warn");
+
+  try {
+    await refreshMyAttendanceForAction();
+  } catch (error) {
+    return setMessage(attendanceMessageEl, "Nepodařilo se ověřit aktuální stav docházky: " + (error?.message || String(error)), "err");
+  }
+
+  if (!myOpenShift) {
+    return setMessage(attendanceMessageEl, "Nemáš otevřenou směnu. Nejdřív zapiš příchod.", "err");
+  }
+
   let error = null;
   try {
     const res = await supabaseClient.rpc("rpc_check_out", {
       p_office: officeText,
-      p_type: attendanceTypeEl.value,
-      p_break_minutes: Number(breakMinutesEl.value || 0)
+      p_type: selectedType,
+      p_break_minutes: selectedBreakMinutes
     });
     error = res.error;
   } catch (e) {
     error = e;
   }
+
   if (error) {
-    return setMessage(attendanceMessageEl, "Chyba při zápisu odchodu: " + error.message, "err");
+    return setMessage(attendanceMessageEl, getFriendlyAttendanceErrorMessage("zápisu odchodu", error), "err");
   }
+
   await loadAllData();
   setMessage(attendanceMessageEl, "Odchod zapsán.", "ok");
 }
