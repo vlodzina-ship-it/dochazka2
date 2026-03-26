@@ -70,6 +70,8 @@ create unique index if not exists employees_email_key
 
 create unique index if not exists employees_auth_user_id_key
   on public.employees (auth_user_id);
+
+
 -- ==========================================
 -- TABULKA: attendance
 -- ==========================================
