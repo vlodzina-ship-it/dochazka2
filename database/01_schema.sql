@@ -1,0 +1,11 @@
+-- ==========================================
+-- 01_schema.sql
+-- Docházkový systém - instalační schema
+-- ==========================================
+
+-- Obsah:
+-- - tabulky
+-- - constraints
+-- - indexy
+-- - views
+-- - triggery na updated_at
