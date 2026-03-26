@@ -1,5 +1,5 @@
-const SUPABASE_URL = "SEM_VLOZ_NOVOU_SUPABASE_URL";
-const SUPABASE_KEY = "SEM_VLOZ_NOVY_SB_PUBLISHABLE_KEY";
+const SUPABASE_URL = "https://wgnzqdleoiyuukgololm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_qa7SC3zS7C46oDudqrAQ4g_b-e0wrCQ";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
