@@ -202,3 +202,245 @@ begin
   );
 end;
 $$;
+
+
+-- ==========================================
+-- FUNCTION: admin_insert_attendance
+-- ==========================================
+
+create or replace function public.admin_insert_attendance(
+  p_employee_id bigint,
+  p_date date,
+  p_office_id bigint,
+  p_type text,
+  p_time_from text default null,
+  p_time_to text default null,
+  p_break_minutes integer default 0
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_office_name text;
+begin
+  if not public.is_current_admin() then
+    raise exception 'Pouze admin může vložit docházku';
+  end if;
+
+  select name
+    into v_office_name
+  from public.offices
+  where id = p_office_id
+  limit 1;
+
+  if v_office_name is null then
+    raise exception 'Office nebyl nalezen';
+  end if;
+
+  insert into public.attendance (
+    employee_id,
+    date,
+    time_from,
+    time_to,
+    office,
+    type,
+    break_minutes
+  )
+  values (
+    p_employee_id,
+    p_date,
+    case
+      when p_time_from is null or btrim(p_time_from) = '' then null
+      else p_time_from::time
+    end,
+    case
+      when p_time_to is null or btrim(p_time_to) = '' then null
+      else p_time_to::time
+    end,
+    v_office_name,
+    p_type,
+    coalesce(p_break_minutes, 0)
+  );
+end;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: admin_update_attendance
+-- ==========================================
+
+create or replace function public.admin_update_attendance(
+  p_attendance_id bigint,
+  p_date date,
+  p_office_id bigint,
+  p_type text,
+  p_time_from text default null,
+  p_time_to text default null,
+  p_break_minutes integer default 0
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_office_name text;
+begin
+  if not public.is_current_admin() then
+    raise exception 'Pouze admin může upravit docházku';
+  end if;
+
+  select name
+    into v_office_name
+  from public.offices
+  where id = p_office_id
+  limit 1;
+
+  if v_office_name is null then
+    raise exception 'Office nebyl nalezen';
+  end if;
+
+  update public.attendance
+  set
+    date = p_date,
+    time_from = case
+      when p_time_from is null or btrim(p_time_from) = '' then null
+      else p_time_from::time
+    end,
+    time_to = case
+      when p_time_to is null or btrim(p_time_to) = '' then null
+      else p_time_to::time
+    end,
+    office = v_office_name,
+    type = p_type,
+    break_minutes = coalesce(p_break_minutes, 0)
+  where id = p_attendance_id;
+
+  if not found then
+    raise exception 'Docházka nebyla nalezena';
+  end if;
+end;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: admin_delete_attendance
+-- ==========================================
+
+create or replace function public.admin_delete_attendance(
+  p_attendance_id bigint
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_current_admin() then
+    raise exception 'Pouze admin může smazat docházku';
+  end if;
+
+  delete from public.attendance
+  where id = p_attendance_id;
+
+  if not found then
+    raise exception 'Docházka nebyla nalezena';
+  end if;
+end;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: admin_create_employee
+-- ==========================================
+
+create or replace function public.admin_create_employee(
+  p_name text,
+  p_email text,
+  p_role text default 'employee',
+  p_offices text default null,
+  p_weekly text default null,
+  p_leave_days integer default 20,
+  p_leave_hours integer default 160
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_current_admin() then
+    raise exception 'Pouze admin může vytvořit zaměstnance';
+  end if;
+
+  insert into public.employees (
+    name,
+    email,
+    role,
+    offices,
+    weekly,
+    leave_days,
+    leave_hours,
+    is_admin,
+    active
+  )
+  values (
+    p_name,
+    lower(p_email),
+    coalesce(p_role, 'employee'),
+    p_offices,
+    p_weekly,
+    coalesce(p_leave_days, 20),
+    coalesce(p_leave_hours, 160),
+    case when coalesce(p_role, 'employee') = 'admin' then true else false end,
+    true
+  );
+end;
+$$;
+
+
+-- ==========================================
+-- FUNCTION: admin_update_employee
+-- ==========================================
+
+create or replace function public.admin_update_employee(
+  p_id bigint,
+  p_name text,
+  p_email text,
+  p_role text,
+  p_offices text default null,
+  p_weekly text default null,
+  p_leave_days integer default 20,
+  p_leave_hours integer default 160,
+  p_active boolean default true
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_current_admin() then
+    raise exception 'Pouze admin může upravit zaměstnance';
+  end if;
+
+  update public.employees
+  set
+    name = p_name,
+    email = lower(p_email),
+    role = coalesce(p_role, 'employee'),
+    offices = p_offices,
+    weekly = p_weekly,
+    leave_days = coalesce(p_leave_days, 20),
+    leave_hours = coalesce(p_leave_hours, 160),
+    is_admin = case when coalesce(p_role, 'employee') = 'admin' then true else false end,
+    active = coalesce(p_active, true)
+  where id = p_id;
+
+  if not found then
+    raise exception 'Zaměstnanec nebyl nalezen';
+  end if;
+end;
+$$;
