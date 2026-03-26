@@ -19,7 +19,8 @@ adminLeaveMessageEl=$("adminLeaveMessage"), exportMessageEl=$("exportMessage"),
 createEmployeeMessageEl=$("createEmployeeMessage"), attendanceEditMessageEl=$("attendanceEditMessage"),
 adminHistorySummaryEl=$("adminHistorySummary"), lockMonthMessageEl=$("lockMonthMessage"),
 officeMessageEl=$("officeMessage"), sessionTextEl=$("sessionText"), rolePillEl=$("rolePill"),
-profileBoxEl=$("profileBox"), openShiftValueEl=$("openShiftValue"), todayArrivalValueEl=$("todayArrivalValue"),
+profileBoxEl=$("profileBox"), appBrandEl=$("appBrand"),
+openShiftValueEl=$("openShiftValue"), todayArrivalValueEl=$("todayArrivalValue"),
 todayDepartureValueEl=$("todayDepartureValue"), leaveTotalHoursValueEl=$("leaveTotalHoursValue"),
 leaveUsedHoursValueEl=$("leaveUsedHoursValue"), leaveRemainingDaysValueEl=$("leaveRemainingDaysValue"),
 monthlySummaryLabelEl=$("monthlySummaryLabel"), monthlyWorkedValueEl=$("monthlyWorkedValue"),
@@ -68,7 +69,7 @@ offlineBannerEl=$("offlineBanner");
 
 const todayFilterButtons = document.querySelectorAll('.today-filter-btn');
 
-let currentUser=null,currentEmployee=null,myAttendanceRows=[],myAttendanceHistoryRows=[],myOpenShift=null,myLeaveSummary=null,isAdmin=false,adminEmployeesData=[],filteredAdminEmployeesData=[],adminTodayAttendanceData=[],adminLeaveData=[],adminLeaveRequestsRows=[],myLeaveRequestsRows=[],editEmployeeId=null,editAttendanceId=null,currentTodayFilter='all',auditRows=[],officesData=[],editOfficeId=null,isPasswordRecoveryFlow=false,passwordWasJustChanged=false,adminHistoryRows=[];
+let currentUser=null,currentEmployee=null,myAttendanceRows=[],myAttendanceHistoryRows=[],myOpenShift=null,myLeaveSummary=null,isAdmin=false,adminEmployeesData=[],filteredAdminEmployeesData=[],adminTodayAttendanceData=[],adminLeaveData=[],adminLeaveRequestsRows=[],myLeaveRequestsRows=[],editEmployeeId=null,editAttendanceId=null,currentTodayFilter='all',auditRows=[],officesData=[],editOfficeId=null,isPasswordRecoveryFlow=false,passwordWasJustChanged=false,adminHistoryRows=[],appSettings=null;
 
 function setMessage(el,text,type='warn'){ if(!el) return; el.textContent=text; el.className='message '+type; }
 function escapeHtml(v){ return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
@@ -84,6 +85,36 @@ function getWorkedMinutes(row){ const type=normalizeText(row.type); if(type==='d
 function formatWorkedMinutes(minutes){ const m=Math.max(0,Number(minutes||0)); return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 function formatMonthLabel(monthStr){ if(!monthStr||!monthStr.includes('-')) return 'aktuální měsíc'; const [y,m]=monthStr.split('-'); return `${m}.${y}`; }
 function monthFromDateStr(dateStr){ return String(dateStr||'').slice(0,7); }
+
+async function loadAppSettings() {
+  try {
+    const { data, error } = await supabaseClient.rpc('get_app_settings');
+    if (error) throw error;
+
+    const settings = Array.isArray(data) && data.length ? data[0] : null;
+    if (!settings) return;
+
+    appSettings = settings;
+
+    const appTitle = settings.app_name || 'Docházkový systém';
+    const companyName = settings.company_name || '';
+
+    document.title = appTitle;
+
+    if (appBrandEl) {
+      appBrandEl.textContent = companyName ? `${appTitle} · ${companyName}` : appTitle;
+    }
+
+    if (settings.primary_color) {
+      document.documentElement.style.setProperty('--primary', settings.primary_color);
+    }
+  } catch (error) {
+    console.error('Chyba načtení app settings:', error);
+    if (appBrandEl && !appBrandEl.textContent.trim()) {
+      appBrandEl.textContent = 'Docházkový systém';
+    }
+  }
+}
 
 function updateOnlineStatus(){
   if(!offlineBannerEl) return;
@@ -1212,6 +1243,7 @@ async function loadAdminData(){
 
 async function loadAllData(){
   try{
+    await loadAppSettings();
     await loadOffices();
     await loadProfile();
     renderProfile();
@@ -1348,6 +1380,7 @@ supabaseClient.auth.onAuthStateChange((event,session)=>{
   isPasswordRecoveryFlow=detectRecoveryModeFromUrl();
   renderLoggedOut();
   updateOnlineStatus();
+  await loadAppSettings();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
