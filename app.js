@@ -1,5 +1,5 @@
-const SUPABASE_URL = "https://avjkkdfzzudtmlqolbzk.supabase.co";
-const SUPABASE_KEY = "sb_publishable_I8axbKcJOoZ5mhiixKxfTg_fM5dCCJ-";
+const SUPABASE_URL = "https://wgnzqdleoiyuukgololm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_qa7SC3zS7C46oDudqrAQ4g_b-e0wrCQ";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
 });
