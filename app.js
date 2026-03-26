@@ -1444,65 +1444,95 @@ async function doCheckOut() {
   setMessage(attendanceMessageEl, "Ověřuji otevřenou směnu…", "warn");
 
   try {
-    await refreshMyAttendanceForAction();
-  } catch (error) {
-    return setMessage(attendanceMessageEl, "Nepodařilo se ověřit aktuální stav docházky: " + (error?.message || String(error)), "err");
-  }
+    const { data: checkData, error: checkError } = await supabaseClient.rpc("can_check_out");
 
-  if (!myOpenShift) {
-    return setMessage(attendanceMessageEl, "Nemáš otevřenou směnu. Nejdřív zapiš příchod.", "err");
-  }
+    if (checkError) {
+      return setMessage(attendanceMessageEl, "Nepodařilo se ověřit možnost odchodu: " + checkError.message, "err");
+    }
 
-  let error = null;
-  try {
-    const res = await supabaseClient.rpc("rpc_check_out", {
+    if (!checkData?.ok) {
+      return setMessage(attendanceMessageEl, checkData?.message || "Odchod nelze zapsat.", "err");
+    }
+
+    const { error } = await supabaseClient.rpc("rpc_check_out", {
       p_office: officeText,
       p_type: selectedType,
       p_break_minutes: selectedBreakMinutes
     });
-    error = res.error;
+
+    if (error) {
+      return setMessage(attendanceMessageEl, getFriendlyAttendanceErrorMessage("zápisu odchodu", error), "err");
+    }
+
+    await loadAllData();
+    setMessage(attendanceMessageEl, "Odchod zapsán.", "ok");
   } catch (e) {
-    error = e;
+    return setMessage(attendanceMessageEl, "Neočekávaná chyba při zápisu odchodu: " + (e?.message || e), "err");
   }
-
-  if (error) {
-    return setMessage(attendanceMessageEl, getFriendlyAttendanceErrorMessage("zápisu odchodu", error), "err");
-  }
-
-  await loadAllData();
-  setMessage(attendanceMessageEl, "Odchod zapsán.", "ok");
 }
-
 async function createMyManualAttendance() {
   const officeRow = officesData.find(o => String(o.id) === String(manualAttendanceOfficeEl.value || ""));
-  const p_date = manualAttendanceDateEl.value,
-    p_office = officeRow?.name || "",
-    p_type = manualAttendanceTypeEl.value,
-    p_time_from = manualAttendanceTimeFromEl.value,
-    p_time_to = manualAttendanceTimeToEl.value || null,
-    p_break_minutes = Number(manualAttendanceBreakMinutesEl.value || 0);
+  const p_date = manualAttendanceDateEl.value;
+  const p_office = officeRow?.name || "";
+  const p_type = manualAttendanceTypeEl.value;
+  const p_time_from = manualAttendanceTimeFromEl.value || null;
+  const p_time_to = manualAttendanceTimeToEl.value || null;
+  const p_break_minutes = Number(manualAttendanceBreakMinutesEl.value || 0);
 
-  if (!p_date || !p_office || !p_type || !p_time_from) {
-    return setMessage(manualAttendanceMessageEl, "Vyplň datum, místo, typ a čas od.", "err");
+  if (!p_date || !p_office || !p_type) {
+    return setMessage(manualAttendanceMessageEl, "Vyplň datum, místo a typ.", "err");
   }
+
+  if (normalizeText(p_type) !== "dovolena" && !p_time_from) {
+    return setMessage(manualAttendanceMessageEl, "Vyplň čas od.", "err");
+  }
+
   try {
     await ensureMonthUnlockedOrThrow(p_date);
   } catch (error) {
     return setMessage(manualAttendanceMessageEl, error.message, "err");
   }
-  setMessage(manualAttendanceMessageEl, "Zapisuji ruční docházku…", "warn");
-  const { error } = await supabaseClient.rpc("create_my_attendance_manual", {
-    p_date,
-    p_office,
-    p_type,
-    p_time_from,
-    p_time_to,
-    p_break_minutes
-  });
-  if (error) return setMessage(manualAttendanceMessageEl, "Chyba ručního zápisu: " + error.message, "err");
-  resetManualAttendanceForm();
-  await loadAllData();
-  setMessage(manualAttendanceMessageEl, "Docházka byla ručně zapsána.", "ok");
+
+  setMessage(manualAttendanceMessageEl, "Ověřuji ruční zápis docházky…", "warn");
+
+  try {
+    const { data: checkData, error: checkError } = await supabaseClient.rpc("can_create_my_manual_attendance", {
+      p_date,
+      p_type,
+      p_time_from,
+      p_time_to
+    });
+
+    if (checkError) {
+      return setMessage(manualAttendanceMessageEl, "Nepodařilo se ověřit ruční zápis: " + checkError.message, "err");
+    }
+
+    if (!checkData?.ok) {
+      return setMessage(manualAttendanceMessageEl, checkData?.message || "Ruční zápis nelze uložit.", "err");
+    }
+
+    const { error } = await supabaseClient.rpc("create_my_attendance_manual", {
+      p_date,
+      p_office,
+      p_type,
+      p_time_from,
+      p_time_to,
+      p_break_minutes
+    });
+
+    if (error) {
+      if (error.code === "23505") {
+        return setMessage(manualAttendanceMessageEl, "Pro tento den už pracovní docházka existuje.", "err");
+      }
+      return setMessage(manualAttendanceMessageEl, "Chyba ručního zápisu: " + error.message, "err");
+    }
+
+    resetManualAttendanceForm();
+    await loadAllData();
+    setMessage(manualAttendanceMessageEl, "Docházka byla ručně zapsána.", "ok");
+  } catch (e) {
+    return setMessage(manualAttendanceMessageEl, "Neočekávaná chyba ručního zápisu: " + (e?.message || e), "err");
+  }
 }
 async function createMyLeave() {
   const p_date_from = myLeaveDateFromEl.value, p_date_to = myLeaveDateToEl.value, p_hours = Number(myLeaveHoursEl.value || 0), p_note = myLeaveNoteEl.value.trim();
@@ -1600,27 +1630,72 @@ function normalizeAttendanceEditFields() {
 }
 async function insertAttendanceManual() {
   normalizeAttendanceEditFields();
-  const p_employee_id = Number(editAttendanceEmployeeEl.value || 0),
-    p_date = editAttendanceDateEl.value,
-    p_office_id = Number(editAttendanceOfficeEl.value || 0),
-    p_type = editAttendanceTypeEl.value,
-    p_time_from = editAttendanceTimeFromEl.value || null,
-    p_time_to = editAttendanceTimeToEl.value || null,
-    p_break_minutes = Number(editAttendanceBreakMinutesEl.value || 0);
-  if (!p_employee_id || !p_date || !p_office_id || !p_type) return setMessage(attendanceEditMessageEl, "Vyber zaměstnance a vyplň datum, místo a typ.", "err");
-  if (normalizeText(p_type) !== "dovolena" && !p_time_from) return setMessage(attendanceEditMessageEl, "Vyplň čas od.", "err");
+
+  const p_employee_id = Number(editAttendanceEmployeeEl.value || 0);
+  const p_date = editAttendanceDateEl.value;
+  const p_office_id = Number(editAttendanceOfficeEl.value || 0);
+  const p_type = editAttendanceTypeEl.value;
+  const p_time_from = editAttendanceTimeFromEl.value || null;
+  const p_time_to = editAttendanceTimeToEl.value || null;
+  const p_break_minutes = Number(editAttendanceBreakMinutesEl.value || 0);
+
+  if (!p_employee_id || !p_date || !p_office_id || !p_type) {
+    return setMessage(attendanceEditMessageEl, "Vyber zaměstnance a vyplň datum, místo a typ.", "err");
+  }
+
+  if (normalizeText(p_type) !== "dovolena" && !p_time_from) {
+    return setMessage(attendanceEditMessageEl, "Vyplň čas od.", "err");
+  }
+
   try {
     await ensureMonthUnlockedOrThrow(p_date);
   } catch (error) {
     return setMessage(attendanceEditMessageEl, error.message, "err");
   }
-  setMessage(attendanceEditMessageEl, "Vkládám nový záznam docházky…", "warn");
-  const { error } = await supabaseClient.rpc("admin_insert_attendance", { p_employee_id, p_date, p_office_id, p_type, p_time_from, p_time_to, p_break_minutes });
-  if (error) return setMessage(attendanceEditMessageEl, "Chyba při vložení docházky: " + error.message, "err");
-  resetAttendanceEditForm();
-  await loadAllData();
-  if (adminHistoryEmployeeEl.value && adminHistoryMonthEl.value) await loadAdminAttendanceHistory();
-  setMessage(attendanceEditMessageEl, "Nový záznam docházky byl vložen.", "ok");
+
+  setMessage(attendanceEditMessageEl, "Ověřuji možnost vložení docházky…", "warn");
+
+  try {
+    const { data: checkData, error: checkError } = await supabaseClient.rpc("can_admin_insert_attendance", {
+      p_employee_id,
+      p_date,
+      p_type,
+      p_time_from,
+      p_time_to
+    });
+
+    if (checkError) {
+      return setMessage(attendanceEditMessageEl, "Nepodařilo se ověřit vložení docházky: " + checkError.message, "err");
+    }
+
+    if (!checkData?.ok) {
+      return setMessage(attendanceEditMessageEl, checkData?.message || "Docházku nelze vložit.", "err");
+    }
+
+    const { error } = await supabaseClient.rpc("admin_insert_attendance", {
+      p_employee_id,
+      p_date,
+      p_office_id,
+      p_type,
+      p_time_from,
+      p_time_to,
+      p_break_minutes
+    });
+
+    if (error) {
+      if (error.code === "23505") {
+        return setMessage(attendanceEditMessageEl, "Zaměstnanec už má pro tento den pracovní docházku.", "err");
+      }
+      return setMessage(attendanceEditMessageEl, "Chyba při vložení docházky: " + error.message, "err");
+    }
+
+    resetAttendanceEditForm();
+    await loadAllData();
+    if (adminHistoryEmployeeEl.value && adminHistoryMonthEl.value) await loadAdminAttendanceHistory();
+    setMessage(attendanceEditMessageEl, "Nový záznam docházky byl vložen.", "ok");
+  } catch (e) {
+    return setMessage(attendanceEditMessageEl, "Neočekávaná chyba při vložení docházky: " + (e?.message || e), "err");
+  }
 }
 async function saveAttendanceEdit() {
   if (!editAttendanceId) return setMessage(attendanceEditMessageEl, "Pro úpravu nejdřív vyber řádek tlačítkem Upravit. Pro nový záznam použij Vložit ručně.", "err");
