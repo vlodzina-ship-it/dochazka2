@@ -177,6 +177,38 @@ function setMessage(el, text, type = "warn") {
   el.textContent = text;
   el.className = "message " + type;
 }
+function mapAttendanceError(error) {
+  if (!error) return "Neznámá chyba";
+
+  const msg = (error.message || "").toLowerCase();
+  const code = error.code;
+
+  if (code === "23505") {
+    return "Pro tento den už existuje docházka.";
+  }
+
+  if (code === "23502") {
+    return "Chybí povinná hodnota (např. čas od).";
+  }
+
+  if (code === "23503") {
+    return "Neplatný odkaz (zaměstnanec / místo).";
+  }
+
+  if (msg.includes("duplicate")) {
+    return "Záznam už existuje.";
+  }
+
+  if (msg.includes("time") && msg.includes("null")) {
+    return "Vyplň čas.";
+  }
+
+  if (msg.includes("check")) {
+    return "Neplatná kombinace hodnot.";
+  }
+
+  return error.message || "Došlo k chybě.";
+}
 function escapeHtml(v) {
   return String(v ?? "")
     .replaceAll("&", "&amp;")
