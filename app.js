@@ -1382,16 +1382,19 @@ supabaseClient.auth.onAuthStateChange((event,session)=>{
   updateOnlineStatus();
   await loadAppSettings();
 
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-      try {
-        await navigator.serviceWorker.register('./sw.js');
-        console.log('Service Worker zaregistrován');
-      } catch (err) {
-        console.error('Chyba registrace Service Workeru:', err);
+ if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
       }
-    });
-  }
+      console.log('Starý Service Worker byl odregistrován');
+    } catch (err) {
+      console.error('Chyba při odregistraci Service Workeru:', err);
+    }
+  });
+}
 
   if(isPasswordRecoveryFlow){
     showRecoveryView();
