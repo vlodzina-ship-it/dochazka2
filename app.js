@@ -6,7 +6,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, 
 });
 
 console.log("SUPABASE_URL:", SUPABASE_URL);
-console.log("APP VERSION:", "2026-03-31-prod-tuning-1-3");
+console.log("APP VERSION:", "2026-03-31-prod-tuning-1-4");
 
 const $ = id => document.getElementById(id);
 
@@ -250,7 +250,14 @@ function normalizeText(value) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ");
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function isEmployeeAdmin(employee) {
+  return !!employee && (
+    normalizeText(employee.role) === "admin" ||
+    employee.is_admin === true
+  );
 }
 function getAutoBreakMinutes(row) {
   const start = parseRowDateTime(row.date, row.time_from);
@@ -262,8 +269,6 @@ function getAutoBreakMinutes(row) {
 
   const raw = Math.round((end.getTime() - start.getTime()) / 60000);
 
-  // 🔥 KLÍČOVÁ OPRAVA
-  // pauza až při překročení 6 hodin (360 min)
   if (raw <= 360) return 0;
 
   return Number(row.break_minutes || 0);
@@ -1116,8 +1121,19 @@ async function saveNewPassword() {
 async function loadProfile() {
   const { data, error } = await supabaseClient.rpc("get_my_employee_profile");
   if (error) throw error;
+
   currentEmployee = Array.isArray(data) && data.length ? data[0] : null;
-  isAdmin = !!(currentEmployee && (currentEmployee.role === "admin" || currentEmployee.is_admin === true));
+  isAdmin = isEmployeeAdmin(currentEmployee);
+
+  if (!currentEmployee) {
+    await supabaseClient.auth.signOut();
+    throw new Error("Tento účet není spárovaný se zaměstnancem v tabulce employees.");
+  }
+
+  if (currentEmployee.active === false) {
+    await supabaseClient.auth.signOut();
+    throw new Error("Tento účet je neaktivní. Kontaktuj administrátora.");
+  }
 }
 function renderProfile() {
   if (!currentEmployee) {
@@ -1128,8 +1144,8 @@ function renderProfile() {
     updateRoleVisibility();
     return;
   }
-  rolePillEl.textContent = isAdmin ? "admin" : currentEmployee.role || "employee";
-  rolePillEl.className = "pill " + (isAdmin ? "pill-admin" : "pill-employee");
+  rolePillEl.textContent = isEmployeeAdmin(currentEmployee) ? "admin" : (currentEmployee.role || "employee");
+  rolePillEl.className = "pill " + (isEmployeeAdmin(currentEmployee) ? "pill-admin" : "pill-employee");
   profileBoxEl.innerHTML = `<strong>${escapeHtml(currentEmployee.name || "")}</strong><br>${escapeHtml(currentEmployee.email || "")}<br>role: <span class="mono">${escapeHtml(currentEmployee.role || "employee")}</span><br>is_admin: <span class="mono">${escapeHtml(String(!!currentEmployee.is_admin))}</span><br>active: <span class="mono">${escapeHtml(String(!!currentEmployee.active))}</span><br>employee id: <span class="mono">${escapeHtml(currentEmployee.id)}</span><br>auth_user_id: <span class="mono">${escapeHtml(currentEmployee.auth_user_id || "")}</span><br>offices: <span class="mono">${escapeHtml(currentEmployee.offices || "—")}</span>`;
   employeeOfficesInfoEl.value = currentEmployee.offices || "";
   updateRoleVisibility();
@@ -1849,6 +1865,12 @@ async function loadAllData() {
     await loadAppSettings();
     await loadOffices();
     await loadProfile();
+
+    if (!currentEmployee) {
+      await supabaseClient.auth.signOut();
+      throw new Error("Tento účet není spárovaný se zaměstnancem v tabulce employees.");
+    }
+
     renderProfile();
     await loadMyAttendance();
     await loadAttendanceHistory();
