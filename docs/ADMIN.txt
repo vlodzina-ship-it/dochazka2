@@ -1,0 +1,26 @@
+NÁVOD PRO ADMINA
+
+Admin může:
+- prohlížet dnešní docházku všech zaměstnanců,
+- upravovat a vkládat docházku,
+- vytvářet a upravovat zaměstnance,
+- spravovat místa výkonu práce,
+- schvalovat a zamítat žádosti o dovolenou,
+- zapisovat dovolenou zaměstnanci,
+- zamykat a odemykat měsíce,
+- spouštět export pro účetní,
+- zobrazovat audit log docházky.
+
+DOPORUČENÝ POSTUP PO PRVNÍM SPUŠTĚNÍ
+
+1. Zkontrolovat firemní nastavení.
+2. Přidat zaměstnance.
+3. Nastavit místa výkonu práce.
+4. Ověřit role admin / employee.
+5. Otestovat přihlášení jednoho zaměstnance.
+6. Otestovat příchod, odchod a žádost o dovolenou.
+7. Otestovat export.
+
+POZNÁMKA
+
+Admin má přístup k citlivým provozním datům. Přístupové údaje admina musí být chráněné.
