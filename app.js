@@ -255,9 +255,18 @@ function normalizeText(value) {
 function getAutoBreakMinutes(row) {
   const start = parseRowDateTime(row.date, row.time_from);
   const end = parseRowDateTime(row.date, row.time_to);
-  if (!start || !end || end <= start) return Number(row.break_minutes || 0);
+
+  if (!start || !end || end <= start) {
+    return Number(row.break_minutes || 0);
+  }
+
   const raw = Math.round((end.getTime() - start.getTime()) / 60000);
-  return raw < 360 ? 0 : Number(row.break_minutes || 0);
+
+  // 🔥 KLÍČOVÁ OPRAVA
+  // pauza až při překročení 6 hodin (360 min)
+  if (raw <= 360) return 0;
+
+  return Number(row.break_minutes || 0);
 }
 function getWorkedMinutes(row) {
   const type = normalizeText(row.type);
