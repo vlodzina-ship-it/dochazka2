@@ -1,12 +1,19 @@
-const SUPABASE_URL = "https://wgnzqdleoiyuukgololm.supabase.co";
-const SUPABASE_KEY = "sb_publishable_qa7SC3zS7C46oDudqrAQ4g_b-e0wrCQ";
+const APP_CONFIG = window.APP_CONFIG || {};
+
+const SUPABASE_URL = APP_CONFIG.SUPABASE_URL || "";
+const SUPABASE_KEY = APP_CONFIG.SUPABASE_KEY || "";
+const APP_VERSION = APP_CONFIG.APP_VERSION || "dev";
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  throw new Error("Chybí konfigurace aplikace. Zkontroluj soubor config.js.");
+}
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 
 console.log("SUPABASE_URL:", SUPABASE_URL);
-console.log("APP VERSION:", "2026-03-31-prod-tuning-1-4");
+console.log("APP VERSION:", APP_VERSION);
 
 const $ = id => document.getElementById(id);
 
