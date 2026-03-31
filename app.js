@@ -6,7 +6,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, 
 });
 
 console.log("SUPABASE_URL:", SUPABASE_URL);
-console.log("APP VERSION:", "2026-03-26-full-rebuild");
+console.log("APP VERSION:", "2026-03-31-prod-tuning-1-3");
 
 const $ = id => document.getElementById(id);
 
@@ -177,38 +177,36 @@ function setMessage(el, text, type = "warn") {
   el.textContent = text;
   el.className = "message " + type;
 }
+
 function mapAttendanceError(error) {
-  if (!error) return "Neznámá chyba";
+  if (!error) return "Neznámá chyba.";
 
-  const msg = (error.message || "").toLowerCase();
-  const code = error.code;
+  const raw = String(error.message || error.details || error.hint || "").trim();
+  const msg = raw.toLowerCase();
+  const code = String(error.code || "").trim();
 
-  if (code === "23505") {
-    return "Pro tento den už existuje docházka.";
-  }
+  if (code === "23505") return "Pro tento den už existuje pracovní docházka.";
+  if (code === "23502") return "Chybí povinná hodnota. Zkontroluj čas a vyplněná pole.";
+  if (code === "23503") return "Neplatný odkaz na zaměstnance nebo místo.";
+  if (code === "22007") return "Neplatný formát data nebo času.";
 
-  if (code === "23502") {
-    return "Chybí povinná hodnota (např. čas od).";
-  }
+  if (msg.includes("open shift")) return "Máš otevřenou směnu. Nejdřív zapiš odchod.";
+  if (msg.includes("no open shift")) return "Nemáš otevřenou směnu. Nejdřív zapiš příchod.";
+  if (msg.includes("already checked in")) return "Příchod pro dnešní den už je zapsaný.";
+  if (msg.includes("already clocked in")) return "Příchod pro dnešní den už je zapsaný.";
+  if (msg.includes("day already exists")) return "Pro tento den už pracovní docházka existuje.";
+  if (msg.includes("open_shift_exists")) return "Pro tento den už existuje otevřená směna.";
+  if (msg.includes("invalid time range")) return "Čas do musí být později než čas od.";
+  if (msg.includes("missing_time_from")) return "Vyplň čas od.";
+  if (msg.includes("duplicate")) return "Záznam už existuje.";
+  if (msg.includes("unique")) return "Záznam už existuje.";
+  if (msg.includes("null value")) return "Chybí povinná hodnota.";
+  if (msg.includes("time") && msg.includes("null")) return "Vyplň čas.";
+  if (msg.includes("check")) return "Neplatná kombinace hodnot.";
 
-  if (code === "23503") {
-    return "Neplatný odkaz (zaměstnanec / místo).";
-  }
-
-  if (msg.includes("duplicate")) {
-    return "Záznam už existuje.";
-  }
-
-  if (msg.includes("time") && msg.includes("null")) {
-    return "Vyplň čas.";
-  }
-
-  if (msg.includes("check")) {
-    return "Neplatná kombinace hodnot.";
-  }
-
-  return error.message || "Došlo k chybě.";
+  return raw || "Došlo k chybě.";
 }
+
 function escapeHtml(v) {
   return String(v ?? "")
     .replaceAll("&", "&amp;")
@@ -253,10 +251,6 @@ function normalizeText(value) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ");
-}
-function isLeaveType(type) {
-  const t = normalizeText(type);
-  return t === "dovolena" || t === "leave" || t === "vacation";
 }
 function getAutoBreakMinutes(row) {
   const start = parseRowDateTime(row.date, row.time_from);
@@ -324,8 +318,7 @@ function getAttendanceRowsForMonth(rows, monthStr) {
 }
 function getMonthlySummary(rows) {
   const month = currentMonthStr();
-  const workDays = new Set(),
-    leaveDays = new Set();
+  const workDays = new Set(), leaveDays = new Set();
   let totalWorkedMinutes = 0;
   for (const row of rows) {
     if (!row?.date || !String(row.date).startsWith(month)) continue;
@@ -540,8 +533,7 @@ async function ensureMonthUnlockedOrThrow(dateStr) {
   if (isLocked) throw new Error(`Měsíc ${formatMonthLabel(monthStr)} je uzamčený.`);
 }
 async function ensureRangeMonthsUnlockedOrThrow(dateFrom, dateTo) {
-  const startMonth = monthFromDateStr(dateFrom),
-    endMonth = monthFromDateStr(dateTo);
+  const startMonth = monthFromDateStr(dateFrom), endMonth = monthFromDateStr(dateTo);
   if (startMonth) await ensureMonthUnlockedOrThrow(dateFrom);
   if (endMonth && endMonth !== startMonth) await ensureMonthUnlockedOrThrow(dateTo);
 }
@@ -1191,45 +1183,6 @@ function renderMyAttendance() {
   );
 }
 
-function getTodayNonLeaveAttendanceRows(rows = myAttendanceRows) {
-  const today = todayStr();
-  return (rows || [])
-    .filter(r => r?.date === today && !isLeaveType(r.type))
-    .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
-}
-function getLatestTodayAttendanceRow(rows = myAttendanceRows) {
-  const todayRows = getTodayNonLeaveAttendanceRows(rows);
-  return todayRows.length ? todayRows[0] : null;
-}
-async function refreshMyAttendanceForAction() {
-  await loadMyAttendance();
-}
-function getFriendlyAttendanceErrorMessage(actionLabel, error) {
-  const raw = String(error?.message || error?.details || error?.hint || error || "").trim();
-  const normalized = normalizeText(raw);
-  const code = String(error?.code || "").trim();
-
-  if (code === "23505" || normalized.includes("duplicate") || normalized.includes("unique")) {
-    return "Příchod pro dnešní den už je zapsaný.";
-  }
-  if (normalized.includes("already") && normalized.includes("clock") && normalized.includes("in")) {
-    return "Příchod pro dnešní den už je zapsaný.";
-  }
-  if (normalized.includes("open shift") || normalized.includes("otevren") || normalized.includes("otevřen")) {
-    return "Máš otevřenou směnu. Nejdřív zapiš odchod.";
-  }
-  if (normalized.includes("no open shift") || normalized.includes("not clocked in") || normalized.includes("neni otevrena") || normalized.includes("není otevřená")) {
-    return "Nemáš otevřenou směnu. Nejdřív zapiš příchod.";
-  }
-  if (normalized.includes("locked") || normalized.includes("zamcen") || normalized.includes("zamčen")) {
-    return "Tento měsíc je uzamčený a docházku už nelze měnit.";
-  }
-  if (raw) {
-    return `Chyba při ${actionLabel}: ${raw}`;
-  }
-  return `Chyba při ${actionLabel}.`;
-}
-
 async function loadMyLeaveSummary() {
   if (!currentEmployee || isAdmin) {
     myLeaveSummary = null;
@@ -1385,7 +1338,7 @@ async function approveLeaveRequestById(id) {
   const ok = window.confirm(`Schválit žádost #${id}?`);
   if (!ok) return;
   const { error } = await supabaseClient.rpc("approve_leave_request", { p_request_id: Number(id) });
-  if (error) return alert("Chyba při schválení: " + error.message);
+  if (error) return alert("Chyba při schválení: " + mapAttendanceError(error));
   await loadAllData();
   alert("Žádost byla schválena.");
 }
@@ -1393,7 +1346,7 @@ async function rejectLeaveRequestById(id) {
   const ok = window.confirm(`Zamítnout žádost #${id}?`);
   if (!ok) return;
   const { error } = await supabaseClient.rpc("reject_leave_request", { p_request_id: Number(id) });
-  if (error) return alert("Chyba při zamítnutí: " + error.message);
+  if (error) return alert("Chyba při zamítnutí: " + mapAttendanceError(error));
   await loadAllData();
   alert("Žádost byla zamítnuta.");
 }
@@ -1401,7 +1354,7 @@ async function cancelApprovedLeaveRequestById(id) {
   const ok = window.confirm(`Stornovat schválenou žádost #${id}?`);
   if (!ok) return;
   const { error } = await supabaseClient.rpc("cancel_approved_leave_request", { p_request_id: Number(id) });
-  if (error) return alert("Chyba při stornu: " + error.message);
+  if (error) return alert("Chyba při stornu: " + mapAttendanceError(error));
   await loadAllData();
   alert("Schválená žádost byla stornována.");
 }
@@ -1413,56 +1366,43 @@ async function doCheckIn() {
 
   const officeRow = officesData.find(o => String(o.id) === String(officeEl.value || ""));
   const officeText = officeRow?.name || "";
-  const selectedType = attendanceTypeEl.value;
-  const selectedBreakMinutes = Number(breakMinutesEl.value || 0);
+  const p_type = attendanceTypeEl.value;
+  const p_break_minutes = Number(breakMinutesEl.value || 0);
 
   if (!officeText) {
-    return setMessage(attendanceMessageEl, "Vyber místo výkonu práce.", "err");
-  }
-  if (!selectedType) {
-    return setMessage(attendanceMessageEl, "Vyber typ docházky.", "err");
+    return setMessage(attendanceMessageEl, "Vyber místo.", "err");
   }
 
   setMessage(attendanceMessageEl, "Ověřuji možnost zápisu příchodu…", "warn");
 
   try {
-    await refreshMyAttendanceForAction();
-  } catch (error) {
-    return setMessage(attendanceMessageEl, "Nepodařilo se ověřit aktuální stav docházky: " + (error?.message || String(error)), "err");
-  }
+    const { data: checkData, error: checkError } = await supabaseClient.rpc("can_check_in");
 
-  if (myOpenShift) {
-    return setMessage(attendanceMessageEl, `Máš otevřenou směnu od ${myOpenShift.time_from || "—"}. Nejdřív zapiš odchod.`, "err");
-  }
+    if (checkError) {
+      return setMessage(attendanceMessageEl, "Nepodařilo se ověřit možnost příchodu: " + mapAttendanceError(checkError), "err");
+    }
 
-  const todayRows = getTodayNonLeaveAttendanceRows();
-  if (todayRows.length > 0) {
-    const latestToday = getLatestTodayAttendanceRow();
-    const detail = latestToday?.time_to
-      ? `Dnešní docházka už existuje (${latestToday.time_from || "—"}–${latestToday.time_to || "—"}).`
-      : `Dnešní příchod už existuje od ${latestToday?.time_from || "—"}.`;
-    return setMessage(attendanceMessageEl, `${detail} Druhý příchod ve stejný den není povolen.`, "err");
-  }
+    if (!checkData?.ok) {
+      return setMessage(attendanceMessageEl, checkData?.message || "Příchod nelze zapsat.", "err");
+    }
 
-  let error = null;
-  try {
-    const res = await supabaseClient.rpc("rpc_check_in", {
+    const { error } = await supabaseClient.rpc("rpc_check_in", {
       p_office: officeText,
-      p_type: selectedType,
-      p_break_minutes: selectedBreakMinutes
+      p_type,
+      p_break_minutes
     });
-    error = res.error;
+
+    if (error) {
+      return setMessage(attendanceMessageEl, mapAttendanceError(error), "err");
+    }
+
+    await loadAllData();
+    setMessage(attendanceMessageEl, "Příchod zapsán.", "ok");
   } catch (e) {
-    error = e;
+    return setMessage(attendanceMessageEl, "Neočekávaná chyba při zápisu příchodu: " + mapAttendanceError(e), "err");
   }
-
-  if (error) {
-    return setMessage(attendanceMessageEl, getFriendlyAttendanceErrorMessage("zápisu příchodu", error), "err");
-  }
-
-  await loadAllData();
-  setMessage(attendanceMessageEl, "Příchod zapsán.", "ok");
 }
+
 async function doCheckOut() {
   if (!currentEmployee || isAdmin) {
     return setMessage(attendanceMessageEl, "Odchod může zapisovat jen přihlášený zaměstnanec.", "err");
@@ -1470,8 +1410,8 @@ async function doCheckOut() {
 
   const officeRow = officesData.find(o => String(o.id) === String(officeEl.value || ""));
   const officeText = officeRow?.name || "";
-  const selectedType = attendanceTypeEl.value;
-  const selectedBreakMinutes = Number(breakMinutesEl.value || 0);
+  const p_type = attendanceTypeEl.value;
+  const p_break_minutes = Number(breakMinutesEl.value || 0);
 
   setMessage(attendanceMessageEl, "Ověřuji otevřenou směnu…", "warn");
 
@@ -1479,7 +1419,7 @@ async function doCheckOut() {
     const { data: checkData, error: checkError } = await supabaseClient.rpc("can_check_out");
 
     if (checkError) {
-      return setMessage(attendanceMessageEl, "Nepodařilo se ověřit možnost odchodu: " + checkError.message, "err");
+      return setMessage(attendanceMessageEl, "Nepodařilo se ověřit možnost odchodu: " + mapAttendanceError(checkError), "err");
     }
 
     if (!checkData?.ok) {
@@ -1488,20 +1428,21 @@ async function doCheckOut() {
 
     const { error } = await supabaseClient.rpc("rpc_check_out", {
       p_office: officeText,
-      p_type: selectedType,
-      p_break_minutes: selectedBreakMinutes
+      p_type,
+      p_break_minutes
     });
 
     if (error) {
-      return setMessage(attendanceMessageEl, getFriendlyAttendanceErrorMessage("zápisu odchodu", error), "err");
+      return setMessage(attendanceMessageEl, mapAttendanceError(error), "err");
     }
 
     await loadAllData();
     setMessage(attendanceMessageEl, "Odchod zapsán.", "ok");
   } catch (e) {
-    return setMessage(attendanceMessageEl, "Neočekávaná chyba při zápisu odchodu: " + (e?.message || e), "err");
+    return setMessage(attendanceMessageEl, "Neočekávaná chyba při zápisu odchodu: " + mapAttendanceError(e), "err");
   }
 }
+
 async function createMyManualAttendance() {
   const officeRow = officesData.find(o => String(o.id) === String(manualAttendanceOfficeEl.value || ""));
   const p_date = manualAttendanceDateEl.value;
@@ -1536,7 +1477,7 @@ async function createMyManualAttendance() {
     });
 
     if (checkError) {
-      return setMessage(manualAttendanceMessageEl, "Nepodařilo se ověřit ruční zápis: " + checkError.message, "err");
+      return setMessage(manualAttendanceMessageEl, "Nepodařilo se ověřit ruční zápis: " + mapAttendanceError(checkError), "err");
     }
 
     if (!checkData?.ok) {
@@ -1553,19 +1494,17 @@ async function createMyManualAttendance() {
     });
 
     if (error) {
-      if (error.code === "23505") {
-        return setMessage(manualAttendanceMessageEl, "Pro tento den už pracovní docházka existuje.", "err");
-      }
-      return setMessage(manualAttendanceMessageEl, "Chyba ručního zápisu: " + error.message, "err");
+      return setMessage(manualAttendanceMessageEl, mapAttendanceError(error), "err");
     }
 
     resetManualAttendanceForm();
     await loadAllData();
     setMessage(manualAttendanceMessageEl, "Docházka byla ručně zapsána.", "ok");
   } catch (e) {
-    return setMessage(manualAttendanceMessageEl, "Neočekávaná chyba ručního zápisu: " + (e?.message || e), "err");
+    return setMessage(manualAttendanceMessageEl, "Neočekávaná chyba ručního zápisu: " + mapAttendanceError(e), "err");
   }
 }
+
 async function createMyLeave() {
   const p_date_from = myLeaveDateFromEl.value, p_date_to = myLeaveDateToEl.value, p_hours = Number(myLeaveHoursEl.value || 0), p_note = myLeaveNoteEl.value.trim();
   if (!p_date_from || !p_date_to || !p_hours) return setMessage(myLeaveMessageEl, "Vyber datum od, datum do a počet hodin.", "err");
@@ -1577,7 +1516,7 @@ async function createMyLeave() {
   }
   setMessage(myLeaveMessageEl, "Odesílám žádost o dovolenou…", "warn");
   const { error } = await supabaseClient.rpc("create_leave_request", { p_date_from, p_date_to, p_hours, p_note });
-  if (error) return setMessage(myLeaveMessageEl, "Chyba při odeslání žádosti: " + error.message, "err");
+  if (error) return setMessage(myLeaveMessageEl, "Chyba při odeslání žádosti: " + mapAttendanceError(error), "err");
   resetLeaveRequestForm();
   await loadAllData();
   setMessage(myLeaveMessageEl, "Žádost o dovolenou byla odeslána.", "ok");
@@ -1592,7 +1531,7 @@ async function adminCreateLeave() {
   }
   setMessage(adminLeaveMessageEl, "Zapisuji dovolenou…", "warn");
   const { error } = await supabaseClient.rpc("admin_create_leave", { p_employee_id, p_date, p_hours, p_note });
-  if (error) return setMessage(adminLeaveMessageEl, "Chyba při zápisu dovolené: " + error.message, "err");
+  if (error) return setMessage(adminLeaveMessageEl, "Chyba při zápisu dovolené: " + mapAttendanceError(error), "err");
   adminLeaveDateEl.value = "";
   adminLeaveHoursEl.value = "8";
   adminLeaveNoteEl.value = "";
@@ -1604,7 +1543,7 @@ async function exportMonthSummary() {
   if (!p_month) return setMessage(exportMessageEl, "Vyber měsíc.", "err");
   setMessage(exportMessageEl, "Generuji export pro účetní…", "warn");
   const { data, error } = await supabaseClient.rpc("get_monthly_summary", { p_month });
-  if (error) return setMessage(exportMessageEl, "Chyba exportu: " + error.message, "err");
+  if (error) return setMessage(exportMessageEl, "Chyba exportu: " + mapAttendanceError(error), "err");
   const summaryRows = (data || []).map(row => ({
     "ID zaměstnance": row.employee_id ?? "",
     "Zaměstnanec": row.employee_name || "",
@@ -1640,14 +1579,14 @@ async function createOrUpdateEmployee() {
   if (editEmployeeId) {
     setMessage(createEmployeeMessageEl, "Ukládám změny zaměstnance…", "warn");
     const { error } = await supabaseClient.rpc("admin_update_employee", { p_id: editEmployeeId, p_name, p_email, p_role, p_offices, p_weekly, p_leave_days, p_leave_hours, p_active });
-    if (error) return setMessage(createEmployeeMessageEl, "Chyba při úpravě zaměstnance: " + error.message, "err");
+    if (error) return setMessage(createEmployeeMessageEl, "Chyba při úpravě zaměstnance: " + mapAttendanceError(error), "err");
     resetEmployeeForm();
     await loadAllData();
     return setMessage(createEmployeeMessageEl, "Zaměstnanec byl upraven.", "ok");
   }
   setMessage(createEmployeeMessageEl, "Vytvářím zaměstnance…", "warn");
   const { error } = await supabaseClient.rpc("admin_create_employee", { p_name, p_email, p_role, p_offices, p_weekly, p_leave_days, p_leave_hours });
-  if (error) return setMessage(createEmployeeMessageEl, "Chyba při vytváření zaměstnance: " + error.message, "err");
+  if (error) return setMessage(createEmployeeMessageEl, "Chyba při vytváření zaměstnance: " + mapAttendanceError(error), "err");
   resetEmployeeForm();
   await loadAllData();
   setMessage(createEmployeeMessageEl, "Zaměstnanec byl vytvořen. ", "ok");
@@ -1697,7 +1636,7 @@ async function insertAttendanceManual() {
     });
 
     if (checkError) {
-      return setMessage(attendanceEditMessageEl, "Nepodařilo se ověřit vložení docházky: " + checkError.message, "err");
+      return setMessage(attendanceEditMessageEl, "Nepodařilo se ověřit vložení docházky: " + mapAttendanceError(checkError), "err");
     }
 
     if (!checkData?.ok) {
@@ -1715,10 +1654,7 @@ async function insertAttendanceManual() {
     });
 
     if (error) {
-      if (error.code === "23505") {
-        return setMessage(attendanceEditMessageEl, "Zaměstnanec už má pro tento den pracovní docházku.", "err");
-      }
-      return setMessage(attendanceEditMessageEl, "Chyba při vložení docházky: " + error.message, "err");
+      return setMessage(attendanceEditMessageEl, mapAttendanceError(error), "err");
     }
 
     resetAttendanceEditForm();
@@ -1726,7 +1662,7 @@ async function insertAttendanceManual() {
     if (adminHistoryEmployeeEl.value && adminHistoryMonthEl.value) await loadAdminAttendanceHistory();
     setMessage(attendanceEditMessageEl, "Nový záznam docházky byl vložen.", "ok");
   } catch (e) {
-    return setMessage(attendanceEditMessageEl, "Neočekávaná chyba při vložení docházky: " + (e?.message || e), "err");
+    return setMessage(attendanceEditMessageEl, "Neočekávaná chyba při vložení docházky: " + mapAttendanceError(e), "err");
   }
 }
 async function saveAttendanceEdit() {
@@ -1748,7 +1684,7 @@ async function saveAttendanceEdit() {
   }
   setMessage(attendanceEditMessageEl, "Ukládám opravu docházky…", "warn");
   const { error } = await supabaseClient.rpc("admin_update_attendance", { p_attendance_id, p_date, p_office_id, p_type, p_time_from, p_time_to, p_break_minutes });
-  if (error) return setMessage(attendanceEditMessageEl, "Chyba při opravě docházky: " + error.message, "err");
+  if (error) return setMessage(attendanceEditMessageEl, "Chyba při opravě docházky: " + mapAttendanceError(error), "err");
   resetAttendanceEditForm();
   await loadAllData();
   if (adminHistoryEmployeeEl.value && adminHistoryMonthEl.value) await loadAdminAttendanceHistory();
@@ -1760,7 +1696,7 @@ async function deleteAttendanceRecord() {
   if (!ok) return;
   setMessage(attendanceEditMessageEl, "Mažu docházku…", "warn");
   const { error } = await supabaseClient.rpc("admin_delete_attendance", { p_attendance_id: Number(editAttendanceId) });
-  if (error) return setMessage(attendanceEditMessageEl, "Chyba při mazání docházky: " + error.message, "err");
+  if (error) return setMessage(attendanceEditMessageEl, "Chyba při mazání docházky: " + mapAttendanceError(error), "err");
   resetAttendanceEditForm();
   await loadAllData();
   if (adminHistoryEmployeeEl.value && adminHistoryMonthEl.value) await loadAdminAttendanceHistory();
