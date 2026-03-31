@@ -1,0 +1,23 @@
+NÁVOD PRO ZAMĚSTNANCE
+
+Zaměstnanec může:
+- přihlásit se do systému,
+- zapisovat příchod a odchod,
+- doplnit ručně docházku zpětně,
+- zobrazit historii docházky,
+- zobrazit měsíční přehled,
+- vytvořit žádost o dovolenou,
+- zobrazit stav svých žádostí.
+
+BĚŽNÉ POUŽITÍ
+
+1. Přihlaste se e-mailem a heslem.
+2. Vyberte místo práce a typ docházky.
+3. Zapište příchod.
+4. Po ukončení práce zapište odchod.
+5. Pro dovolenou použijte formulář žádosti o dovolenou.
+
+POZNÁMKA
+
+Pokud je měsíc uzamčen, starší záznamy nemusí jít upravit.
+V případě problému kontaktujte administrátora firmy.
