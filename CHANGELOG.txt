@@ -1,0 +1,18 @@
+CHANGELOG
+
+Verze 1.0.0
+- Login přes Supabase Auth
+- Role admin / employee
+- Evidence příchodů a odchodů
+- Ruční zápis docházky
+- Žádosti o dovolenou
+- Schvalování dovolené
+- Přehledy docházky
+- Měsíční souhrny
+- Export pro účetní
+- Audit log docházky
+- Uzávěrka měsíce
+- Správa zaměstnanců
+- Správa míst výkonu práce
+- Konfigurace přes config.js
+- Připraveno pro self-hosted instalaci
