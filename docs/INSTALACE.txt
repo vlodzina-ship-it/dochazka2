@@ -1,0 +1,30 @@
+INSTALAČNÍ NÁVOD
+
+1. Vytvořte nový Supabase projekt nebo připravte databázi zákazníka.
+2. Otevřete SQL editor.
+3. Spusťte SQL soubory v tomto pořadí:
+   1. 01_schema.sql
+   2. 02_functions.sql
+   3. 03_policies.sql
+   4. 04_seed.sql
+
+4. Otevřete soubor app/config.js
+5. Doplňte:
+   - SUPABASE_URL
+   - SUPABASE_KEY
+
+6. Nahrajte soubory ze složky app/ na webhosting nebo interní server firmy.
+7. Otevřete index.html v prohlížeči.
+8. Přihlaste se admin účtem.
+9. Zkontrolujte:
+   - seznam zaměstnanců
+   - místa výkonu práce
+   - docházku
+   - dovolené
+   - export
+
+DOPORUČENÍ
+
+- Každá firma by měla mít samostatný projekt a databázi.
+- Pravidelně zálohujte databázi.
+- Po každé aktualizaci si uložte starou verzi aplikace i databáze.
