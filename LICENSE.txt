@@ -1,0 +1,14 @@
+LICENČNÍ UPOZORNĚNÍ
+
+Tento software je určen k použití pouze oprávněným zákazníkem na základě zakoupené licence.
+
+Bez písemného souhlasu autora není dovoleno:
+- software dále prodávat,
+- veřejně šířit,
+- poskytovat třetím stranám,
+- upravovat a dále komerčně využívat jako vlastní produkt.
+
+Software je poskytován bez záruky nepřerušeného provozu.
+Za pravidelné zálohování a bezpečné provozování odpovídá provozovatel systému.
+
+Konkrétní rozsah licence, podpory a aktualizací se řídí obchodní dohodou s autorem.
