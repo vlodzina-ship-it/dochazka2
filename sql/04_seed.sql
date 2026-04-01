@@ -3,16 +3,6 @@
 -- Docházkový systém - výchozí data
 -- ==========================================
 
--- Obsah:
--- - app_settings
--- - základní offices
--- - případně první admin setup
-
-
--- ==========================================
--- DEFAULT APP SETTINGS
--- ==========================================
-
 insert into public.app_settings (
   id,
   app_name,
@@ -41,12 +31,8 @@ set
   primary_color = excluded.primary_color,
   support_email = excluded.support_email,
   timezone = excluded.timezone,
-  currency = excluded.currency;
-
-
--- ==========================================
--- DEFAULT OFFICES
--- ==========================================
+  currency = excluded.currency,
+  updated_at = now();
 
 insert into public.offices (name, sort_order, active)
 values
@@ -54,3 +40,32 @@ values
   ('Home office', 2, true),
   ('Provoz', 3, true)
 on conflict (name) do nothing;
+
+/*
+VOLITELNÉ: první admin záznam
+--------------------------------
+Po vytvoření uživatele v Supabase Auth se při prvním loginu employee
+automaticky spáruje podle stejného e-mailu.
+
+Odkomentuj a uprav podle potřeby:
+
+insert into public.employees (
+  name,
+  email,
+  role,
+  is_admin,
+  active,
+  leave_days,
+  leave_hours
+)
+values (
+  'Admin',
+  'admin@firma.cz',
+  'admin',
+  true,
+  true,
+  20,
+  160
+)
+on conflict do nothing;
+*/
