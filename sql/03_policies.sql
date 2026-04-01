@@ -3,15 +3,6 @@
 -- Docházkový systém - RLS a policies
 -- ==========================================
 
--- Obsah:
--- - enable row level security
--- - create policy
-
-
--- ==========================================
--- ENABLE RLS
--- ==========================================
-
 alter table public.app_settings enable row level security;
 alter table public.employees enable row level security;
 alter table public.attendance enable row level security;
@@ -21,38 +12,32 @@ alter table public.offices enable row level security;
 alter table public.attendance_audit enable row level security;
 alter table public.attendance_month_locks enable row level security;
 
-
--- ==========================================
--- DROP EXISTING POLICIES (safe re-run)
--- ==========================================
-
 do $$
 declare
-    r record;
+  r record;
 begin
-    for r in
-        select tablename, policyname
-        from pg_policies
-        where schemaname = 'public'
-          and tablename in (
-            'app_settings',
-            'employees',
-            'attendance',
-            'leaves',
-            'leave_requests',
-            'offices',
-            'attendance_audit',
-            'attendance_month_locks'
-          )
-    loop
-        execute format(
-            'drop policy if exists %I on public.%I',
-            r.policyname,
-            r.tablename
-        );
-    end loop;
+  for r in
+    select tablename, policyname
+    from pg_policies
+    where schemaname = 'public'
+      and tablename in (
+        'app_settings',
+        'employees',
+        'attendance',
+        'leaves',
+        'leave_requests',
+        'offices',
+        'attendance_audit',
+        'attendance_month_locks'
+      )
+  loop
+    execute format(
+      'drop policy if exists %I on public.%I',
+      r.policyname,
+      r.tablename
+    );
+  end loop;
 end $$;
-
 
 -- ==========================================
 -- app_settings
@@ -70,7 +55,6 @@ for update
 to authenticated
 using (public.is_current_admin())
 with check (public.is_current_admin());
-
 
 -- ==========================================
 -- employees
@@ -93,17 +77,15 @@ with check (
   public.is_current_admin()
 );
 
-create policy employees_update_authenticated
+create policy employees_update_admin
 on public.employees
 for update
 to authenticated
 using (
   public.is_current_admin()
-  or auth.uid() = auth_user_id
 )
 with check (
   public.is_current_admin()
-  or auth.uid() = auth_user_id
 );
 
 create policy employees_delete_admin
@@ -113,7 +95,6 @@ to authenticated
 using (
   public.is_current_admin()
 );
-
 
 -- ==========================================
 -- attendance
@@ -128,37 +109,6 @@ using (
   or employee_id = public.my_employee_id()
 );
 
-create policy attendance_insert_authenticated
-on public.attendance
-for insert
-to authenticated
-with check (
-  public.is_current_admin()
-  or employee_id = public.my_employee_id()
-);
-
-create policy attendance_update_authenticated
-on public.attendance
-for update
-to authenticated
-using (
-  public.is_current_admin()
-  or employee_id = public.my_employee_id()
-)
-with check (
-  public.is_current_admin()
-  or employee_id = public.my_employee_id()
-);
-
-create policy attendance_delete_admin
-on public.attendance
-for delete
-to authenticated
-using (
-  public.is_current_admin()
-);
-
-
 -- ==========================================
 -- leaves
 -- ==========================================
@@ -171,37 +121,6 @@ using (
   public.is_current_admin()
   or employee_id = public.my_employee_id()
 );
-
-create policy leaves_insert_authenticated
-on public.leaves
-for insert
-to authenticated
-with check (
-  public.is_current_admin()
-  or employee_id = public.my_employee_id()
-);
-
-create policy leaves_update_authenticated
-on public.leaves
-for update
-to authenticated
-using (
-  public.is_current_admin()
-  or employee_id = public.my_employee_id()
-)
-with check (
-  public.is_current_admin()
-  or employee_id = public.my_employee_id()
-);
-
-create policy leaves_delete_admin
-on public.leaves
-for delete
-to authenticated
-using (
-  public.is_current_admin()
-);
-
 
 -- ==========================================
 -- leave_requests
@@ -224,28 +143,6 @@ with check (
   public.is_current_admin()
   or employee_id = public.my_employee_id()
 );
-
-create policy leave_requests_update_authenticated
-on public.leave_requests
-for update
-to authenticated
-using (
-  public.is_current_admin()
-  or employee_id = public.my_employee_id()
-)
-with check (
-  public.is_current_admin()
-  or employee_id = public.my_employee_id()
-);
-
-create policy leave_requests_delete_admin
-on public.leave_requests
-for delete
-to authenticated
-using (
-  public.is_current_admin()
-);
-
 
 -- ==========================================
 -- offices
@@ -284,7 +181,6 @@ using (
   public.is_current_admin()
 );
 
-
 -- ==========================================
 -- attendance_audit
 -- ==========================================
@@ -296,7 +192,6 @@ to authenticated
 using (
   public.is_current_admin()
 );
-
 
 -- ==========================================
 -- attendance_month_locks
