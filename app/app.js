@@ -1598,6 +1598,7 @@ async function exportMonthSummary() {
   XLSX.writeFile(wb, filename);
   setMessage(exportMessageEl, `Export hotový: ${filename}`, "ok");
 }
+
 async function createOrUpdateEmployee() {
   const p_name = newEmployeeNameEl.value.trim(),
     p_email = newEmployeeEmailEl.value.trim().toLowerCase(),
@@ -1607,22 +1608,92 @@ async function createOrUpdateEmployee() {
     p_leave_days = Number(newEmployeeLeaveDaysEl.value || 0),
     p_leave_hours = Number(newEmployeeLeaveHoursEl.value || 0),
     p_active = newEmployeeActiveEl.value === "true";
-  if (!p_name || !p_email || !p_role) return setMessage(createEmployeeMessageEl, "Vyplň jméno, e-mail a roli.", "err");
+
+  if (!p_name || !p_email || !p_role) {
+    return setMessage(createEmployeeMessageEl, "Vyplň jméno, e-mail a roli.", "err");
+  }
+
   if (editEmployeeId) {
     setMessage(createEmployeeMessageEl, "Ukládám změny zaměstnance…", "warn");
-    const { error } = await supabaseClient.rpc("admin_update_employee", { p_id: editEmployeeId, p_name, p_email, p_role, p_offices, p_weekly, p_leave_days, p_leave_hours, p_active });
-    if (error) return setMessage(createEmployeeMessageEl, "Chyba při úpravě zaměstnance: " + mapAttendanceError(error), "err");
+
+    const { error } = await supabaseClient.rpc("admin_update_employee", {
+      p_id: editEmployeeId,
+      p_name,
+      p_email,
+      p_role,
+      p_offices,
+      p_weekly,
+      p_leave_days,
+      p_leave_hours,
+      p_active
+    });
+
+    if (error) {
+      return setMessage(
+        createEmployeeMessageEl,
+        "Chyba při úpravě zaměstnance: " + mapAttendanceError(error),
+        "err"
+      );
+    }
+
     resetEmployeeForm();
     await loadAllData();
     return setMessage(createEmployeeMessageEl, "Zaměstnanec byl upraven.", "ok");
   }
+
   setMessage(createEmployeeMessageEl, "Vytvářím zaměstnance…", "warn");
-  const { error } = await supabaseClient.rpc("admin_create_employee", { p_name, p_email, p_role, p_offices, p_weekly, p_leave_days, p_leave_hours });
-  if (error) return setMessage(createEmployeeMessageEl, "Chyba při vytváření zaměstnance: " + mapAttendanceError(error), "err");
+
+  const { error: createError } = await supabaseClient.rpc("admin_create_employee", {
+    p_name,
+    p_email,
+    p_role,
+    p_offices,
+    p_weekly,
+    p_leave_days,
+    p_leave_hours
+  });
+
+  if (createError) {
+    return setMessage(
+      createEmployeeMessageEl,
+      "Chyba při vytváření zaměstnance: " + mapAttendanceError(createError),
+      "err"
+    );
+  }
+
+  setMessage(createEmployeeMessageEl, "Zaměstnanec vytvořen, odesílám pozvánku…", "warn");
+
+  const { data: inviteData, error: inviteError } = await supabaseClient.functions.invoke("invite-employee", {
+    body: {
+      email: p_email
+    }
+  });
+
+  if (inviteError) {
+    await loadAllData();
+    resetEmployeeForm();
+    return setMessage(
+      createEmployeeMessageEl,
+      "Zaměstnanec byl vytvořen, ale pozvánku se nepodařilo odeslat: " + inviteError.message,
+      "err"
+    );
+  }
+
+  if (inviteData?.error) {
+    await loadAllData();
+    resetEmployeeForm();
+    return setMessage(
+      createEmployeeMessageEl,
+      "Zaměstnanec byl vytvořen, ale pozvánku se nepodařilo odeslat: " + inviteData.error,
+      "err"
+    );
+  }
+
   resetEmployeeForm();
   await loadAllData();
-  setMessage(createEmployeeMessageEl, "Zaměstnanec byl vytvořen. ", "ok");
+  setMessage(createEmployeeMessageEl, "Zaměstnanec byl vytvořen a pozvánka byla odeslána.", "ok");
 }
+
 function normalizeAttendanceEditFields() {
   const type = normalizeText(editAttendanceTypeEl.value);
   if (type === "dovolena" || type === "leave" || type === "vacation") {
