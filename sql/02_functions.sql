@@ -1,9 +1,12 @@
--- ==========================================
 -- FORCE DROP PROBLEMATIC FUNCTIONS
--- ==========================================
 
 drop function if exists public.rpc_check_in(text, text, integer);
 drop function if exists public.rpc_check_out(text, text, integer);
+
+drop function if exists public.admin_insert_attendance(bigint, date, bigint, text, text, text, integer);
+drop function if exists public.admin_update_attendance(bigint, date, bigint, text, text, text, integer);
+drop function if exists public.admin_delete_attendance(bigint);
+
 -- ==========================================
 -- 02_functions.sql
 -- Docházkový systém - funkce
