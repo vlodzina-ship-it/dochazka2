@@ -4,6 +4,28 @@
 -- ==========================================
 
 -- ==========================================
+-- DROP FUNCTIONS WITH CHANGED RETURN TYPES
+-- ==========================================
+
+drop function if exists public.get_my_employee_profile();
+drop function if exists public.get_my_leave_summary();
+drop function if exists public.get_my_attendance_rows(integer);
+drop function if exists public.get_attendance_by_month(bigint, text);
+drop function if exists public.get_attendance_audit_by_month(text);
+drop function if exists public.get_offices();
+drop function if exists public.get_admin_employees();
+drop function if exists public.get_admin_today_attendance();
+drop function if exists public.get_admin_today_locations();
+drop function if exists public.get_admin_dashboard_summary();
+drop function if exists public.get_admin_leave_summary();
+drop function if exists public.get_leave_requests();
+drop function if exists public.get_monthly_summary(text);
+drop function if exists public.can_check_in();
+drop function if exists public.can_check_out();
+drop function if exists public.can_create_my_manual_attendance(date, text, text, text);
+drop function if exists public.can_admin_insert_attendance(bigint, date, text, text, text);
+
+-- ==========================================
 -- HELPER: set_updated_at
 -- ==========================================
 
@@ -208,7 +230,7 @@ $$;
 -- HELPER: get employee profile
 -- ==========================================
 
-create or replace function public.get_my_employee_profile()
+create function public.get_my_employee_profile()
 returns table (
   id bigint,
   name text,
@@ -327,7 +349,7 @@ $$;
 -- CHECKERS: check-in / check-out
 -- ==========================================
 
-create or replace function public.can_check_in()
+create function public.can_check_in()
 returns table (
   ok boolean,
   message text
@@ -360,7 +382,7 @@ begin
 end;
 $$;
 
-create or replace function public.can_check_out()
+create function public.can_check_out()
 returns table (
   ok boolean,
   message text
@@ -490,7 +512,7 @@ $$;
 -- EMPLOYEE: manual attendance
 -- ==========================================
 
-create or replace function public.can_create_my_manual_attendance(
+create function public.can_create_my_manual_attendance(
   p_date date,
   p_type text,
   p_time_from text,
@@ -590,7 +612,7 @@ $$;
 -- ADMIN: attendance insert/update/delete
 -- ==========================================
 
-create or replace function public.can_admin_insert_attendance(
+create function public.can_admin_insert_attendance(
   p_employee_id bigint,
   p_date date,
   p_type text,
@@ -1163,7 +1185,7 @@ begin
 end;
 $$;
 
-create or replace function public.get_my_leave_summary()
+create function public.get_my_leave_summary()
 returns table (
   leave_days_total integer,
   leave_hours_total integer,
@@ -1202,7 +1224,7 @@ $$;
 -- READ: attendance / history / audit / offices
 -- ==========================================
 
-create or replace function public.get_my_attendance_rows(
+create function public.get_my_attendance_rows(
   p_limit integer default 30
 )
 returns table (
@@ -1236,7 +1258,7 @@ as $$
   limit coalesce(p_limit, 30);
 $$;
 
-create or replace function public.get_attendance_by_month(
+create function public.get_attendance_by_month(
   p_employee_id bigint,
   p_month text
 )
@@ -1272,7 +1294,7 @@ as $$
   order by a.date desc, a.id desc;
 $$;
 
-create or replace function public.get_attendance_audit_by_month(
+create function public.get_attendance_audit_by_month(
   p_month text
 )
 returns table (
@@ -1298,7 +1320,7 @@ as $$
   order by a.changed_at desc;
 $$;
 
-create or replace function public.get_offices()
+create function public.get_offices()
 returns table (
   id bigint,
   name text,
@@ -1322,7 +1344,7 @@ $$;
 -- READ: admin employees / attendance / dashboard
 -- ==========================================
 
-create or replace function public.get_admin_employees()
+create function public.get_admin_employees()
 returns table (
   id bigint,
   name text,
@@ -1355,7 +1377,7 @@ as $$
   order by e.name asc;
 $$;
 
-create or replace function public.get_admin_today_attendance()
+create function public.get_admin_today_attendance()
 returns table (
   id bigint,
   employee_id bigint,
@@ -1388,7 +1410,7 @@ as $$
   order by e.name asc, a.time_from asc nulls last;
 $$;
 
-create or replace function public.get_admin_today_locations()
+create function public.get_admin_today_locations()
 returns table (
   employee_id bigint,
   employee_name text,
@@ -1416,7 +1438,7 @@ as $$
   order by e.name asc;
 $$;
 
-create or replace function public.get_admin_dashboard_summary()
+create function public.get_admin_dashboard_summary()
 returns table (
   total_employees bigint,
   at_work_count bigint,
@@ -1448,7 +1470,7 @@ as $$
   where public.is_current_admin();
 $$;
 
-create or replace function public.get_admin_leave_summary()
+create function public.get_admin_leave_summary()
 returns table (
   employee_id bigint,
   employee_name text,
@@ -1482,7 +1504,7 @@ as $$
   order by e.name asc;
 $$;
 
-create or replace function public.get_leave_requests()
+create function public.get_leave_requests()
 returns table (
   id bigint,
   employee_id bigint,
@@ -1520,7 +1542,7 @@ $$;
 -- READ: monthly summary
 -- ==========================================
 
-create or replace function public.get_monthly_summary(
+create function public.get_monthly_summary(
   p_month text
 )
 returns table (
