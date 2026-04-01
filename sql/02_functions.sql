@@ -1,4 +1,10 @@
 -- ==========================================
+-- FORCE DROP PROBLEMATIC FUNCTIONS
+-- ==========================================
+
+drop function if exists public.rpc_check_in(text, text, integer);
+drop function if exists public.rpc_check_out(text, text, integer);
+-- ==========================================
 -- 02_functions.sql
 -- Docházkový systém - funkce
 -- ==========================================
