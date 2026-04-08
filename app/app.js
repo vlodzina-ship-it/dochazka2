@@ -1669,25 +1669,31 @@ async function createOrUpdateEmployee() {
     }
   });
 
-  if (inviteError) {
-    await loadAllData();
-    resetEmployeeForm();
-    return setMessage(
-      createEmployeeMessageEl,
-      "Zaměstnanec byl vytvořen, ale pozvánku se nepodařilo odeslat: " + inviteError.message,
-      "err"
-    );
-  }
+if (inviteError) {
+  console.error("inviteError:", inviteError);
+  await loadAllData();
+  resetEmployeeForm();
+  return setMessage(
+    createEmployeeMessageEl,
+    "Zaměstnanec byl vytvořen, ale pozvánku se nepodařilo odeslat: " +
+      (inviteError.message || JSON.stringify(inviteError)),
+    "err"
+  );
+}
 
-  if (inviteData?.error) {
-    await loadAllData();
-    resetEmployeeForm();
-    return setMessage(
-      createEmployeeMessageEl,
-      "Zaměstnanec byl vytvořen, ale pozvánku se nepodařilo odeslat: " + inviteData.error,
-      "err"
-    );
-  }
+if (inviteData?.error) {
+  console.error("inviteData.error:", inviteData);
+  await loadAllData();
+  resetEmployeeForm();
+  return setMessage(
+    createEmployeeMessageEl,
+    "Zaměstnanec byl vytvořen, ale pozvánku se nepodařilo odeslat: " +
+      (inviteData.error || JSON.stringify(inviteData)),
+    "err"
+  );
+}
+
+console.log("inviteData OK:", inviteData);
 
   resetEmployeeForm();
   await loadAllData();
