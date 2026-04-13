@@ -753,25 +753,30 @@ function updateRoleVisibility() {
 }
 function fillAdminLeaveEmployeeOptions() {
   adminLeaveEmployeeEl.innerHTML = "";
-  adminEmployeesData.filter(e => !(e.role === "admin" || e.is_admin === true)).forEach(employee => {
-    const option = document.createElement("option");
-    option.value = employee.id;
-    option.textContent = `${employee.name || ""} (${employee.email || ""})`;
-    adminLeaveEmployeeEl.appendChild(option);
-  });
+  adminEmployeesData
+    .filter(employee => !isEmployeeAdmin(employee))
+    .forEach(employee => {
+      const option = document.createElement("option");
+      option.value = employee.id;
+      option.textContent = `${employee.name || ""} (${employee.email || ""})`;
+      adminLeaveEmployeeEl.appendChild(option);
+    });
 }
 function fillAdminHistoryEmployeeOptions() {
   adminHistoryEmployeeEl.innerHTML = "";
-  adminEmployeesData.filter(e => !(e.role === "admin" || e.is_admin === true)).forEach(employee => {
-    const option = document.createElement("option");
-    option.value = employee.id;
-    option.textContent = `${employee.name || ""} (${employee.email || ""})`;
-    adminHistoryEmployeeEl.appendChild(option);
-  });
+  adminEmployeesData
+    .filter(employee => !isEmployeeAdmin(employee))
+    .forEach(employee => {
+      const option = document.createElement("option");
+      option.value = employee.id;
+      option.textContent = `${employee.name || ""} (${employee.email || ""})`;
+      adminHistoryEmployeeEl.appendChild(option);
+    });
 }
 function fillEditAttendanceEmployeeOptions() {
   editAttendanceEmployeeEl.innerHTML = "";
-  const filtered = adminEmployeesData.filter(e => !(e.role === "admin" || e.is_admin === true));
+  const filtered = adminEmployeesData.filter(employee => !isEmployeeAdmin(employee));
+
   if (!filtered.length) {
     const option = document.createElement("option");
     option.value = "";
@@ -779,6 +784,7 @@ function fillEditAttendanceEmployeeOptions() {
     editAttendanceEmployeeEl.appendChild(option);
     return;
   }
+
   filtered.forEach(employee => {
     const option = document.createElement("option");
     option.value = employee.id;
@@ -786,6 +792,7 @@ function fillEditAttendanceEmployeeOptions() {
     editAttendanceEmployeeEl.appendChild(option);
   });
 }
+
 function renderRoleBadge(role) {
   return normalizeText(role) === "admin" ? `<span class="pill pill-admin">admin</span>` : `<span class="pill pill-employee">employee</span>`;
 }
