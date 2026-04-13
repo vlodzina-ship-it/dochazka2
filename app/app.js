@@ -1897,66 +1897,32 @@ async function deleteAttendanceRecord() {
 }
 
 async function loadAdminDashboard() {
-
-async function loadAdminData() {
   if (!isAdmin) {
-    adminPanelEl.classList.add("hidden");
+    resetDashboard();
     return;
   }
-  adminPanelEl.classList.remove("hidden");
-  let locations = [], todayRows = [], employees = [], leaveSummary = [];
-  try {
-    const [locationsRes, todayRes, employeesRes] = await Promise.all([
-      supabaseClient.rpc("get_admin_today_locations"),
-      supabaseClient.rpc("get_admin_today_attendance"),
-      supabaseClient.rpc("get_admin_employees")
-    ]);
-    if (locationsRes.error) throw locationsRes.error;
-    if (todayRes.error) throw todayRes.error;
-    if (employeesRes.error) throw employeesRes.error;
-    locations = locationsRes.data || [];
-    todayRows = todayRes.data || [];
-    employees = employeesRes.data || [];
-  } catch (_) {
-    const [{ data: aRows, error: aErr }, { data: eRows, error: eErr }] = await Promise.all([
-      supabaseClient.from("attendance").select("id, employee_id, date, office, type, time_from, time_to, break_minutes").eq("date", todayStr()),
-      supabaseClient.from("employees").select("id, name, email, role, is_admin, active, offices, weekly, leave_days, leave_hours")
-    ]);
-    if (aErr) throw aErr;
-    if (eErr) throw eErr;
-    employees = eRows || [];
-    const byEmployee = new Map(employees.map(e => [Number(e.id), e]));
-    todayRows = (aRows || []).map(r => ({
-      ...r,
-      employee_name: byEmployee.get(Number(r.employee_id))?.name || ""
-    }));
-    locations = todayRows.filter(r => !r.time_to).map(r => ({
-      employee_name: byEmployee.get(Number(r.employee_id))?.name || "",
-      employee_email: byEmployee.get(Number(r.employee_id))?.email || "",
-      office: r.office,
-      type: r.type,
-      time_from: r.time_from
-    }));
-  }
 
   try {
-    const { data, error } = await supabaseClient.rpc("get_admin_leave_summary");
-    if (!error) leaveSummary = data || [];
-  } catch (_) {}
-  if (!leaveSummary.length) {
-    leaveSummary = employees
-      .filter(e => !(e.role === "admin" || e.is_admin === true))
-      .map(e => ({
-        employee_name: e.name,
-        employee_email: e.email,
-        leave_days_total: e.leave_days || 0,
-        leave_hours_total: e.leave_hours || 0,
-        leave_hours_used: 0,
-        leave_hours_remaining: e.leave_hours || 0,
-        leave_days_remaining: e.leave_days || 0
-      }));
-  }
+    const employeeOnlyRows = (adminEmployeesData || []).filter(e => !isEmployeeAdmin(e));
+    const todayEmployeeIds = new Set(employeeOnlyRows.map(e => Number(e.id)));
 
+    const todayRows = (adminTodayAttendanceData || []).filter(r =>
+      todayEmployeeIds.has(Number(r.employee_id))
+    );
+
+    const types = todayRows.map(x => normalizeText(x.type));
+
+    dashTotalEmployeesEl.textContent = employeeOnlyRows.length;
+    dashAtWorkEl.textContent = types.filter(t => t === "prace" || t === "work").length;
+    dashHomeOfficeEl.textContent = types.filter(t => t.includes("home")).length;
+    dashBusinessTripEl.textContent = types.filter(t => t.includes("trip") || t.includes("cesta")).length;
+    dashOnLeaveEl.textContent = types.filter(t => t.includes("leave") || t.includes("dovolena")).length;
+
+  } catch (error) {
+    console.error("loadAdminDashboard:", error);
+    resetDashboard();
+  }
+}
   adminTodayAttendanceData = todayRows || [];
   adminEmployeesData = employees || [];
   adminLeaveData = leaveSummary || [];
