@@ -1890,41 +1890,6 @@ async function deleteAttendanceRecord() {
 }
 
 async function loadAdminDashboard() {
-  if (!isAdmin) {
-    resetDashboard();
-    return;
-  }
-  try {
-    const { data, error } = await supabaseClient.rpc("get_admin_dashboard_summary");
-    if (!error && data && data.length) {
-      const d = data[0];
-      dashTotalEmployeesEl.textContent = d.total_employees ?? 0;
-      dashAtWorkEl.textContent = d.at_work_count ?? 0;
-      dashHomeOfficeEl.textContent = d.home_office_count ?? 0;
-      dashBusinessTripEl.textContent = d.business_trip_count ?? 0;
-      dashOnLeaveEl.textContent = d.on_leave_count ?? 0;
-      return;
-    }
-  } catch (_) {}
-  try {
-    const { data: employees, error: empError } = await supabaseClient.from("employees").select("id");
-    if (empError) throw empError;
-    const { data: todayRows, error: attError } = await supabaseClient
-      .from("attendance")
-      .select("type")
-      .eq("date", todayStr());
-    if (attError) throw attError;
-    const types = (todayRows || []).map(x => normalizeText(x.type));
-    dashTotalEmployeesEl.textContent = employees?.length || 0;
-    dashAtWorkEl.textContent = types.filter(t => t === "prace" || t === "work").length;
-    dashHomeOfficeEl.textContent = types.filter(t => t.includes("home")).length;
-    dashBusinessTripEl.textContent = types.filter(t => t.includes("trip") || t.includes("cesta")).length;
-    dashOnLeaveEl.textContent = types.filter(t => t.includes("leave") || t.includes("dovolena")).length;
-  } catch (error) {
-    console.error("loadAdminDashboard:", error);
-    resetDashboard();
-  }
-}
 
 async function loadAdminData() {
   if (!isAdmin) {
