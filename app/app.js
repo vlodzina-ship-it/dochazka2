@@ -151,7 +151,15 @@ const loginView = $("loginView"),
   newEmployeeActiveEl = $("newEmployeeActive"),
   createEmployeeBtn = $("createEmployeeBtn"),
   cancelEditEmployeeBtn = $("cancelEditEmployeeBtn"),
-  offlineBannerEl = $("offlineBanner");
+  offlineBannerEl = $("offlineBanner"),
+  onboardingViewEl = $("onboardingView"),
+  registerCompanyBtn = $("registerCompanyBtn"),
+  registerMessageEl = $("registerMessage"),
+  regCompanyEl = $("regCompany"),
+  regNameEl = $("regName"),
+  regEmailEl = $("regEmail"),
+  showLoginBtn = $("showLoginBtn"),
+  showOnboardingBtn = $("showOnboardingBtn");
 
 const todayFilterButtons = document.querySelectorAll(".today-filter-btn");
 
@@ -975,21 +983,86 @@ function resetDashboard() {
   dashBusinessTripEl.textContent = "0";
   dashOnLeaveEl.textContent = "0";
 }
-
 function showLoginView() {
+  onboardingViewEl?.classList.add("hidden");
   loginView.classList.remove("hidden");
   passwordResetView.classList.add("hidden");
   appView.classList.add("hidden");
 }
 function showRecoveryView() {
+  onboardingViewEl?.classList.add("hidden");
   loginView.classList.add("hidden");
   appView.classList.add("hidden");
   passwordResetView.classList.remove("hidden");
 }
 function showAppView() {
+  onboardingViewEl?.classList.add("hidden");
   loginView.classList.add("hidden");
   passwordResetView.classList.add("hidden");
   appView.classList.remove("hidden");
+}
+function showOnboardingView() {
+  onboardingViewEl?.classList.remove("hidden");
+  loginView?.classList.add("hidden");
+  passwordResetView?.classList.add("hidden");
+  appView?.classList.add("hidden");
+}
+
+function showLoginOnlyView() {
+  onboardingViewEl?.classList.add("hidden");
+  loginView?.classList.remove("hidden");
+  passwordResetView?.classList.add("hidden");
+  appView?.classList.add("hidden");
+}
+
+async function registerCompany() {
+  const companyName = regCompanyEl?.value.trim() || "";
+  const adminName = regNameEl?.value.trim() || "";
+  const adminEmail = regEmailEl?.value.trim().toLowerCase() || "";
+
+  if (!companyName || !adminName || !adminEmail) {
+    return setMessage(registerMessageEl, "Vyplň název firmy, jméno admina a e-mail.", "err");
+  }
+
+  setMessage(registerMessageEl, "Vytvářím firmu…", "warn");
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/register-company`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY
+      },
+      body: JSON.stringify({
+        companyName,
+        adminName,
+        adminEmail
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data.error || data.message || `HTTP ${res.status}`);
+    }
+
+    regCompanyEl.value = "";
+    regNameEl.value = "";
+    regEmailEl.value = "";
+
+    setMessage(
+      registerMessageEl,
+      "Firma byla vytvořena. Admin dostal e-mail s pozvánkou. Teď se můžeš přihlásit.",
+      "ok"
+    );
+
+    setTimeout(() => {
+      showLoginOnlyView();
+      setMessage(loginMessageEl, "Firma je založená. Přihlas se nebo dokonči pozvánku z e-mailu.", "ok");
+    }, 1200);
+  } catch (err) {
+    setMessage(registerMessageEl, "Chyba registrace firmy: " + (err.message || err), "err");
+  }
 }
 function cleanRecoveryUrl() {
   window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
@@ -1001,7 +1074,7 @@ function detectRecoveryModeFromUrl() {
 }
 function renderLoggedOut() {
   if (isPasswordRecoveryFlow) showRecoveryView();
-  else showLoginView();
+  else showOnboardingView();
   currentUser = null;
   currentEmployee = null;
   myAttendanceRows = [];
@@ -2061,8 +2134,9 @@ passwordEl?.addEventListener("keydown", e => {
 newPassword2El?.addEventListener("keydown", e => {
   if (e.key === "Enter") saveNewPassword();
 });
-window.addEventListener("online", updateOnlineStatus);
-window.addEventListener("offline", updateOnlineStatus);
+registerCompanyBtn?.addEventListener("click", registerCompany);
+showLoginBtn?.addEventListener("click", showLoginOnlyView);
+showOnboardingBtn?.addEventListener("click", showOnboardingView);
 
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === "PASSWORD_RECOVERY") {
@@ -2120,47 +2194,3 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   }
   await loadSession();
 })();
-const registerCompanyBtn = document.getElementById("registerCompanyBtn");
-const registerMessageEl = document.getElementById("registerMessage");
-
-registerCompanyBtn?.addEventListener("click", async () => {
-  const companyName = document.getElementById("regCompany").value.trim();
-  const adminName = document.getElementById("regName").value.trim();
-  const adminEmail = document.getElementById("regEmail").value.trim();
-
-  if (!companyName || !adminName || !adminEmail) {
-    registerMessageEl.textContent = "Vyplň všechna pole.";
-    return;
-  }
-
-  registerMessageEl.textContent = "Vytvářím firmu...";
-
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/functions/v1/register-company`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: SUPABASE_KEY
-        },
-        body: JSON.stringify({
-          companyName,
-          adminName,
-          adminEmail
-        })
-      }
-    );
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Chyba");
-    }
-
-    registerMessageEl.textContent = "Firma vytvořena! Zkontroluj e-mail.";
-
-  } catch (err) {
-    registerMessageEl.textContent = "Chyba: " + err.message;
-  }
-});
