@@ -1027,18 +1027,22 @@ async function registerCompany() {
   setMessage(registerMessageEl, "Vytvářím firmu…", "warn");
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/register-company`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_KEY
-      },
-      body: JSON.stringify({
-        companyName,
-        adminName,
-        adminEmail
-      })
-    });
+   const res = await fetch(
+  `${SUPABASE_URL}/functions/v1/register-company`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`
+    },
+    body: JSON.stringify({
+      companyName,
+      adminName,
+      adminEmail
+    })
+  }
+);
 
     const data = await res.json().catch(() => ({}));
 
