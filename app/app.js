@@ -2120,3 +2120,47 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   }
   await loadSession();
 })();
+const registerCompanyBtn = document.getElementById("registerCompanyBtn");
+const registerMessageEl = document.getElementById("registerMessage");
+
+registerCompanyBtn?.addEventListener("click", async () => {
+  const companyName = document.getElementById("regCompany").value.trim();
+  const adminName = document.getElementById("regName").value.trim();
+  const adminEmail = document.getElementById("regEmail").value.trim();
+
+  if (!companyName || !adminName || !adminEmail) {
+    registerMessageEl.textContent = "Vyplň všechna pole.";
+    return;
+  }
+
+  registerMessageEl.textContent = "Vytvářím firmu...";
+
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/functions/v1/register-company`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY
+        },
+        body: JSON.stringify({
+          companyName,
+          adminName,
+          adminEmail
+        })
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Chyba");
+    }
+
+    registerMessageEl.textContent = "Firma vytvořena! Zkontroluj e-mail.";
+
+  } catch (err) {
+    registerMessageEl.textContent = "Chyba: " + err.message;
+  }
+});
