@@ -1356,23 +1356,52 @@ async function saveNewPassword() {
   const p1 = newPasswordEl.value;
   const p2 = newPassword2El.value;
 
-  if (!p1 || p1.length < 6) return setMessage(passwordResetMessageEl, "Heslo musí mít alespoň 6 znaků.", "err");
-  if (p1 !== p2) return setMessage(passwordResetMessageEl, "Hesla se neshodují.", "err");
+  if (!p1 || p1.length < 6) {
+    return setMessage(passwordResetMessageEl, "Heslo musí mít alespoň 6 znaků.", "err");
+  }
+
+  if (p1 !== p2) {
+    return setMessage(passwordResetMessageEl, "Hesla se neshodují.", "err");
+  }
+
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+
+  if (!sessionData?.session) {
+    return setMessage(
+      passwordResetMessageEl,
+      "Chybí recovery session. Otevři znovu odkaz z pozvánky v e-mailu.",
+      "err"
+    );
+  }
 
   setMessage(passwordResetMessageEl, "Ukládám nové heslo…", "warn");
+
   const { error } = await supabaseClient.auth.updateUser({ password: p1 });
-  if (error) return setMessage(passwordResetMessageEl, "Chyba: " + error.message, "err");
+
+  if (error) {
+    return setMessage(passwordResetMessageEl, "Chyba: " + error.message, "err");
+  }
 
   passwordWasJustChanged = true;
   isPasswordRecoveryFlow = false;
-  setMessage(passwordResetMessageEl, "Heslo bylo změněno. Probíhá návrat na přihlášení…", "ok");
+
+  setMessage(
+    passwordResetMessageEl,
+    "Heslo bylo změněno. Probíhá návrat na přihlášení…",
+    "ok"
+  );
+
   newPasswordEl.value = "";
   newPassword2El.value = "";
+
   cleanRecoveryUrl();
   await supabaseClient.auth.signOut();
+
   passwordWasJustChanged = false;
   renderLoggedOut();
-  setMessage(loginMessageEl, "Heslo bylo změněno. Teď se přihlas novým heslem.", "ok");
+  showLoginOnlyView();
+
+  setMessage(loginMessageEl, "Heslo bylo změněno. Přihlas se novým heslem.", "ok");
 }
 
 async function loadProfile() {
@@ -2316,32 +2345,43 @@ async function loadAllData() {
 async function loadSession() {
   const { data, error } = await supabaseClient.auth.getSession();
 
-  if (error || !data?.session?.user) {
+  if (error) {
+    console.error("loadSession error:", error);
     renderLoggedOut();
     return;
   }
 
-  if (isPasswordRecoveryFlow) {
-    showRecoveryView();
-    setMessage(passwordResetMessageEl, "Reset link je aktivní. Nastav nové heslo.", "warn");
+  if (!data?.session?.user) {
+    if (isPasswordRecoveryFlow) {
+      showRecoveryView();
+      setMessage(
+        passwordResetMessageEl,
+        "Recovery session se nenačetla. Otevři znovu odkaz z e-mailu.",
+        "err"
+      );
+      return;
+    }
+
+    renderLoggedOut();
     return;
   }
 
   currentUser = data.session.user;
+
+  if (isPasswordRecoveryFlow) {
+    showRecoveryView();
+    setMessage(
+      passwordResetMessageEl,
+      "Recovery session je aktivní. Nastav nové heslo.",
+      "warn"
+    );
+    return;
+  }
+
   showAppView();
   sessionTextEl.textContent = "Přihlášen: " + (currentUser.email || "");
   await loadAllData();
 }
-
-loginBtn?.addEventListener("click", signIn);
-logoutBtn?.addEventListener("click", signOut);
-
-refreshBtn?.addEventListener("click", async () => {
-  await loadAllData();
-  if (isAdmin && adminHistoryEmployeeEl.value && adminHistoryMonthEl.value) {
-    await loadAdminAttendanceHistory();
-  }
-});
 
 loadHistoryBtn?.addEventListener("click", loadAttendanceHistory);
 adminLoadHistoryBtn?.addEventListener("click", loadAdminAttendanceHistory);
@@ -2460,6 +2500,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   auditMonthEl.value = currentMonthStr();
   adminLeaveDateEl.value = todayStr();
   manualAttendanceDateEl.value = todayStr();
+
   isPasswordRecoveryFlow = detectRecoveryModeFromUrl();
   renderLoggedOut();
   updateOnlineStatus();
@@ -2480,8 +2521,11 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 
   if (isPasswordRecoveryFlow) {
     showRecoveryView();
-    setMessage(passwordResetMessageEl, "Odkaz pro reset hesla byl rozpoznán. Nastav nové heslo.", "warn");
-    return;
+    setMessage(
+      passwordResetMessageEl,
+      "Odkaz pro reset hesla byl rozpoznán. Načítám recovery session…",
+      "warn"
+    );
   }
 
   await loadSession();
