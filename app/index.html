@@ -14,7 +14,7 @@
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="./icon-192.png" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=2026-04-13-1" />
+  <link rel="stylesheet" href="./styles.css?v=2026-04-15-1" />
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -25,40 +25,8 @@
       Jsi offline. Data ze Supabase teď nepůjdou načíst ani uložit.
     </div>
 
-    <!-- ONBOARDING -->
-    <div id="onboardingView" class="login-wrap">
-      <div class="card">
-        <h1>Registrace firmy</h1>
-        <p class="muted">Nejprve vytvoř firmu a hlavního administrátora.</p>
-
-        <div>
-          <label for="regCompany">Název firmy</label>
-          <input id="regCompany" type="text" />
-        </div>
-
-        <div style="margin-top:14px;">
-          <label for="regName">Jméno admina</label>
-          <input id="regName" type="text" />
-        </div>
-
-        <div style="margin-top:14px;">
-          <label for="regEmail">E-mail admina</label>
-          <input id="regEmail" type="email" />
-        </div>
-
-        <div class="actions" style="margin-top:16px;">
-          <button id="registerCompanyBtn" class="btn-success" type="button">Vytvořit firmu</button>
-          <button id="showLoginBtn" class="btn-secondary" type="button">Už mám účet</button>
-        </div>
-
-        <div id="registerMessage" class="message warn" style="margin-top:16px;">
-          Vyplň název firmy, jméno a e-mail administrátora.
-        </div>
-      </div>
-    </div>
-
     <!-- LOGIN -->
-    <div id="loginView" class="login-wrap hidden">
+    <div id="loginView" class="login-wrap">
       <div class="card">
         <h1>Přihlášení do docházky</h1>
         <p class="muted">Přihlášení přes Supabase Auth.</p>
@@ -75,7 +43,6 @@
 
         <div class="actions" style="margin-top:16px;">
           <button id="loginBtn" class="btn-primary" type="button">Přihlásit</button>
-          <button id="showOnboardingBtn" class="btn-secondary" type="button">Založit novou firmu</button>
         </div>
 
         <div id="loginMessage" class="message warn" style="margin-top:16px;">
@@ -801,7 +768,7 @@
     </div>
   </div>
 
-  <script src="./config.js?v=2026-04-13-1"></script>
-  <script src="./app.js?v=2026-04-13-1"></script>
+  <script src="./config.js?v=2026-04-15-1"></script>
+  <script src="./app.js?v=2026-04-15-1"></script>
 </body>
 </html>
