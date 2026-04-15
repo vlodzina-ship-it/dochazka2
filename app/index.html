@@ -6,7 +6,6 @@
   <title>Docházkový systém</title>
 
   <meta name="theme-color" content="#2563eb" />
-  <meta name="mobile-web-app-capable" content="yes" />
 
   <link rel="stylesheet" href="./styles.css?v=2026-04-13-1" />
 
@@ -42,60 +41,95 @@
       <button id="logoutBtn">Odhlásit</button>
     </div>
 
-    <div class="grid">
+    <div class="grid grid-main">
 
-      <!-- ZAMĚSTNANCI -->
-      <div class="card">
-        <h2>Zaměstnanci</h2>
+      <!-- LEVÁ STRANA -->
+      <div class="stack">
 
-        <label>Jméno</label>
-        <input id="newEmployeeName" type="text" />
+        <!-- PROFIL -->
+        <div class="card">
+          <h2>Můj profil</h2>
+          <div id="profileBox"></div>
+        </div>
 
-        <label>E-mail</label>
-        <input id="newEmployeeEmail" type="email" />
+        <!-- DOCHÁZKA -->
+        <div class="card">
+          <h2>Příchod / Odchod</h2>
 
-        <!-- 🔥 TOTO JE DŮLEŽITÉ -->
-        <label>Dočasné heslo</label>
-        <input id="newEmployeePassword" type="text" value="Test123456" />
+          <label>Místo</label>
+          <select id="office"></select>
 
-        <label>Role</label>
-        <select id="newEmployeeRole">
-          <option value="employee">employee</option>
-          <option value="admin">admin</option>
-        </select>
+          <label>Typ</label>
+          <select id="attendanceType">
+            <option value="práce">práce</option>
+            <option value="home office">home office</option>
+            <option value="služební cesta">služební cesta</option>
+          </select>
 
-        <label>Offices</label>
-        <input id="newEmployeeOffices" type="text" />
+          <div style="margin-top:10px;">
+            <button id="checkInBtn">Příchod</button>
+            <button id="checkOutBtn">Odchod</button>
+          </div>
 
-        <label>Úvazek</label>
-        <input id="newEmployeeWeekly" type="text" />
+          <div id="attendanceMessage" class="message warn"></div>
+        </div>
 
-        <label>Dovolená dny</label>
-        <input id="newEmployeeLeaveDays" type="number" value="20" />
-
-        <label>Dovolená hodiny</label>
-        <input id="newEmployeeLeaveHours" type="number" value="160" />
-
-        <button id="createEmployeeBtn">Přidat zaměstnance</button>
-
-        <div id="createEmployeeMessage" class="message warn"></div>
       </div>
 
-      <!-- DOCHÁZKA -->
-      <div class="card">
-        <h2>Docházka</h2>
+      <!-- PRAVÁ STRANA -->
+      <div class="stack">
 
-        <select id="office"></select>
+        <!-- ZAMĚSTNANCI -->
+        <div class="card">
+          <h2>Nový zaměstnanec</h2>
 
-        <select id="attendanceType">
-          <option value="práce">práce</option>
-          <option value="home office">home office</option>
-        </select>
+          <label>Jméno</label>
+          <input id="newEmployeeName" type="text" />
 
-        <button id="checkInBtn">Příchod</button>
-        <button id="checkOutBtn">Odchod</button>
+          <label>E-mail</label>
+          <input id="newEmployeeEmail" type="email" />
 
-        <div id="attendanceMessage" class="message warn"></div>
+          <!-- 🔥 KLÍČOVÉ POLE -->
+          <label>Dočasné heslo</label>
+          <input id="newEmployeePassword" type="text" value="Test123456" />
+
+          <label>Role</label>
+          <select id="newEmployeeRole">
+            <option value="employee">employee</option>
+            <option value="admin">admin</option>
+          </select>
+
+          <label>Offices</label>
+          <input id="newEmployeeOffices" type="text" />
+
+          <label>Úvazek</label>
+          <input id="newEmployeeWeekly" type="text" />
+
+          <label>Dovolená dny</label>
+          <input id="newEmployeeLeaveDays" type="number" value="20" />
+
+          <label>Dovolená hodiny</label>
+          <input id="newEmployeeLeaveHours" type="number" value="160" />
+
+          <label>Aktivní</label>
+          <select id="newEmployeeActive">
+            <option value="true">ano</option>
+            <option value="false">ne</option>
+          </select>
+
+          <div style="margin-top:10px;">
+            <button id="createEmployeeBtn">Přidat zaměstnance</button>
+          </div>
+
+          <div id="createEmployeeMessage" class="message warn"></div>
+        </div>
+
+        <!-- SEZNAM -->
+        <div class="card">
+          <h2>Zaměstnanci</h2>
+          <div id="employeesWrap"></div>
+        </div>
+
       </div>
 
     </div>
