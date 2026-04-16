@@ -1882,7 +1882,11 @@ async function createOrUpdateEmployee() {
     });
 
     if (error) {
-      return setMessage(createEmployeeMessageEl, "Chyba při úpravě zaměstnance: " + mapAttendanceError(error), "err");
+      return setMessage(
+        createEmployeeMessageEl,
+        "Chyba při úpravě zaměstnance: " + mapAttendanceError(error),
+        "err"
+      );
     }
 
     resetEmployeeForm();
@@ -1894,69 +1898,46 @@ async function createOrUpdateEmployee() {
     return setMessage(createEmployeeMessageEl, "Dočasné heslo musí mít alespoň 6 znaků.", "err");
   }
 
-  setMessage(createEmployeeMessageEl, "Zakládám přihlašovací účet…", "warn");
+  setMessage(createEmployeeMessageEl, "Zakládám zaměstnance…", "warn");
 
-  const { data: authData, error: authError } = await supabaseClient.functions.invoke("create-employee-direct", {
+  const { data, error } = await supabaseClient.functions.invoke("create-employee-direct", {
     body: {
       email: p_email,
       password: p_password,
+      name: p_name,
+      role: p_role,
+      offices: p_offices,
+      weekly: p_weekly,
+      leave_days: p_leave_days,
+      leave_hours: p_leave_hours,
+      active: p_active,
     },
   });
 
-  if (authError) {
-    return setMessage(createEmployeeMessageEl, "Chyba při zakládání auth účtu: " + (authError.message || JSON.stringify(authError)), "err");
-  }
-
-  if (authData?.error) {
-    return setMessage(createEmployeeMessageEl, "Chyba při zakládání auth účtu: " + authData.error, "err");
-  }
-
-  setMessage(createEmployeeMessageEl, "Vytvářím zaměstnance v databázi…", "warn");
-
-  const { error: createError } = await supabaseClient.rpc("admin_create_employee", {
-    p_name,
-    p_email,
-    p_role,
-    p_offices,
-    p_weekly,
-    p_leave_days,
-    p_leave_hours,
-  });
-
-  if (createError) {
+  if (error) {
     return setMessage(
       createEmployeeMessageEl,
-      "Auth účet byl vytvořen, ale zaměstnance se nepodařilo uložit do DB: " + mapAttendanceError(createError),
+      "Chyba při vytváření zaměstnance: " + (error.message || JSON.stringify(error)),
       "err"
     );
   }
 
-  const { error: linkError } = await supabaseClient.rpc("link_employee_to_auth_user", {
-    p_email,
-  });
-
-  if (linkError) {
+  if (data?.error) {
     return setMessage(
       createEmployeeMessageEl,
-      "Zaměstnanec byl vytvořen, ale nepodařilo se propojit s přihlášením: " + mapAttendanceError(linkError),
+      "Chyba při vytváření zaměstnance: " + data.error,
       "err"
     );
   }
 
   resetEmployeeForm();
-  if (newEmployeePasswordEl) newEmployeePasswordEl.value = "Test123456";
   await loadAllData();
 
-  setMessage(createEmployeeMessageEl, `Zaměstnanec byl vytvořen. Přihlášení: ${p_email} / ${p_password}`, "ok");
-}
-
-function normalizeAttendanceEditFields() {
-  const type = normalizeText(editAttendanceTypeEl.value);
-  if (type === "dovolena" || type === "leave" || type === "vacation") {
-    editAttendanceTimeFromEl.value = "";
-    editAttendanceTimeToEl.value = "";
-    editAttendanceBreakMinutesEl.value = "0";
-  }
+  setMessage(
+    createEmployeeMessageEl,
+    `Zaměstnanec byl vytvořen. Přihlášení: ${p_email} / ${p_password}`,
+    "ok"
+  );
 }
 
 async function insertAttendanceManual() {
