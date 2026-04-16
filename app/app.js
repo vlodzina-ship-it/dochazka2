@@ -1772,6 +1772,15 @@ async function insertAttendanceManual() {
 async function saveAttendanceEdit() {
   if (!editAttendanceId) return setMessage(attendanceEditMessageEl, "Pro úpravu nejdřív vyber řádek tlačítkem Upravit. Pro nový záznam použij Vložit ručně.", "err");
   normalizeAttendanceEditFields();
+  function normalizeAttendance(rows) {
+  if (!rows) return [];
+  return rows.map(r => ({
+    ...r,
+    time_from: r.time_from || null,
+    time_to: r.time_to || null,
+    break_minutes: r.break_minutes || 0
+  }));
+}
   const p_attendance_id = Number(editAttendanceId),
     p_date = editAttendanceDateEl.value,
     p_office_id = Number(editAttendanceOfficeEl.value || 0),
