@@ -156,15 +156,7 @@ const loginView = $("loginView"),
   newEmployeeActiveEl = $("newEmployeeActive"),
   createEmployeeBtn = $("createEmployeeBtn"),
   cancelEditEmployeeBtn = $("cancelEditEmployeeBtn"),
-  offlineBannerEl = $("offlineBanner"),
-  onboardingViewEl = $("onboardingView"),
-  registerCompanyBtn = $("registerCompanyBtn"),
-  registerMessageEl = $("registerMessage"),
-  regCompanyEl = $("regCompany"),
-  regNameEl = $("regName"),
-  regEmailEl = $("regEmail"),
-  showLoginBtn = $("showLoginBtn"),
-  showOnboardingBtn = $("showOnboardingBtn");
+  offlineBannerEl = $("offlineBanner");
 
 const todayFilterButtons = document.querySelectorAll(".today-filter-btn");
 
@@ -205,11 +197,13 @@ function mapAttendanceError(error) {
   const msg = raw.toLowerCase();
   const code = String(error.code || "").trim();
 
-  if (code === "23505") return "Pro tento den už existuje pracovní docházka.";
-  if (code === "23502") return "Chybí povinná hodnota. Zkontroluj čas a vyplněná pole.";
+  if (code === "23505") return "Záznam už existuje nebo je duplicitní.";
+  if (code === "23502") return "Chybí povinná hodnota. Zkontroluj vyplněná pole.";
   if (code === "23503") return "Neplatný odkaz na zaměstnance nebo místo.";
   if (code === "22007") return "Neplatný formát data nebo času.";
 
+  if (msg.includes("auth user neexistuje")) return "Auth účet pro tento e-mail neexistuje.";
+  if (msg.includes("employee pro e-mail")) return "Zaměstnanec s tímto e-mailem v databázi neexistuje.";
   if (msg.includes("open shift")) return "Máš otevřenou směnu. Nejdřív zapiš odchod.";
   if (msg.includes("no open shift")) return "Nemáš otevřenou směnu. Nejdřív zapiš příchod.";
   if (msg.includes("already checked in")) return "Příchod pro dnešní den už je zapsaný.";
@@ -494,7 +488,6 @@ async function loadAppSettings() {
     console.error("Chyba app settings:", error);
   }
 }
-
 function renderMonthlySummary() {
   if (!currentEmployee || isAdmin) {
     myMonthlySummaryCardEl.classList.add("hidden");
@@ -960,7 +953,6 @@ function renderEmployeesTable() {
     filteredAdminEmployeesData
   );
 }
-
 function resetOfficeForm() {
   editOfficeId = null;
   officeNameEl.value = "";
@@ -1139,85 +1131,21 @@ function resetDashboard() {
 }
 
 function showLoginView() {
-  onboardingViewEl?.classList.add("hidden");
   loginView?.classList.remove("hidden");
   passwordResetView?.classList.add("hidden");
   appView?.classList.add("hidden");
 }
 
 function showRecoveryView() {
-  onboardingViewEl?.classList.add("hidden");
   loginView?.classList.add("hidden");
   appView?.classList.add("hidden");
   passwordResetView?.classList.remove("hidden");
 }
 
 function showAppView() {
-  onboardingViewEl?.classList.add("hidden");
   loginView?.classList.add("hidden");
   passwordResetView?.classList.add("hidden");
   appView?.classList.remove("hidden");
-}
-
-function showOnboardingView() {
-  onboardingViewEl?.classList.remove("hidden");
-  loginView?.classList.add("hidden");
-  passwordResetView?.classList.add("hidden");
-  appView?.classList.add("hidden");
-}
-
-function showLoginOnlyView() {
-  onboardingViewEl?.classList.add("hidden");
-  loginView?.classList.remove("hidden");
-  passwordResetView?.classList.add("hidden");
-  appView?.classList.add("hidden");
-}
-
-async function registerCompany() {
-  const companyName = regCompanyEl?.value.trim() || "";
-  const adminName = regNameEl?.value.trim() || "";
-  const adminEmail = regEmailEl?.value.trim().toLowerCase() || "";
-
-  if (!companyName || !adminName || !adminEmail) {
-    return setMessage(registerMessageEl, "Vyplň název firmy, jméno admina a e-mail.", "err");
-  }
-
-  setMessage(registerMessageEl, "Vytvářím firmu…", "warn");
-
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/register-company`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-      },
-      body: JSON.stringify({
-        companyName,
-        adminName,
-        adminEmail,
-      }),
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data.error || data.message || `HTTP ${res.status}`);
-    }
-
-    if (regCompanyEl) regCompanyEl.value = "";
-    if (regNameEl) regNameEl.value = "";
-    if (regEmailEl) regEmailEl.value = "";
-
-    setMessage(registerMessageEl, "Firma byla vytvořena. Admin dostal e-mail s pozvánkou. Teď se můžeš přihlásit.", "ok");
-
-    setTimeout(() => {
-      showLoginOnlyView();
-      setMessage(loginMessageEl, "Firma je založená. Přihlas se nebo dokonči pozvánku z e-mailu.", "ok");
-    }, 1200);
-  } catch (err) {
-    setMessage(registerMessageEl, "Chyba registrace firmy: " + (err.message || err), "err");
-  }
 }
 
 function cleanRecoveryUrl() {
@@ -1239,7 +1167,7 @@ function detectRecoveryModeFromUrl() {
 
 function renderLoggedOut() {
   if (isPasswordRecoveryFlow) showRecoveryView();
-  else showOnboardingView();
+  else showLoginView();
 
   currentUser = null;
   currentEmployee = null;
@@ -1495,7 +1423,6 @@ function renderMyAttendance() {
     myAttendanceRows
   );
 }
-
 async function loadMyLeaveSummary() {
   if (!currentEmployee || isAdmin) {
     myLeaveSummary = null;
@@ -1967,7 +1894,7 @@ async function createOrUpdateEmployee() {
     return setMessage(createEmployeeMessageEl, "Dočasné heslo musí mít alespoň 6 znaků.", "err");
   }
 
-  setMessage(createEmployeeMessageEl, "Zakládám auth účet…", "warn");
+  setMessage(createEmployeeMessageEl, "Zakládám přihlašovací účet…", "warn");
 
   const { data: authData, error: authError } = await supabaseClient.functions.invoke("create-employee-direct", {
     body: {
@@ -1997,7 +1924,23 @@ async function createOrUpdateEmployee() {
   });
 
   if (createError) {
-    return setMessage(createEmployeeMessageEl, "Auth účet byl vytvořen, ale zaměstnance se nepodařilo uložit do DB: " + mapAttendanceError(createError), "err");
+    return setMessage(
+      createEmployeeMessageEl,
+      "Auth účet byl vytvořen, ale zaměstnance se nepodařilo uložit do DB: " + mapAttendanceError(createError),
+      "err"
+    );
+  }
+
+  const { error: linkError } = await supabaseClient.rpc("link_employee_to_auth_user", {
+    p_email,
+  });
+
+  if (linkError) {
+    return setMessage(
+      createEmployeeMessageEl,
+      "Zaměstnanec byl vytvořen, ale nepodařilo se propojit s přihlášením: " + mapAttendanceError(linkError),
+      "err"
+    );
   }
 
   resetEmployeeForm();
@@ -2368,9 +2311,6 @@ saveAttendanceEditBtn?.addEventListener("click", saveAttendanceEdit);
 deleteAttendanceBtn?.addEventListener("click", deleteAttendanceRecord);
 cancelAttendanceEditBtn?.addEventListener("click", resetAttendanceEditForm);
 editAttendanceTypeEl?.addEventListener("change", normalizeAttendanceEditFields);
-registerCompanyBtn?.addEventListener("click", registerCompany);
-showLoginBtn?.addEventListener("click", showLoginOnlyView);
-showOnboardingBtn?.addEventListener("click", showOnboardingView);
 
 todayFilterButtons.forEach((btn) =>
   btn.addEventListener("click", () => {
