@@ -2267,6 +2267,15 @@ refreshBtn?.addEventListener("click", async () => {
   }
 });
 
+function normalizeAttendanceEditFields() {
+  const type = (editAttendanceTypeEl?.value || "").toLowerCase();
+
+  if (type === "dovolena" || type === "leave" || type === "vacation") {
+    if (editAttendanceTimeFromEl) editAttendanceTimeFromEl.value = "";
+    if (editAttendanceTimeToEl) editAttendanceTimeToEl.value = "";
+    if (editAttendanceBreakMinutesEl) editAttendanceBreakMinutesEl.value = "0";
+  }
+}
 loadHistoryBtn?.addEventListener("click", loadAttendanceHistory);
 adminLoadHistoryBtn?.addEventListener("click", loadAdminAttendanceHistory);
 loadAuditBtn?.addEventListener("click", loadAttendanceAudit);
