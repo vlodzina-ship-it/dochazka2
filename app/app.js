@@ -1600,14 +1600,14 @@ async function exportMonthSummary() {
 }
 
 async function createOrUpdateEmployee() {
-  const p_name = newEmployeeNameEl.value.trim(),
-    p_email = newEmployeeEmailEl.value.trim().toLowerCase(),
-    p_role = newEmployeeRoleEl.value,
-    p_offices = newEmployeeOfficesEl.value.trim(),
-    p_weekly = newEmployeeWeeklyEl.value.trim(),
-    p_leave_days = Number(newEmployeeLeaveDaysEl.value || 0),
-    p_leave_hours = Number(newEmployeeLeaveHoursEl.value || 0),
-    p_active = newEmployeeActiveEl.value === "true";
+  const p_name = newEmployeeNameEl.value.trim();
+  const p_email = newEmployeeEmailEl.value.trim().toLowerCase();
+  const p_role = newEmployeeRoleEl.value;
+  const p_offices = newEmployeeOfficesEl.value.trim();
+  const p_weekly = newEmployeeWeeklyEl.value.trim();
+  const p_leave_days = Number(newEmployeeLeaveDaysEl.value || 0);
+  const p_leave_hours = Number(newEmployeeLeaveHoursEl.value || 0);
+  const p_active = newEmployeeActiveEl.value === "true";
 
   if (!p_name || !p_email || !p_role) {
     return setMessage(createEmployeeMessageEl, "Vyplň jméno, e-mail a roli.", "err");
@@ -1669,44 +1669,39 @@ async function createOrUpdateEmployee() {
     }
   });
 
-if (inviteError) {
-  console.error("inviteError:", inviteError);
-  await loadAllData();
-  resetEmployeeForm();
-  return setMessage(
-    createEmployeeMessageEl,
-    "Zaměstnanec byl vytvořen, ale pozvánku se nepodařilo odeslat: " +
-      (inviteError.message || JSON.stringify(inviteError)),
-    "err"
-  );
-}
-
-if (inviteData?.error) {
-  console.error("inviteData.error:", inviteData);
-  await loadAllData();
-  resetEmployeeForm();
-  return setMessage(
-    createEmployeeMessageEl,
-    "Zaměstnanec byl vytvořen, ale pozvánku se nepodařilo odeslat: " +
-      (inviteData.error || JSON.stringify(inviteData)),
-    "err"
-  );
-}
-
-console.log("inviteData OK:", inviteData);
-
-  resetEmployeeForm();
-  await loadAllData();
-  setMessage(createEmployeeMessageEl, "Zaměstnanec byl vytvořen a pozvánka byla odeslána.", "ok");
-}
-
-function normalizeAttendanceEditFields() {
-  const type = normalizeText(editAttendanceTypeEl.value);
-  if (type === "dovolena" || type === "leave" || type === "vacation") {
-    editAttendanceTimeFromEl.value = "";
-    editAttendanceTimeToEl.value = "";
-    editAttendanceBreakMinutesEl.value = "0";
+  if (inviteError) {
+    console.error("inviteError:", inviteError);
+    await loadAllData();
+    resetEmployeeForm();
+    return setMessage(
+      createEmployeeMessageEl,
+      "Zaměstnanec byl vytvořen, ale pozvánku se nepodařilo odeslat: " +
+        (inviteError.message || JSON.stringify(inviteError)),
+      "err"
+    );
   }
+
+  if (inviteData?.error) {
+    console.error("inviteData.error:", inviteData);
+    await loadAllData();
+    resetEmployeeForm();
+    return setMessage(
+      createEmployeeMessageEl,
+      "Zaměstnanec byl vytvořen, ale pozvánku se nepodařilo odeslat: " +
+        (inviteData.error || JSON.stringify(inviteData)),
+      "err"
+    );
+  }
+
+  console.log("inviteData OK:", inviteData);
+
+  resetEmployeeForm();
+  await loadAllData();
+  setMessage(
+    createEmployeeMessageEl,
+    `Zaměstnanec byl vytvořen a pozvánka byla odeslána na ${p_email}.`,
+    "ok"
+  );
 }
 async function insertAttendanceManual() {
   normalizeAttendanceEditFields();
