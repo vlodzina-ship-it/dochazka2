@@ -1615,10 +1615,14 @@ async function cancelApprovedLeaveRequestById(id) {
   alert("Schválená žádost byla stornována.");
 }
 
-async function doCheckIn() {
-  if (!currentEmployee || isAdmin) {
-    return setMessage(attendanceMessageEl, "Příchod může zapisovat jen přihlášený zaměstnanec.", "err");
-  }
+if (!checkData?.ok) {
+  console.log("can_check_in FULL:", checkData);
+  return setMessage(
+    attendanceMessageEl,
+    checkData?.message || JSON.stringify(checkData) || "Příchod nelze zapsat.",
+    "err"
+  );
+}
 
   const officeRow = officesData.find((o) => String(o.id) === String(officeEl.value || ""));
   const officeText = officeRow?.name || "";
