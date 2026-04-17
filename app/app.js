@@ -2644,7 +2644,9 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   auditMonthEl.value = currentMonthStr();
   adminLeaveDateEl.value = todayStr();
   manualAttendanceDateEl.value = todayStr();
+
   isPasswordRecoveryFlow = detectRecoveryModeFromUrl();
+
   renderLoggedOut();
   updateOnlineStatus();
 
@@ -2654,9 +2656,8 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
       for (const registration of registrations) {
         await registration.unregister();
       }
-
       const cacheKeys = await caches.keys();
-      await Promise.all(cacheKeys.map((k) => caches.delete(k)));
+      await Promise.all(cacheKeys.map(k => caches.delete(k)));
       console.log("Service Worker odstraněn a cache smazána");
     } catch (err) {
       console.error("Chyba při odstraňování Service Workeru:", err);
@@ -2665,7 +2666,30 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 
   if (isPasswordRecoveryFlow) {
     showRecoveryView();
-    setMessage(passwordResetMessageEl, "Odkaz pro reset hesla byl rozpoznán. Nastav nové heslo.", "warn");
+    setMessage(passwordResetMessageEl, "Odkaz pro reset hesla byl rozpoznán. Načítám recovery session…", "warn");
+
+    await new Promise(resolve => setTimeout(resolve, 1200));
+
+    const {
+      data: { session },
+      error
+    } = await supabaseClient.auth.getSession();
+
+    console.log("RECOVERY SESSION:", session, error);
+
+    if (session?.user) {
+      currentUser = session.user;
+      showRecoveryView();
+      setMessage(passwordResetMessageEl, "Recovery session načtena. Teď nastav nové heslo.", "ok");
+    } else {
+      showRecoveryView();
+      setMessage(
+        passwordResetMessageEl,
+        "Recovery session se nenačetla. Otevři znovu celý odkaz z e-mailu ve stejném okně prohlížeče.",
+        "err"
+      );
+    }
+
     return;
   }
 
