@@ -1207,7 +1207,8 @@ function showAppView() {
 }
 
 function cleanRecoveryUrl() {
-  window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+  const cleanUrl = window.location.origin + window.location.pathname;
+  window.history.replaceState({}, document.title, cleanUrl);
 }
 
 function detectRecoveryModeFromUrl() {
@@ -1216,13 +1217,187 @@ function detectRecoveryModeFromUrl() {
 
   return (
     hash.includes("type=recovery") ||
+    hash.includes("type=invite") ||
+    hash.includes("type=signup") ||
     hash.includes("type=PASSWORD_RECOVERY") ||
     search.includes("type=recovery") ||
+    search.includes("type=invite") ||
+    search.includes("type=signup") ||
     search.includes("type=PASSWORD_RECOVERY") ||
     hash.includes("access_token=") ||
-    search.includes("access_token=")
+    hash.includes("refresh_token=") ||
+    search.includes("access_token=") ||
+    search.includes("refresh_token=") ||
+    search.includes("code=")
   );
 }
+
+async function ensureRecoverySessionFromUrl() {
+  try {
+    const hash = window.location.hash || "";
+    const search = window.location.search || "";
+
+    const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+    const searchParams = new URLSearchParams(search);
+
+    const access_token = hashParams.get("access_token") || searchParams.get("access_token");
+    const refresh_token = hashParams.get("refresh_token") || searchParams.get("refresh_token");
+    const type =
+      hashParams.get("type") ||
+      searchParams.get("type") ||
+      "";
+
+    if (access_token && refresh_token) {
+      const { error } = await supabaseClient.auth.setSession({
+        access_token,
+        refresh_token
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    }
+
+    const code = searchParams.get("code");
+    if (code) {
+      const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
+      if (error) {
+        throw error;
+      }
+      return true;
+    }
+
+    const { data } = await supabaseClient.auth.getSession();
+    if (data?.session) {
+      return true;
+    }
+
+    if (
+      type === "recovery" ||
+      type === "invite" ||
+      type === "signup" ||
+      type === "PASSWORD_RECOVERY"
+    ) {
+      return false;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("ensureRecoverySessionFromUrl:", error);
+    return false;
+  }
+}
+
+async function saveNewPassword() {
+  const p1 = newPasswordEl.value;
+  const p2 = newPassword2El.value;
+
+  if (!p1 || p1.length < 6) {
+    return setMessage(passwordResetMessageEl, "Heslo musí mít alespoň 6 znaků.", "err");
+  }
+
+  if (p1 !== p2) {
+    return setMessage(passwordResetMessageEl, "Hesla se neshodují.", "err");
+  }
+
+  setMessage(passwordResetMessageEl, "Ověřuji reset session…", "warn");
+
+  const recoveryReady = await ensureRecoverySessionFromUrl();
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!recoveryReady || !session) {
+    return setMessage(
+      passwordResetMessageEl,
+      "Reset link není aktivní. Otevři znovu odkaz z e-mailu a nastav heslo znovu.",
+      "err"
+    );
+  }
+
+  setMessage(passwordResetMessageEl, "Ukládám nové heslo…", "warn");
+
+  const { error } = await supabaseClient.auth.updateUser({ password: p1 });
+
+  if (error) {
+    return setMessage(passwordResetMessageEl, "Chyba: " + error.message, "err");
+  }
+
+  passwordWasJustChanged = true;
+  isPasswordRecoveryFlow = false;
+
+  setMessage(
+    passwordResetMessageEl,
+    "Heslo bylo změněno. Probíhá návrat na přihlášení…",
+    "ok"
+  );
+
+  newPasswordEl.value = "";
+  newPassword2El.value = "";
+
+  await supabaseClient.auth.signOut();
+  cleanRecoveryUrl();
+
+  passwordWasJustChanged = false;
+  renderLoggedOut();
+  setMessage(loginMessageEl, "Heslo bylo změněno. Teď se přihlas novým heslem.", "ok");
+}
+
+(async function bootstrap() {
+  lockMonthEl.value = previousMonthStr();
+  exportMonthEl.value = currentMonthStr();
+  historyMonthEl.value = currentMonthStr();
+  adminHistoryMonthEl.value = currentMonthStr();
+  auditMonthEl.value = currentMonthStr();
+  adminLeaveDateEl.value = todayStr();
+  manualAttendanceDateEl.value = todayStr();
+
+  isPasswordRecoveryFlow = detectRecoveryModeFromUrl();
+
+  renderLoggedOut();
+  updateOnlineStatus();
+
+  if ("serviceWorker" in navigator) {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+      }
+      const cacheKeys = await caches.keys();
+      await Promise.all(cacheKeys.map(k => caches.delete(k)));
+      console.log("Service Worker odstraněn a cache smazána");
+    } catch (err) {
+      console.error("Chyba při odstraňování Service Workeru:", err);
+    }
+  }
+
+  if (isPasswordRecoveryFlow) {
+    showRecoveryView();
+
+    const recoveryReady = await ensureRecoverySessionFromUrl();
+
+    if (recoveryReady) {
+      setMessage(
+        passwordResetMessageEl,
+        "Odkaz pro nastavení hesla byl rozpoznán. Zadej nové heslo.",
+        "warn"
+      );
+    } else {
+      setMessage(
+        passwordResetMessageEl,
+        "Nepodařilo se aktivovat reset session z odkazu. Otevři znovu odkaz z e-mailu.",
+        "err"
+      );
+    }
+
+    return;
+  }
+
+  await loadSession();
+})();
 function renderLoggedOut() {
   if (isPasswordRecoveryFlow) showRecoveryView();
   else showLoginView();
