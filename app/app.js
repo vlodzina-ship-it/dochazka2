@@ -2648,12 +2648,26 @@ officesWrapEl?.addEventListener("click", (e) => {
   if (officeRow) fillOfficeFormForEdit(officeRow);
 });
 
-employeesWrapEl?.addEventListener("click", (e) => {
-  const btn = e.target.closest(".edit-employee-btn");
-  if (!btn) return;
+employeesWrapEl?.addEventListener("click", e => {
 
-  const employee = adminEmployeesData.find((x) => Number(x.id) === Number(btn.dataset.id));
-  if (employee) fillEmployeeFormForEdit(employee);
+  // 🔵 Upravit zaměstnance
+  const editBtn = e.target.closest(".edit-employee-btn");
+  if (editBtn) {
+    const employee = adminEmployeesData.find(
+      x => Number(x.id) === Number(editBtn.dataset.id)
+    );
+    if (employee) fillEmployeeFormForEdit(employee);
+    return;
+  }
+
+  // 🟢 Poslat pozvánku znovu
+  const inviteBtn = e.target.closest(".resend-invite-btn");
+  if (inviteBtn) {
+    const email = inviteBtn.dataset.email;
+    resendEmployeeInvite(email);
+    return;
+  }
+
 });
 
 adminTodayWrapEl?.addEventListener("click", (e) => {
