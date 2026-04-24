@@ -992,12 +992,20 @@ function renderEmployeesTable() {
 
   employeesWrapEl.innerHTML = renderSimpleTable(
     [
-      { label: "Jméno", render: (r) => escapeHtml(r.name || "") },
-      { label: "E-mail", render: (r) => escapeHtml(r.email || "") },
-      { label: "Role", render: (r) => renderRoleBadge(r.role || "employee") },
-      { label: "Stav", render: (r) => renderActiveBadge(r.active !== false) },
-      { label: "Offices", render: (r) => escapeHtml(r.offices || "—") },
-      { label: "Akce", render: (r) => `<button type="button" class="btn-secondary edit-employee-btn" data-id="${r.id}">Upravit</button>` }
+      { label: "Jméno", render: r => escapeHtml(r.name || "") },
+      { label: "E-mail", render: r => escapeHtml(r.email || "") },
+      { label: "Role", render: r => renderRoleBadge(r.role || "employee") },
+      { label: "Stav", render: r => renderActiveBadge(r.active !== false) },
+      { label: "Offices", render: r => escapeHtml(r.offices || "—") },
+      {
+        label: "Akce",
+        render: r => `
+          <div class="actions">
+            <button type="button" class="btn-secondary edit-employee-btn" data-id="${r.id}">Upravit</button>
+            <button type="button" class="btn-success resend-invite-btn" data-email="${escapeHtml(r.email || "")}">Poslat pozvánku znovu</button>
+          </div>
+        `
+      }
     ],
     filteredAdminEmployeesData
   );
@@ -1225,10 +1233,7 @@ function detectRecoveryModeFromUrl() {
     search.includes("type=signup") ||
     search.includes("type=PASSWORD_RECOVERY") ||
     hash.includes("access_token=") ||
-    hash.includes("refresh_token=") ||
-    search.includes("access_token=") ||
-    search.includes("refresh_token=") ||
-    search.includes("code=")
+    search.includes("access_token=")
   );
 }
 
@@ -1290,6 +1295,28 @@ async function ensureRecoverySessionFromUrl() {
   }
 }
 
+async function ensureSessionFromUrl() {
+  const hash = window.location.hash || "";
+  const params = new URLSearchParams(hash.replace(/^#/, ""));
+
+  const access_token = params.get("access_token");
+  const refresh_token = params.get("refresh_token");
+
+  if (!access_token || !refresh_token) return false;
+
+  const { error } = await supabaseClient.auth.setSession({
+    access_token,
+    refresh_token
+  });
+
+  if (error) {
+    console.error("setSession error:", error);
+    return false;
+  }
+
+  return true;
+}
+
 async function saveNewPassword() {
   const p1 = newPasswordEl.value;
   const p2 = newPassword2El.value;
@@ -1302,22 +1329,45 @@ async function saveNewPassword() {
     return setMessage(passwordResetMessageEl, "Hesla se neshodují.", "err");
   }
 
-  setMessage(passwordResetMessageEl, "Ověřuji reset session…", "warn");
+  setMessage(passwordResetMessageEl, "Ověřuji pozvánku…", "warn");
 
-  const recoveryReady = await ensureRecoverySessionFromUrl();
+  await ensureSessionFromUrl();
 
-  const {
-    data: { session }
-  } = await supabaseClient.auth.getSession();
+  const { data: sessionData } = await supabaseClient.auth.getSession();
 
-  if (!recoveryReady || !session) {
+  if (!sessionData?.session) {
     return setMessage(
       passwordResetMessageEl,
-      "Reset link není aktivní. Otevři znovu odkaz z e-mailu a nastav heslo znovu.",
+      "Pozvánka není aktivní. Otevři odkaz z e-mailu znovu ve stejném prohlížeči.",
       "err"
     );
   }
 
+  setMessage(passwordResetMessageEl, "Ukládám nové heslo…", "warn");
+
+  const { error } = await supabaseClient.auth.updateUser({
+    password: p1
+  });
+
+  if (error) {
+    return setMessage(passwordResetMessageEl, "Chyba: " + error.message, "err");
+  }
+
+  passwordWasJustChanged = true;
+  isPasswordRecoveryFlow = false;
+
+  newPasswordEl.value = "";
+  newPassword2El.value = "";
+
+  cleanRecoveryUrl();
+
+  await supabaseClient.auth.signOut();
+
+  passwordWasJustChanged = false;
+  renderLoggedOut();
+
+  setMessage(loginMessageEl, "Heslo bylo nastaveno. Teď se přihlas novým heslem.", "ok");
+}
   setMessage(passwordResetMessageEl, "Ukládám nové heslo…", "warn");
 
   const { error } = await supabaseClient.auth.updateUser({ password: p1 });
@@ -2098,6 +2148,39 @@ async function exportMonthSummary() {
   XLSX.writeFile(wb, filename);
 
   setMessage(exportMessageEl, `Export hotový: ${filename}`, "ok");
+}
+
+async function resendEmployeeInvite(email) {
+  if (!email) return;
+
+  const ok = window.confirm(`Odeslat pozvánku znovu na ${email}?`);
+  if (!ok) return;
+
+  setMessage(createEmployeeMessageEl, "Odesílám pozvánku…", "warn");
+
+  const { data, error } = await supabaseClient.functions.invoke("invite-employee", {
+    body: { email }
+  });
+
+  if (error) {
+    console.error("resend invite error:", error);
+    return setMessage(
+      createEmployeeMessageEl,
+      "Pozvánku se nepodařilo odeslat: " + (error.message || JSON.stringify(error)),
+      "err"
+    );
+  }
+
+  if (data?.error) {
+    console.error("resend invite data error:", data);
+    return setMessage(
+      createEmployeeMessageEl,
+      "Pozvánku se nepodařilo odeslat: " + data.error,
+      "err"
+    );
+  }
+
+  setMessage(createEmployeeMessageEl, "Pozvánka byla znovu odeslána.", "ok");
 }
 
 async function createOrUpdateEmployee() {
