@@ -2648,7 +2648,7 @@ officesWrapEl?.addEventListener("click", (e) => {
   if (officeRow) fillOfficeFormForEdit(officeRow);
 });
 
-employeesWrapEl?.addEventListener("click", e => {
+employeesWrapEl?.addEventListener("click", async (e) => {
 
   // 🔵 Upravit zaměstnance
   const editBtn = e.target.closest(".edit-employee-btn");
